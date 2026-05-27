@@ -13,7 +13,7 @@ export const Route = createFileRoute('/pallet/$palletId')({ component: PalletLab
 function PalletLabelPreview() {
   const { palletId } = Route.useParams();
   const location = useLocation();
-  const copies = parseInt(new URLSearchParams(location.search).get('copies')) || 1;
+  const copies = parseInt(new URLSearchParams(location.search).get("copies") ?? "1", 10) || 1;
   const pallets = useStore((s) => s.pallets);
   const pallet = pallets.find((p) => p.palletId === palletId);
 
@@ -26,7 +26,7 @@ function PalletLabelPreview() {
 
   const confirm = () => {
     try { confirmLabelAttached(pallet.palletId); toast.success('Da xac nhan dan nhan'); }
-    catch (e) { toast.error(e.message); }
+    catch (e: any) { toast.error(e?.message ?? "Xác nhận thất bại"); }
   };
 
   const LabelCard = ({ copyIdx }: { copyIdx?: number }) => (

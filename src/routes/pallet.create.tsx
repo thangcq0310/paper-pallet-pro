@@ -1,81 +1,208 @@
-믯붿뿯榽洀瀀漀爀琀 笀 挀爀攀愀琀攀䘀椀氀攀刀漀甀琀攀Ⰰ 甀猀攀一愀瘀椀最愀琀攀 紀 昀爀漀洀 ✀䀀琀愀渀猀琀愀挀欀⼀爀攀愀挀琀ⴀ爀漀甀琀攀爀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 甀猀攀匀琀愀琀攀Ⰰ 甀猀攀䴀攀洀漀 紀 昀爀漀洀 ✀爀攀愀挀琀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 甀猀攀匀琀漀爀攀 紀 昀爀漀洀 ✀䀀⼀猀攀爀瘀椀挀攀猀⼀猀琀漀爀攀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 挀爀攀愀琀攀倀愀氀氀攀琀䰀愀戀攀氀 紀 昀爀漀洀 ✀䀀⼀猀攀爀瘀椀挀攀猀⼀瀀愀氀氀攀琀匀攀爀瘀椀挀攀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 䌀愀爀搀Ⰰ 䌀愀爀搀䌀漀渀琀攀渀琀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀挀愀爀搀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 䈀甀琀琀漀渀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀戀甀琀琀漀渀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 䤀渀瀀甀琀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀椀渀瀀甀琀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 䰀愀戀攀氀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀氀愀戀攀氀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 匀攀氀攀挀琀Ⰰ 匀攀氀攀挀琀䌀漀渀琀攀渀琀Ⰰ 匀攀氀攀挀琀䤀琀攀洀Ⰰ 匀攀氀攀挀琀吀爀椀最最攀爀Ⰰ 匀攀氀攀挀琀嘀愀氀甀攀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀猀攀氀攀挀琀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 吀攀砀琀愀爀攀愀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀甀椀⼀琀攀砀琀愀爀攀愀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 倀愀最攀䠀攀愀搀攀爀 紀 昀爀漀洀 ✀䀀⼀挀漀洀瀀漀渀攀渀琀猀⼀倀愀最攀䠀攀愀搀攀爀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 琀漀愀猀琀 紀 昀爀漀洀 ✀猀漀渀渀攀爀✀㬀ഀ
-਍椀洀瀀漀爀琀 笀 倀爀椀渀琀攀爀 紀 昀爀漀洀 ✀氀甀挀椀搀攀ⴀ爀攀愀挀琀✀㬀ഀ
-਍ഀ
-਍攀砀瀀漀爀琀 挀漀渀猀琀 刀漀甀琀攀 㴀 挀爀攀愀琀攀䘀椀氀攀刀漀甀琀攀⠀✀⼀瀀愀氀氀攀琀⼀挀爀攀愀琀攀✀⤀⠀笀 挀漀洀瀀漀渀攀渀琀㨀 䌀爀攀愀琀攀倀愀氀氀攀琀䰀愀戀攀氀倀愀最攀 紀⤀㬀ഀ
-਍ഀ
-਍昀甀渀挀琀椀漀渀 䌀爀攀愀琀攀倀愀氀氀攀琀䰀愀戀攀氀倀愀最攀⠀⤀ 笀ഀ
-਍  挀漀渀猀琀 猀欀甀猀 㴀 甀猀攀匀琀漀爀攀⠀⠀猀⤀ 㴀㸀 猀⸀猀欀甀猀⤀㬀ഀ
-਍  挀漀渀猀琀 戀愀琀挀栀攀猀 㴀 甀猀攀匀琀漀爀攀⠀⠀猀⤀ 㴀㸀 猀⸀戀愀琀挀栀攀猀⤀㬀ഀ
-਍  挀漀渀猀琀 渀愀瘀 㴀 甀猀攀一愀瘀椀最愀琀攀⠀⤀㬀ഀ
-਍  挀漀渀猀琀 嬀昀漀爀洀Ⰰ 猀攀琀䘀漀爀洀崀 㴀 甀猀攀匀琀愀琀攀⠀笀 猀欀甀䌀漀搀攀㨀 ✀✀Ⰰ 戀愀琀挀栀一漀㨀 ✀✀Ⰰ 焀琀礀㨀 ㄀Ⰰ 甀漀洀㨀 ✀䌀愀爀琀漀渀✀Ⰰ 挀漀瀀椀攀猀㨀 ㄀Ⰰ 眀攀椀最栀琀㨀 　Ⰰ 洀昀最䐀愀琀攀㨀 ✀✀Ⰰ 攀砀瀀䐀愀琀攀㨀 ✀✀Ⰰ 渀漀琀攀㨀 ✀✀ 紀⤀㬀ഀ
-਍ഀ
-਍  挀漀渀猀琀 猀欀甀 㴀 猀欀甀猀⸀昀椀渀搀⠀⠀猀⤀ 㴀㸀 猀⸀猀欀甀䌀漀搀攀 㴀㴀㴀 昀漀爀洀⸀猀欀甀䌀漀搀攀⤀㬀ഀ
-਍  挀漀渀猀琀 愀瘀愀椀氀愀戀氀攀䈀愀琀挀栀攀猀 㴀 甀猀攀䴀攀洀漀⠀⠀⤀ 㴀㸀 戀愀琀挀栀攀猀⸀昀椀氀琀攀爀⠀⠀戀⤀ 㴀㸀 戀⸀猀欀甀䌀漀搀攀 㴀㴀㴀 昀漀爀洀⸀猀欀甀䌀漀搀攀⤀Ⰰ 嬀戀愀琀挀栀攀猀Ⰰ 昀漀爀洀⸀猀欀甀䌀漀搀攀崀⤀㬀ഀ
-਍  挀漀渀猀琀 戀愀琀挀栀 㴀 戀愀琀挀栀攀猀⸀昀椀渀搀⠀⠀戀⤀ 㴀㸀 戀⸀戀愀琀挀栀一漀 㴀㴀㴀 昀漀爀洀⸀戀愀琀挀栀一漀 ☀☀ 戀⸀猀欀甀䌀漀搀攀 㴀㴀㴀 昀漀爀洀⸀猀欀甀䌀漀搀攀⤀㬀ഀ
-਍ഀ
-਍  挀漀渀猀琀 愀甀琀漀圀攀椀最栀琀 㴀 猀欀甀 㼀 猀欀甀⸀眀攀椀最栀琀倀攀爀唀渀椀琀 ⨀ 昀漀爀洀⸀焀琀礀 㨀 　㬀ഀ
-਍ഀ
-਍  挀漀渀猀琀 猀甀戀洀椀琀 㴀 ⠀⤀ 㴀㸀 笀ഀ
-਍    琀爀礀 笀ഀ
-਍      挀漀渀猀琀 昀椀渀愀氀 㴀 笀ഀ
-਍        ⸀⸀⸀昀漀爀洀Ⰰഀ
-਍        甀漀洀㨀 猀欀甀㼀⸀甀漀洀 㼀㼀 昀漀爀洀⸀甀漀洀Ⰰഀ
-਍        眀攀椀最栀琀㨀 昀漀爀洀⸀眀攀椀最栀琀 㸀 　 㼀 昀漀爀洀⸀眀攀椀最栀琀 㨀 愀甀琀漀圀攀椀最栀琀Ⰰഀ
-਍        洀昀最䐀愀琀攀㨀 昀漀爀洀⸀洀昀最䐀愀琀攀 簀簀 戀愀琀挀栀㼀⸀洀昀最䐀愀琀攀 簀簀 ✀✀Ⰰഀ
-਍        攀砀瀀䐀愀琀攀㨀 昀漀爀洀⸀攀砀瀀䐀愀琀攀 簀簀 戀愀琀挀栀㼀⸀攀砀瀀䐀愀琀攀 簀簀 ✀✀Ⰰഀ
-਍      紀㬀ഀ
-਍      挀漀渀猀琀 瀀 㴀 挀爀攀愀琀攀倀愀氀氀攀琀䰀愀戀攀氀⠀昀椀渀愀氀⤀㬀ഀ
-਍      琀漀愀猀琀⸀猀甀挀挀攀猀猀⠀怀䐀愀 琀愀漀 渀栀愀渀 ␀笀瀀⸀瀀愀氀氀攀琀䤀搀紀怀⤀㬀ഀ
-਍      渀愀瘀⠀笀 琀漀㨀 ✀⼀瀀愀氀氀攀琀⼀␀瀀愀氀氀攀琀䤀搀✀Ⰰ 瀀愀爀愀洀猀㨀 笀 瀀愀氀氀攀琀䤀搀㨀 瀀⸀瀀愀氀氀攀琀䤀搀 紀Ⰰ 琀漀㨀 ✀⼀瀀愀氀氀攀琀⼀␀瀀愀氀氀攀琀䤀搀㼀挀漀瀀椀攀猀㴀✀ ⬀ 昀漀爀洀⸀挀漀瀀椀攀猀Ⰰ 瀀愀爀愀洀猀㨀 笀 瀀愀氀氀攀琀䤀搀㨀 瀀⸀瀀愀氀氀攀琀䤀搀 紀 紀⤀㬀ഀ
-਍    紀 挀愀琀挀栀 ⠀攀⤀ 笀 琀漀愀猀琀⸀攀爀爀漀爀⠀攀⸀洀攀猀猀愀最攀⤀㬀 紀ഀ
-਍  紀㬀ഀ
-਍ഀ
-਍  爀攀琀甀爀渀 ⠀ഀ
-਍    㰀搀椀瘀㸀ഀ
-਍      㰀倀愀最攀䠀攀愀搀攀爀 琀椀琀氀攀㴀✀䌀爀攀愀琀攀 倀愀氀氀攀琀 䰀愀戀攀氀✀ 搀攀猀挀爀椀瀀琀椀漀渀㴀✀吀愀漀 瀀愀氀氀攀琀 瘀愀 椀渀 渀栀椀攀甀 戀愀渀 猀愀漀 渀栀愀渀 最椀愀礀✀ ഀ
-਍        愀挀琀椀漀渀㴀笀㰀䈀甀琀琀漀渀 漀渀䌀氀椀挀欀㴀笀猀甀戀洀椀琀紀 搀椀猀愀戀氀攀搀㴀笀℀昀漀爀洀⸀猀欀甀䌀漀搀攀 簀簀 ℀昀漀爀洀⸀戀愀琀挀栀一漀 簀簀 昀漀爀洀⸀焀琀礀 㰀㴀 　紀㸀㰀倀爀椀渀琀攀爀 挀氀愀猀猀一愀洀攀㴀✀栀ⴀ㐀 眀ⴀ㐀 洀爀ⴀ㄀✀ ⼀㸀吀愀漀 倀愀氀氀攀琀 ☀ 䤀渀 渀栀愀渀㰀⼀䈀甀琀琀漀渀㸀紀ഀ
-਍      ⼀㸀ഀ
-਍      㰀䌀愀爀搀 挀氀愀猀猀一愀洀攀㴀✀爀漀甀渀搀攀搀ⴀ㈀砀氀 洀愀砀ⴀ眀ⴀ㌀砀氀✀㸀ഀ
-਍        㰀䌀愀爀搀䌀漀渀琀攀渀琀 挀氀愀猀猀一愀洀攀㴀✀瀀ⴀ㘀 猀瀀愀挀攀ⴀ礀ⴀ㐀✀㸀ഀ
-਍          㰀搀椀瘀 挀氀愀猀猀一愀洀攀㴀✀最爀椀搀 最爀椀搀ⴀ挀漀氀猀ⴀ㄀ 猀洀㨀最爀椀搀ⴀ挀漀氀猀ⴀ㈀ 最愀瀀ⴀ㐀✀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀匀䬀唀㰀⼀䰀愀戀攀氀㸀ഀ
-਍              㰀匀攀氀攀挀琀 瘀愀氀甀攀㴀笀昀漀爀洀⸀猀欀甀䌀漀搀攀紀 漀渀嘀愀氀甀攀䌀栀愀渀最攀㴀笀⠀瘀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 猀欀甀䌀漀搀攀㨀 瘀Ⰰ 戀愀琀挀栀一漀㨀 ✀✀ 紀⤀紀㸀ഀ
-਍                㰀匀攀氀攀挀琀吀爀椀最最攀爀㸀㰀匀攀氀攀挀琀嘀愀氀甀攀 瀀氀愀挀攀栀漀氀搀攀爀㴀✀䌀栀漀渀 匀䬀唀✀ ⼀㸀㰀⼀匀攀氀攀挀琀吀爀椀最最攀爀㸀ഀ
-਍                㰀匀攀氀攀挀琀䌀漀渀琀攀渀琀㸀笀猀欀甀猀⸀洀愀瀀⠀⠀猀⤀ 㴀㸀 㰀匀攀氀攀挀琀䤀琀攀洀 欀攀礀㴀笀猀⸀椀搀紀 瘀愀氀甀攀㴀笀猀⸀猀欀甀䌀漀搀攀紀㸀笀猀⸀猀欀甀䌀漀搀攀紀 ⴀ 笀猀⸀猀欀甀一愀洀攀紀㰀⼀匀攀氀攀挀琀䤀琀攀洀㸀⤀紀㰀⼀匀攀氀攀挀琀䌀漀渀琀攀渀琀㸀ഀ
-਍              㰀⼀匀攀氀攀挀琀㸀ഀ
-਍            㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀䈀愀琀挀栀㰀⼀䰀愀戀攀氀㸀ഀ
-਍              㰀匀攀氀攀挀琀 瘀愀氀甀攀㴀笀昀漀爀洀⸀戀愀琀挀栀一漀紀 漀渀嘀愀氀甀攀䌀栀愀渀最攀㴀笀⠀瘀⤀ 㴀㸀 笀ഀ
-਍                挀漀渀猀琀 戀 㴀 戀愀琀挀栀攀猀⸀昀椀渀搀⠀⠀砀⤀ 㴀㸀 砀⸀戀愀琀挀栀一漀 㴀㴀㴀 瘀⤀㬀ഀ
-਍                猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 戀愀琀挀栀一漀㨀 瘀Ⰰ 洀昀最䐀愀琀攀㨀 戀㼀⸀洀昀最䐀愀琀攀 㼀㼀 ✀✀Ⰰ 攀砀瀀䐀愀琀攀㨀 戀㼀⸀攀砀瀀䐀愀琀攀 㼀㼀 ✀✀ 紀⤀㬀ഀ
-਍              紀紀 搀椀猀愀戀氀攀搀㴀笀℀昀漀爀洀⸀猀欀甀䌀漀搀攀紀㸀ഀ
-਍                㰀匀攀氀攀挀琀吀爀椀最最攀爀㸀㰀匀攀氀攀挀琀嘀愀氀甀攀 瀀氀愀挀攀栀漀氀搀攀爀㴀✀䌀栀漀渀 䈀愀琀挀栀✀ ⼀㸀㰀⼀匀攀氀攀挀琀吀爀椀最最攀爀㸀ഀ
-਍                㰀匀攀氀攀挀琀䌀漀渀琀攀渀琀㸀笀愀瘀愀椀氀愀戀氀攀䈀愀琀挀栀攀猀⸀洀愀瀀⠀⠀戀⤀ 㴀㸀 㰀匀攀氀攀挀琀䤀琀攀洀 欀攀礀㴀笀戀⸀椀搀紀 瘀愀氀甀攀㴀笀戀⸀戀愀琀挀栀一漀紀㸀笀戀⸀戀愀琀挀栀一漀紀㰀⼀匀攀氀攀挀琀䤀琀攀洀㸀⤀紀㰀⼀匀攀氀攀挀琀䌀漀渀琀攀渀琀㸀ഀ
-਍              㰀⼀匀攀氀攀挀琀㸀ഀ
-਍            㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀儀甀愀渀琀椀琀礀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 琀礀瀀攀㴀✀渀甀洀戀攀爀✀ 瘀愀氀甀攀㴀笀昀漀爀洀⸀焀琀礀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 焀琀礀㨀 ⬀攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀 紀⤀紀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀唀伀䴀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 瘀愀氀甀攀㴀笀猀欀甀㼀⸀甀漀洀 㼀㼀 昀漀爀洀⸀甀漀洀紀 搀椀猀愀戀氀攀搀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀圀攀椀最栀琀 ⠀欀最⤀ 笀猀欀甀 ☀☀ 㰀猀瀀愀渀 挀氀愀猀猀一愀洀攀㴀✀琀攀砀琀ⴀ砀猀 琀攀砀琀ⴀ洀甀琀攀搀ⴀ昀漀爀攀最爀漀甀渀搀✀㸀愀甀琀漀㨀 笀愀甀琀漀圀攀椀最栀琀紀㰀⼀猀瀀愀渀㸀紀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 琀礀瀀攀㴀✀渀甀洀戀攀爀✀ 瘀愀氀甀攀㴀笀昀漀爀洀⸀眀攀椀最栀琀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 眀攀椀最栀琀㨀 ⬀攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀 紀⤀紀 瀀氀愀挀攀栀漀氀搀攀爀㴀笀匀琀爀椀渀最⠀愀甀琀漀圀攀椀最栀琀⤀紀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀䴀䘀䜀 䐀愀琀攀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 琀礀瀀攀㴀✀搀愀琀攀✀ 瘀愀氀甀攀㴀笀昀漀爀洀⸀洀昀最䐀愀琀攀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 洀昀最䐀愀琀攀㨀 攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀 紀⤀紀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀䔀堀倀 䐀愀琀攀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 琀礀瀀攀㴀✀搀愀琀攀✀ 瘀愀氀甀攀㴀笀昀漀爀洀⸀攀砀瀀䐀愀琀攀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 攀砀瀀䐀愀琀攀㨀 攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀 紀⤀紀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍            㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀匀漀 戀愀渀 椀渀 渀栀愀渀㰀⼀䰀愀戀攀氀㸀㰀䤀渀瀀甀琀 琀礀瀀攀㴀✀渀甀洀戀攀爀✀ 洀椀渀㴀笀㄀紀 洀愀砀㴀笀㈀　紀 瘀愀氀甀攀㴀笀昀漀爀洀⸀挀漀瀀椀攀猀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 挀漀瀀椀攀猀㨀 䴀愀琀栀⸀洀愀砀⠀㄀Ⰰ 䴀愀琀栀⸀洀椀渀⠀㈀　Ⰰ ⬀攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀⤀⤀ 紀⤀紀 ⼀㸀㰀瀀 挀氀愀猀猀一愀洀攀㴀✀琀攀砀琀ⴀ砀猀 琀攀砀琀ⴀ洀甀琀攀搀ⴀ昀漀爀攀最爀漀甀渀搀 洀琀ⴀ㄀✀㸀吀漀椀 搀愀 ㈀　 戀愀渀㰀⼀瀀㸀㰀⼀搀椀瘀㸀ഀ
-਍          㰀⼀搀椀瘀㸀ഀ
-਍          㰀搀椀瘀㸀㰀䰀愀戀攀氀㸀一漀琀攀㰀⼀䰀愀戀攀氀㸀㰀吀攀砀琀愀爀攀愀 瘀愀氀甀攀㴀笀昀漀爀洀⸀渀漀琀攀紀 漀渀䌀栀愀渀最攀㴀笀⠀攀⤀ 㴀㸀 猀攀琀䘀漀爀洀⠀笀 ⸀⸀⸀昀漀爀洀Ⰰ 渀漀琀攀㨀 攀⸀琀愀爀最攀琀⸀瘀愀氀甀攀 紀⤀紀 ⼀㸀㰀⼀搀椀瘀㸀ഀ
-਍          㰀搀椀瘀 挀氀愀猀猀一愀洀攀㴀✀昀氀攀砀 樀甀猀琀椀昀礀ⴀ攀渀搀✀㸀㰀䈀甀琀琀漀渀 漀渀䌀氀椀挀欀㴀笀猀甀戀洀椀琀紀 搀椀猀愀戀氀攀搀㴀笀℀昀漀爀洀⸀猀欀甀䌀漀搀攀 簀簀 ℀昀漀爀洀⸀戀愀琀挀栀一漀 簀簀 昀漀爀洀⸀焀琀礀 㰀㴀 　紀㸀吀愀漀 倀愀氀氀攀琀 ☀ 䤀渀 渀栀愀渀㰀⼀䈀甀琀琀漀渀㸀㰀⼀搀椀瘀㸀ഀ
-਍        㰀⼀䌀愀爀搀䌀漀渀琀攀渀琀㸀ഀ
-਍      㰀⼀䌀愀爀搀㸀ഀ
-਍    㰀⼀搀椀瘀㸀ഀ
-਍  ⤀㬀ഀ
-਍紀ഀ
-਍搼癩ാ ††††††㰠慌敢㹬潓戠湡椠⁮桮湡⼼慌敢㹬਍†††††††䤼灮瑵琠灹㵥渢浵敢≲洠湩笽紱洠硡笽〲⁽慶畬㵥晻牯⹭潣楰獥⁽湯桃湡敧笽攨 㸽猠瑥潆浲笨⸠⸮潦浲‬潣楰獥›慍桴洮硡ㄨ‬慍桴洮湩㈨ⰰ⬠⹥慴杲瑥瘮污敵⤩素紩⼠㰾⁰汣獡乳浡㵥琢硥⵴獸琠硥⵴畭整ⵤ潦敲牧畯摮洠⵴∱吾楯搠⁡〲戠湡⼼㹰਍††††††⼼楤㹶ഀ
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useStore } from "@/services/store";
+import { createPalletLabel } from "@/services/palletService";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/PageHeader";
+import { toast } from "sonner";
+import { Printer } from "lucide-react";
+
+export const Route = createFileRoute("/pallet/create")({ component: CreatePalletLabelPage });
+
+function CreatePalletLabelPage() {
+  const skus = useStore((s) => s.skus);
+  const batches = useStore((s) => s.batches);
+  const nav = useNavigate();
+
+  const [form, setForm] = useState({
+    skuCode: "",
+    batchNo: "",
+    qty: 1,
+    uom: "Carton",
+    copies: 1,
+    weight: 0,
+    mfgDate: "",
+    expDate: "",
+    note: "",
+  });
+
+  const sku = skus.find((s) => s.skuCode === form.skuCode);
+  const autoWeight = sku ? sku.weightPerUnit * form.qty : 0;
+
+  const availableBatches = useMemo(
+    () => batches.filter((b) => b.skuCode === form.skuCode),
+    [batches, form.skuCode],
+  );
+
+  const batch = availableBatches.find((b) => b.batchNo === form.batchNo);
+
+  const submit = () => {
+    try {
+      if (!form.skuCode) throw new Error("Vui lòng chọn SKU");
+      if (!form.batchNo) throw new Error("Vui lòng chọn Batch");
+      if (form.qty <= 0) throw new Error("Quantity phải > 0");
+
+      const pallet = createPalletLabel({
+        skuCode: form.skuCode,
+        batchNo: form.batchNo,
+        qty: form.qty,
+        uom: sku?.uom ?? form.uom,
+        weight: form.weight > 0 ? form.weight : autoWeight,
+        mfgDate: form.mfgDate || batch?.mfgDate || "",
+        expDate: form.expDate || batch?.expDate || "",
+        note: form.note || undefined,
+      });
+
+      toast.success(`Đã tạo nhãn ${pallet.palletId}`);
+
+      nav({
+        to: "/pallet/$palletId",
+        params: { palletId: pallet.palletId },
+        search: { copies: form.copies } as any,
+      });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Tạo pallet thất bại");
+    }
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title="Create Pallet Label"
+        description="Tạo pallet và in nhiều bản sao nhãn giấy"
+        action={
+          <Button onClick={submit} disabled={!form.skuCode || !form.batchNo || form.qty <= 0}>
+            <Printer className="h-4 w-4 mr-1" />
+            Tạo Pallet & In nhãn
+          </Button>
+        }
+      />
+
+      <Card className="rounded-2xl max-w-3xl">
+        <CardContent className="p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>SKU</Label>
+              <Select
+                value={form.skuCode}
+                onValueChange={(v) => setForm((f) => ({ ...f, skuCode: v, batchNo: "", mfgDate: "", expDate: "" }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn SKU" />
+                </SelectTrigger>
+                <SelectContent>
+                  {skus.map((s) => (
+                    <SelectItem key={s.id} value={s.skuCode}>
+                      {s.skuCode} - {s.skuName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Batch</Label>
+              <Select
+                value={form.batchNo}
+                onValueChange={(v) => {
+                  const b = availableBatches.find((x) => x.batchNo === v);
+                  setForm((f) => ({ ...f, batchNo: v, mfgDate: b?.mfgDate ?? "", expDate: b?.expDate ?? "" }));
+                }}
+                disabled={!form.skuCode}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn Batch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableBatches.map((b) => (
+                    <SelectItem key={b.id} value={b.batchNo}>
+                      {b.batchNo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Quantity</Label>
+              <Input
+                type="number"
+                value={form.qty}
+                onChange={(e) => setForm((f) => ({ ...f, qty: +e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label>UOM</Label>
+              <Input value={sku?.uom ?? form.uom} disabled />
+            </div>
+
+            <div>
+              <Label>
+                Weight (kg)
+                {sku && <span className="text-xs text-muted-foreground ml-2">auto: {autoWeight}</span>}
+              </Label>
+              <Input
+                type="number"
+                value={form.weight}
+                onChange={(e) => setForm((f) => ({ ...f, weight: +e.target.value }))}
+                placeholder={String(autoWeight)}
+              />
+            </div>
+
+            <div>
+              <Label>MFG Date</Label>
+              <Input
+                type="date"
+                value={form.mfgDate}
+                onChange={(e) => setForm((f) => ({ ...f, mfgDate: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label>EXP Date</Label>
+              <Input
+                type="date"
+                value={form.expDate}
+                onChange={(e) => setForm((f) => ({ ...f, expDate: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label>Số bản in nhãn</Label>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={form.copies}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    copies: Math.max(1, Math.min(20, +e.target.value)),
+                  }))
+                }
+              />
+              <p className="text-xs text-muted-foreground mt-1">Tối đa 20 bản</p>
+            </div>
+          </div>
+
+          <div>
+            <Label>Note</Label>
+            <Textarea value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={submit} disabled={!form.skuCode || !form.batchNo || form.qty <= 0}>
+              Tạo Pallet & In nhãn
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

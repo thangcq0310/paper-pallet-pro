@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStore } from "@/services/store";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,31 +11,82 @@ import { PalletStatusBadge } from "@/components/StatusBadges";
 export const Route = createFileRoute("/inventory")({ component: InventoryPage });
 
 function InventoryPage() {
-  const pallets=useStore((s)=>s.pallets);
-  const skus=useStore((s)=>s.skus);
-  const locations=useStore((s)=>s.locations);
+  const pallets = useStore((s) => s.pallets);
+  const skus = useStore((s) => s.skus);
+  const locations = useStore((s) => s.locations);
   const [search, setSearch] = useState("");
   const [skuFilter, setSkuFilter] = useState("all");
   const [locFilter, setLocFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filtered = pallets.filter((p) =>
+  const filteredPallets = pallets.filter((p) =>
     (skuFilter === "all" || p.skuCode === skuFilter) &&
     (locFilter === "all" || p.currentLocation === locFilter) &&
     (statusFilter === "all" || p.status === statusFilter) &&
-    (p.palletId.toLowerCase().includes(search.toLowerCase()) || p.batchNo.toLowerCase().includes(search.toLowerCase())),
+    (search.trim() === "" ||
+      p.palletId.toLowerCase().includes(search.toLowerCase()) ||
+      p.skuCode.toLowerCase().includes(search.toLowerCase()) ||
+      p.skuName.toLowerCase().includes(search.toLowerCase()) ||
+      p.batchNo.toLowerCase().includes(search.toLowerCase())),
   );
 
-  const totals = filtered.reduce((acc, p) => ({ qty: acc.qty + p.qty, weight: acc.weight + p.weight }), { qty: 0, weight: 0 });
+  const grouped = Object.values(
+    filteredPallets.reduce<Record<string, {
+      skuCode: string;
+      skuName: string;
+      batchNo: string;
+      pallets: typeof filteredPallets;
+      uom: string;
+      totalQty: number;
+      totalWeight: number;
+      expDate: string;
+      statuses: Set<string>;
+    }>>((acc, p) => {
+      const key = `${p.skuCode}__${p.batchNo}`;
+      const current = acc[key];
+      const nextExp = current?.expDate
+        ? (p.expDate && p.expDate < current.expDate ? p.expDate : current.expDate)
+        : p.expDate;
+      if (!current) {
+        acc[key] = {
+          skuCode: p.skuCode,
+          skuName: p.skuName,
+          batchNo: p.batchNo,
+          pallets: [p],
+          uom: p.uom,
+          totalQty: p.qty,
+          totalWeight: p.weight,
+          expDate: p.expDate,
+          statuses: new Set([p.status]),
+        };
+      } else {
+        current.pallets.push(p);
+        current.totalQty += p.qty;
+        current.totalWeight += p.weight;
+        current.expDate = nextExp;
+        current.statuses.add(p.status);
+      }
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => {
+      if (a.skuCode !== b.skuCode) return a.skuCode.localeCompare(b.skuCode);
+      return a.batchNo.localeCompare(b.batchNo);
+    });
+
+  const totals = grouped.reduce(
+    (acc, g) => ({ pallets: acc.pallets + g.pallets.length, qty: acc.qty + g.totalQty, weight: acc.weight + g.totalWeight }),
+    { pallets: 0, qty: 0, weight: 0 },
+  );
 
   return (
     <div>
-      <PageHeader title="Inventory" description={`Tổng: ${filtered.length} pallet · ${totals.qty.toLocaleString()} qty · ${totals.weight.toLocaleString()} kg`} />
+      <PageHeader title="Inventory" description={`Tổng: ${totals.pallets} pallet · ${totals.qty.toLocaleString()} qty · ${totals.weight.toLocaleString()} kg`} />
 
       <Card className="rounded-2xl">
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-2 mb-4">
-            <Input placeholder="Search Pallet/Batch..." className="max-w-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Search Pallet / SKU / Batch..." className="max-w-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
             <Select value={skuFilter} onValueChange={setSkuFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">All SKU</SelectItem>{skus.map((s) => <SelectItem key={s.id} value={s.skuCode}>{s.skuCode}</SelectItem>)}</SelectContent>
@@ -55,27 +106,49 @@ function InventoryPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader><TableRow>
-                <TableHead>Pallet ID</TableHead><TableHead>SKU</TableHead><TableHead>Name</TableHead>
-                <TableHead>Batch</TableHead><TableHead className="text-right">Qty</TableHead><TableHead>UOM</TableHead>
-                <TableHead className="text-right">Weight</TableHead><TableHead>Location</TableHead>
-                <TableHead>Status</TableHead><TableHead>EXP</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Batch</TableHead>
+                <TableHead className="text-right">Pallets</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead>UOM</TableHead>
+                <TableHead className="text-right">Weight</TableHead>
+                <TableHead>Locations</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>EXP (earliest)</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {filtered.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell><Link to="/pallet/$palletId" params={{ palletId: p.palletId }} className="font-mono text-xs text-primary hover:underline">{p.palletId}</Link></TableCell>
-                    <TableCell>{p.skuCode}</TableCell>
-                    <TableCell className="text-xs">{p.skuName}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.batchNo}</TableCell>
-                    <TableCell className="text-right">{p.qty}</TableCell>
-                    <TableCell>{p.uom}</TableCell>
-                    <TableCell className="text-right">{p.weight}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.currentLocation}</TableCell>
-                    <TableCell><PalletStatusBadge status={p.status} /></TableCell>
-                    <TableCell className="text-xs">{p.expDate}</TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Không có pallet</TableCell></TableRow>}
+                {grouped.map((g) => {
+                  const uniqueLocations = Array.from(new Set(g.pallets.map((p) => p.currentLocation))).sort();
+                  const statusLabel = g.statuses.size === 1 ? Array.from(g.statuses)[0] : "Mixed";
+                  return (
+                    <TableRow key={`${g.skuCode}__${g.batchNo}`}>
+                      <TableCell>
+                        <div className="font-medium">{g.skuCode}</div>
+                        <div className="text-xs text-muted-foreground">{g.skuName}</div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{g.batchNo}</TableCell>
+                      <TableCell className="text-right">{g.pallets.length}</TableCell>
+                      <TableCell className="text-right">{g.totalQty}</TableCell>
+                      <TableCell>{g.uom}</TableCell>
+                      <TableCell className="text-right">{g.totalWeight}</TableCell>
+                      <TableCell className="text-xs">
+                        <div className="flex flex-wrap gap-1">
+                          {uniqueLocations.slice(0, 3).map((loc) => (
+                            <span key={loc} className="font-mono px-2 py-1 rounded-md bg-secondary">{loc}</span>
+                          ))}
+                          {uniqueLocations.length > 3 && <span className="text-muted-foreground">+{uniqueLocations.length - 3}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {statusLabel === "Mixed"
+                          ? <span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary">Mixed</span>
+                          : <PalletStatusBadge status={statusLabel as any} />}
+                      </TableCell>
+                      <TableCell className="text-xs">{g.expDate || "-"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+                {grouped.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Không có pallet</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
