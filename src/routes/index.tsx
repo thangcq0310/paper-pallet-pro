@@ -29,7 +29,10 @@ function Stat({ label, value, hint, icon: Icon, accent }: { label: string; value
 }
 
 function Dashboard() {
-  const { pallets, locations, movements, tasks } = useStore((s) => s);
+  const pallets=useStore((s)=>s.pallets);
+  const locations=useStore((s)=>s.locations);
+  const movements=useStore((s)=>s.movements);
+  const tasks=useStore((s)=>s.tasks);
   const today = new Date().toISOString().slice(0, 10);
 
   const totalPallets = pallets.length;

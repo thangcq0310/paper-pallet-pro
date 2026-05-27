@@ -13,7 +13,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/move")({ component: MovePage });
 
 function MovePage() {
-  const { pallets, locations } = useStore((s) => s);
+  const pallets=useStore((s)=>s.pallets);
+  const locations=useStore((s)=>s.locations);
   const [palletId, setPalletId] = useState("");
   const [toLocation, setToLocation] = useState("");
   const [note, setNote] = useState("");

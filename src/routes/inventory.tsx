@@ -11,7 +11,9 @@ import { PalletStatusBadge } from "@/components/StatusBadges";
 export const Route = createFileRoute("/inventory")({ component: InventoryPage });
 
 function InventoryPage() {
-  const { pallets, skus, locations } = useStore((s) => s);
+  const pallets=useStore((s)=>s.pallets);
+  const skus=useStore((s)=>s.skus);
+  const locations=useStore((s)=>s.locations);
   const [search, setSearch] = useState("");
   const [skuFilter, setSkuFilter] = useState("all");
   const [locFilter, setLocFilter] = useState("all");

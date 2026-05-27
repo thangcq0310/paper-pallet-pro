@@ -1,5 +1,5 @@
-// Central reactive store. Swap with Firestore later by replacing read/write functions.
-import { useSyncExternalStore } from "react";
+﻿// Central reactive store. Swap with Firestore later by replacing read/write functions.
+import { useSyncExternalStore, useRef } from "react";
 import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, OutboundDocument } from "@/types";
 import {
   mockSKUs, mockBatches, mockLocations, mockPallets, mockMovements, mockTasks, mockOutbounds,
@@ -46,7 +46,12 @@ export function setState(updater: (s: State) => State) {
 export function subscribe(l: () => void) { listeners.add(l); return () => listeners.delete(l); }
 
 export function useStore<T>(selector: (s: State) => T): T {
-  return useSyncExternalStore(subscribe, () => selector(state), () => selector(state));
+  const cached = useRef<T>(undefined as T);
+  return useSyncExternalStore(subscribe, () => {
+    const next = selector(state);
+    if (!Object.is(next, cached.current)) cached.current = next;
+    return cached.current;
+  }, () => selector(state));
 }
 
 export function resetStore() {

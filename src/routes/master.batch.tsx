@@ -16,7 +16,8 @@ import { Plus } from "lucide-react";
 export const Route = createFileRoute("/master/batch")({ component: BatchPage });
 
 function BatchPage() {
-  const { batches, skus } = useStore((s) => ({ batches: s.batches, skus: s.skus }));
+  const batches = useStore((s) => s.batches);
+  const skus = useStore((s) => s.skus);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [skuFilter, setSkuFilter] = useState("all");

@@ -14,7 +14,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/pallet/create")({ component: CreatePalletLabelPage });
 
 function CreatePalletLabelPage() {
-  const { skus, batches } = useStore((s) => ({ skus: s.skus, batches: s.batches }));
+  const skus = useStore((s) => s.skus);
+  const batches = useStore((s) => s.batches);
   const nav = useNavigate();
   const [form, setForm] = useState({ skuCode: "", batchNo: "", qty: 0, uom: "Carton", weight: 0, mfgDate: "", expDate: "", note: "" });
 

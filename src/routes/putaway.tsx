@@ -14,7 +14,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/putaway")({ component: PutawayPage });
 
 function PutawayPage() {
-  const { pallets, locations, tasks } = useStore((s) => s);
+  const pallets=useStore((s)=>s.pallets);
+  const locations=useStore((s)=>s.locations);
+  const tasks=useStore((s)=>s.tasks);
   const [palletId, setPalletId] = useState("");
   const [toLocation, setToLocation] = useState("");
 

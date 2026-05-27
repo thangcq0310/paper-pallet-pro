@@ -7,7 +7,9 @@ import { AlertTriangle, Clock, MapPin, Ban } from "lucide-react";
 export const Route = createFileRoute("/alerts")({ component: AlertsPage });
 
 function AlertsPage() {
-  const { pallets, locations, tasks } = useStore((s) => s);
+  const pallets=useStore((s)=>s.pallets);
+  const locations=useStore((s)=>s.locations);
+  const tasks=useStore((s)=>s.tasks);
   const oneDay = 86400000;
   const sixtyDays = oneDay * 60;
   const now = Date.now();

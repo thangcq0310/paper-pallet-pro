@@ -15,7 +15,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/outbound")({ component: OutboundPage });
 
 function OutboundPage() {
-  const { skus, pallets } = useStore((s) => s);
+  const skus=useStore((s)=>s.skus);
+  const pallets=useStore((s)=>s.pallets);
   const [skuCode, setSkuCode] = useState("");
   const [destination, setDestination] = useState("");
   const [requiredQty, setRequiredQty] = useState(0);
