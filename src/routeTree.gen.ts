@@ -9,38 +9,247 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as PutawayRouteImport } from './routes/putaway'
+import { Route as OutboundRouteImport } from './routes/outbound'
+import { Route as MovementsRouteImport } from './routes/movements'
+import { Route as MoveRouteImport } from './routes/move'
+import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PalletCreateRouteImport } from './routes/pallet.create'
+import { Route as PalletPalletIdRouteImport } from './routes/pallet.$palletId'
+import { Route as MasterSkuRouteImport } from './routes/master.sku'
+import { Route as MasterLocationRouteImport } from './routes/master.location'
+import { Route as MasterBatchRouteImport } from './routes/master.batch'
 
+const TasksRoute = TasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PutawayRoute = PutawayRouteImport.update({
+  id: '/putaway',
+  path: '/putaway',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OutboundRoute = OutboundRouteImport.update({
+  id: '/outbound',
+  path: '/outbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MovementsRoute = MovementsRouteImport.update({
+  id: '/movements',
+  path: '/movements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoveRoute = MoveRouteImport.update({
+  id: '/move',
+  path: '/move',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertsRoute = AlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PalletCreateRoute = PalletCreateRouteImport.update({
+  id: '/pallet/create',
+  path: '/pallet/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PalletPalletIdRoute = PalletPalletIdRouteImport.update({
+  id: '/pallet/$palletId',
+  path: '/pallet/$palletId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterSkuRoute = MasterSkuRouteImport.update({
+  id: '/master/sku',
+  path: '/master/sku',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterLocationRoute = MasterLocationRouteImport.update({
+  id: '/master/location',
+  path: '/master/location',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterBatchRoute = MasterBatchRouteImport.update({
+  id: '/master/batch',
+  path: '/master/batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/inventory': typeof InventoryRoute
+  '/move': typeof MoveRoute
+  '/movements': typeof MovementsRoute
+  '/outbound': typeof OutboundRoute
+  '/putaway': typeof PutawayRoute
+  '/tasks': typeof TasksRoute
+  '/master/batch': typeof MasterBatchRoute
+  '/master/location': typeof MasterLocationRoute
+  '/master/sku': typeof MasterSkuRoute
+  '/pallet/$palletId': typeof PalletPalletIdRoute
+  '/pallet/create': typeof PalletCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/inventory': typeof InventoryRoute
+  '/move': typeof MoveRoute
+  '/movements': typeof MovementsRoute
+  '/outbound': typeof OutboundRoute
+  '/putaway': typeof PutawayRoute
+  '/tasks': typeof TasksRoute
+  '/master/batch': typeof MasterBatchRoute
+  '/master/location': typeof MasterLocationRoute
+  '/master/sku': typeof MasterSkuRoute
+  '/pallet/$palletId': typeof PalletPalletIdRoute
+  '/pallet/create': typeof PalletCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alerts': typeof AlertsRoute
+  '/inventory': typeof InventoryRoute
+  '/move': typeof MoveRoute
+  '/movements': typeof MovementsRoute
+  '/outbound': typeof OutboundRoute
+  '/putaway': typeof PutawayRoute
+  '/tasks': typeof TasksRoute
+  '/master/batch': typeof MasterBatchRoute
+  '/master/location': typeof MasterLocationRoute
+  '/master/sku': typeof MasterSkuRoute
+  '/pallet/$palletId': typeof PalletPalletIdRoute
+  '/pallet/create': typeof PalletCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/alerts'
+    | '/inventory'
+    | '/move'
+    | '/movements'
+    | '/outbound'
+    | '/putaway'
+    | '/tasks'
+    | '/master/batch'
+    | '/master/location'
+    | '/master/sku'
+    | '/pallet/$palletId'
+    | '/pallet/create'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/alerts'
+    | '/inventory'
+    | '/move'
+    | '/movements'
+    | '/outbound'
+    | '/putaway'
+    | '/tasks'
+    | '/master/batch'
+    | '/master/location'
+    | '/master/sku'
+    | '/pallet/$palletId'
+    | '/pallet/create'
+  id:
+    | '__root__'
+    | '/'
+    | '/alerts'
+    | '/inventory'
+    | '/move'
+    | '/movements'
+    | '/outbound'
+    | '/putaway'
+    | '/tasks'
+    | '/master/batch'
+    | '/master/location'
+    | '/master/sku'
+    | '/pallet/$palletId'
+    | '/pallet/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlertsRoute: typeof AlertsRoute
+  InventoryRoute: typeof InventoryRoute
+  MoveRoute: typeof MoveRoute
+  MovementsRoute: typeof MovementsRoute
+  OutboundRoute: typeof OutboundRoute
+  PutawayRoute: typeof PutawayRoute
+  TasksRoute: typeof TasksRoute
+  MasterBatchRoute: typeof MasterBatchRoute
+  MasterLocationRoute: typeof MasterLocationRoute
+  MasterSkuRoute: typeof MasterSkuRoute
+  PalletPalletIdRoute: typeof PalletPalletIdRoute
+  PalletCreateRoute: typeof PalletCreateRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tasks': {
+      id: '/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/putaway': {
+      id: '/putaway'
+      path: '/putaway'
+      fullPath: '/putaway'
+      preLoaderRoute: typeof PutawayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outbound': {
+      id: '/outbound'
+      path: '/outbound'
+      fullPath: '/outbound'
+      preLoaderRoute: typeof OutboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/movements': {
+      id: '/movements'
+      path: '/movements'
+      fullPath: '/movements'
+      preLoaderRoute: typeof MovementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/move': {
+      id: '/move'
+      path: '/move'
+      fullPath: '/move'
+      preLoaderRoute: typeof MoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alerts': {
+      id: '/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +257,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pallet/create': {
+      id: '/pallet/create'
+      path: '/pallet/create'
+      fullPath: '/pallet/create'
+      preLoaderRoute: typeof PalletCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pallet/$palletId': {
+      id: '/pallet/$palletId'
+      path: '/pallet/$palletId'
+      fullPath: '/pallet/$palletId'
+      preLoaderRoute: typeof PalletPalletIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/sku': {
+      id: '/master/sku'
+      path: '/master/sku'
+      fullPath: '/master/sku'
+      preLoaderRoute: typeof MasterSkuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/location': {
+      id: '/master/location'
+      path: '/master/location'
+      fullPath: '/master/location'
+      preLoaderRoute: typeof MasterLocationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/batch': {
+      id: '/master/batch'
+      path: '/master/batch'
+      fullPath: '/master/batch'
+      preLoaderRoute: typeof MasterBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertsRoute: AlertsRoute,
+  InventoryRoute: InventoryRoute,
+  MoveRoute: MoveRoute,
+  MovementsRoute: MovementsRoute,
+  OutboundRoute: OutboundRoute,
+  PutawayRoute: PutawayRoute,
+  TasksRoute: TasksRoute,
+  MasterBatchRoute: MasterBatchRoute,
+  MasterLocationRoute: MasterLocationRoute,
+  MasterSkuRoute: MasterSkuRoute,
+  PalletPalletIdRoute: PalletPalletIdRoute,
+  PalletCreateRoute: PalletCreateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
