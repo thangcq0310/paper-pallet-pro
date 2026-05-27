@@ -1,0 +1,1 @@
+const fs=require("fs");const s=fs.readFileSync("src/routes/pallet.create.tsx","utf8");const st=s.indexOf("nav(");const en=s.indexOf("params: { palletId: p.palletId } }");fs.writeFileSync("src/routes/pallet.create.tsx",s.slice(0,st+4)+" {"+s.slice(en+30));

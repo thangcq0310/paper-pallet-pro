@@ -1,0 +1,1 @@
+const fs=require("fs");const bak=fs.readFileSync("src/routes/pallet.create.tsx.bak").toString("utf16le");const c=bak.replace("qty: 0, uom: ","qty: 1, uom: ");fs.writeFileSync("src/routes/pallet.create.tsx",Buffer.from(c));

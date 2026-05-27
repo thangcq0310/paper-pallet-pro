@@ -1,0 +1,1 @@
+const fs=require("fs");const b=fs.readFileSync("src/routes/pallet.create.tsx");const s=b.swapCase?b.swapCase().slice(2).swapCase().toString("utf8"):b.toString("utf16le");fs.writeFileSync("src/routes/pallet.create.tsx",Buffer.from(s));

@@ -1,0 +1,1 @@
+const fs=require("fs");const b=fs.readFileSync("src/routes/pallet.create.tsx.bak");const bom=b[0]===0xff&&b[1]===0xfe;const s=bom?b.subarray(2).toString("utf16le"):b.toString("utf8");fs.writeFileSync("src/routes/pallet.create.tsx.bak",s);
