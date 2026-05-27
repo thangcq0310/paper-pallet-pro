@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { suggestPalletsForOutbound } from "@/services/palletService";
-import { createOutbound } from "@/services/outboundService";
-import { cancelTask, confirmTask, createTask, printTask } from "@/services/taskService";
+import { createOutbound, updateOutboundStatus } from "@/services/outboundService";
+import { cancelTask, confirmTask, createTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,7 @@ function OutboundPage() {
         });
       }
 
+      updateOutboundStatus(doc.id, "Picking");
       setLastOutboundNo(doc.outboundNo);
       toast.success(`Đã tạo ${selectedPalletIds.length} PICK task cho ${doc.outboundNo}`);
     } catch (e: any) {
@@ -63,14 +64,9 @@ function OutboundPage() {
   };
 
   const doPrint = (taskId: string) => {
-    try {
-      const t = tasks.find((x) => x.id === taskId);
-      if (!t) throw new Error("Task không tồn tại");
-      printTask(taskId);
-      window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    const t = tasks.find((x) => x.id === taskId);
+    if (!t) { toast.error("Task không tồn tại"); return; }
+    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
   const doConfirm = (taskId: string) => {
@@ -202,7 +198,7 @@ function OutboundPage() {
                     <Button size="sm" variant="outline" onClick={() => doPrint(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>
                       Print
                     </Button>
-                    <Button size="sm" onClick={() => doConfirm(t.id)} disabled={t.status !== "Printed" && t.status !== "In Progress"}>
+                    <Button size="sm" onClick={() => doConfirm(t.id)} disabled={t.status !== "Printed"}>
                       Confirm Pick/Ship
                     </Button>
                     <Button

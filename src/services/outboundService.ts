@@ -25,3 +25,17 @@ export function createOutbound(input: { destination: string; skuCode: string; re
 export function updateOutboundStatus(id: string, status: OutboundDocument["status"]) {
   setState((s) => ({ ...s, outbounds: s.outbounds.map((o) => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o) }));
 }
+
+export function syncOutboundStatusByNo(outboundNo: string) {
+  const doc = getState().outbounds.find((o) => o.outboundNo === outboundNo);
+  if (!doc) return;
+  const related = getState().tasks.filter((t) => t.outboundNo === outboundNo && t.taskType === "PICK");
+  if (related.length === 0) return;
+
+  const allConfirmed = related.every((t) => t.status === "Confirmed");
+  const allCancelled = related.every((t) => t.status === "Cancelled");
+
+  if (allConfirmed) updateOutboundStatus(doc.id, "Shipped");
+  else if (allCancelled) updateOutboundStatus(doc.id, "Cancelled");
+  else if (doc.status === "Draft") updateOutboundStatus(doc.id, "Picking");
+}

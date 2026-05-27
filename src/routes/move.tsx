@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
-import { createTask, cancelTask, confirmTask, printTask } from "@/services/taskService";
+import { createTask, cancelTask, confirmTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,7 +43,7 @@ function MovePage() {
   }, [locations, pallet]);
 
   const openMoveTasks = tasks.filter(
-    (t) => t.taskType === "MOVE" && (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+    (t) => t.taskType === "MOVE" && (t.status === "Open" || t.status === "Printed"),
   );
 
   const submit = () => {
@@ -60,14 +60,9 @@ function MovePage() {
   };
 
   const doPrint = (taskId: string) => {
-    try {
-      const t = tasks.find((x) => x.id === taskId);
-      if (!t) throw new Error("Task không tồn tại");
-      printTask(taskId);
-      window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    const t = tasks.find((x) => x.id === taskId);
+    if (!t) { toast.error("Task không tồn tại"); return; }
+    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
   const doConfirm = (taskId: string, loc?: string) => {
@@ -165,7 +160,7 @@ function MovePage() {
                           setActualLocation(t.toLocation);
                           setConfirmOpen(true);
                         }}
-                        disabled={t.status !== "Printed" && t.status !== "In Progress"}
+                        disabled={t.status !== "Printed"}
                       >
                         Confirm
                       </Button>
@@ -232,4 +227,3 @@ function MovePage() {
     </div>
   );
 }
-

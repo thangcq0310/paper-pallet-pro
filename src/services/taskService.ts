@@ -2,6 +2,7 @@ import { getState, setState } from "./store";
 import { generateTaskNo, uid } from "@/utils/idGenerator";
 import type { Pallet, TaskPriority, TaskType, WarehouseTask } from "@/types";
 import { movePallet, pickAndShipPallet, putawayPallet } from "./palletService";
+import { syncOutboundStatusByNo } from "./outboundService";
 
 const CURRENT_USER = "demo";
 const RESERVED_PUTAWAY_LOCATIONS = new Set(["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"]);
@@ -59,6 +60,14 @@ export function createTask(input: {
   note?: string;
 }): WarehouseTask {
   const p = getPalletOrThrow(input.palletId);
+  if (["PUTAWAY", "MOVE", "PICK"].includes(input.taskType)) {
+    const hasOpen = getState().tasks.some(
+      (t) =>
+        t.palletId === p.palletId &&
+        (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+    );
+    if (hasOpen) throw new Error("Pallet đang có task mở");
+  }
   const now = new Date().toISOString();
   const taskNo = generateTaskNo(getState().tasks.map((t) => t.taskNo));
 
@@ -131,22 +140,12 @@ export function printTask(taskId: string) {
   }));
 }
 
-export function startTask(taskId: string) {
-  const t = getState().tasks.find((x) => x.id === taskId);
-  if (!t) throw new Error("Task không tồn tại");
-  if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
-  if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
-  if (t.status === "Open") throw new Error("Task chưa Printed");
-  if (t.status === "In Progress") throw new Error("Task đã In Progress");
-  setState((s) => ({ ...s, tasks: s.tasks.map((x) => x.id === taskId ? { ...x, status: "In Progress" } : x) }));
-}
-
 export function confirmTask(taskId: string, actualLocation?: string) {
   const t = getState().tasks.find((x) => x.id === taskId);
   if (!t) throw new Error("Task không tồn tại");
   if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
   if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
-  if (t.status === "Open") throw new Error("Task chưa Printed");
+  if (t.status !== "Printed") throw new Error("Task chưa Printed");
 
   const dest = (actualLocation ?? t.toLocation).trim();
 
@@ -178,6 +177,8 @@ export function confirmTask(taskId: string, actualLocation?: string) {
         : x,
     ),
   }));
+
+  if (t.outboundNo) syncOutboundStatusByNo(t.outboundNo);
 }
 
 export function cancelTask(taskId: string) {
@@ -186,5 +187,5 @@ export function cancelTask(taskId: string) {
   if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
   if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
   setState((s) => ({ ...s, tasks: s.tasks.map((x) => x.id === taskId ? { ...x, status: "Cancelled" } : x) }));
+  if (t.outboundNo) syncOutboundStatusByNo(t.outboundNo);
 }
-

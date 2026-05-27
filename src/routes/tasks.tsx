@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStore } from "@/services/store";
-import { cancelTask, confirmTask, printTask } from "@/services/taskService";
+import { cancelTask, confirmTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,14 +30,9 @@ function TasksPage() {
   );
 
   const doPrint = (taskId: string) => {
-    try {
-      const t = tasks.find((x) => x.id === taskId);
-      if (!t) throw new Error("Task không tồn tại");
-      printTask(taskId);
-      window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    const t = tasks.find((x) => x.id === taskId);
+    if (!t) { toast.error("Task không tồn tại"); return; }
+    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
   const doConfirm = (taskId: string, loc?: string) => {
@@ -88,7 +83,7 @@ function TasksPage() {
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {["Open", "Printed", "In Progress", "Confirmed", "Cancelled"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {["Open", "Printed", "Confirmed", "Cancelled"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -136,7 +131,7 @@ function TasksPage() {
                         }
                         doConfirm(t.id);
                       }}
-                      disabled={t.status !== "Printed" && t.status !== "In Progress"}
+                      disabled={t.status !== "Printed"}
                     >
                       Confirm
                     </Button>

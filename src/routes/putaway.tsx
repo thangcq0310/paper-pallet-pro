@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStore } from "@/services/store";
-import { createTask, confirmTask, cancelTask, printTask } from "@/services/taskService";
+import { createTask, confirmTask, cancelTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,7 +27,7 @@ function PutawayPage() {
   const labeled = pallets.filter((p) => p.status === "Labeled" && p.labelAttached);
   const targets = locations.filter((l) => l.status === "Active" && !["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"].includes(l.locationCode) && l.currentPalletCount < l.capacityPallet);
   const openTasks = tasks.filter((t) =>
-    t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+    t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed"),
   );
 
   const create = () => {
@@ -45,13 +45,10 @@ function PutawayPage() {
     catch (e: any) { toast.error(e.message); }
   };
 
-  const doPrint = (taskId: string) => {
-    try {
-      const t = tasks.find((x) => x.id === taskId);
-      if (!t) throw new Error("Task không tồn tại");
-      printTask(taskId);
-      window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
-    } catch (e: any) { toast.error(e.message); }
+  const openPrint = (taskId: string) => {
+    const t = tasks.find((x) => x.id === taskId);
+    if (!t) { toast.error("Task không tồn tại"); return; }
+    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -93,7 +90,7 @@ function PutawayPage() {
                     <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
                     <TableCell><TaskStatusBadge status={t.status} /></TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => doPrint(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Print</Button>
+                      <Button size="sm" variant="outline" onClick={() => openPrint(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Print</Button>
                       <Button
                         size="sm"
                         onClick={() => {
@@ -101,11 +98,11 @@ function PutawayPage() {
                           setActualLocation(t.toLocation);
                           setConfirmOpen(true);
                         }}
-                        disabled={t.status !== "Printed" && t.status !== "In Progress"}
+                        disabled={t.status !== "Printed"}
                       >
                         Confirm
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => cancelTask(t.id)}>Cancel</Button>
+                      <Button size="sm" variant="outline" onClick={() => cancelTask(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Cancel</Button>
                     </TableCell>
                   </TableRow>
                 ))}
