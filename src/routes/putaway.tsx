@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/putaway")({ component: PutawayPage });
 
@@ -19,6 +20,9 @@ function PutawayPage() {
   const tasks=useStore((s)=>s.tasks);
   const [palletId, setPalletId] = useState("");
   const [toLocation, setToLocation] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTaskId, setConfirmTaskId] = useState<string>("");
+  const [actualLocation, setActualLocation] = useState<string>("");
 
   const labeled = pallets.filter((p) => p.status === "Labeled" && p.labelAttached);
   const targets = locations.filter((l) => l.status === "Active" && !["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"].includes(l.locationCode) && l.currentPalletCount < l.capacityPallet);
@@ -75,10 +79,19 @@ function PutawayPage() {
                   <TableRow key={t.id}>
                     <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
                     <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
-                    <TableCell><TaskStatusBadge status={t.status} /></TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button size="sm" onClick={() => confirm(t.id, t.toLocation)}>Confirm</Button>
+                  <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
+                  <TableCell><TaskStatusBadge status={t.status} /></TableCell>
+                  <TableCell className="text-right space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setConfirmTaskId(t.id);
+                          setActualLocation(t.toLocation);
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        Confirm
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => cancelTask(t.id)}>Cancel</Button>
                     </TableCell>
                   </TableRow>
@@ -89,6 +102,46 @@ function PutawayPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Putaway</DialogTitle>
+            <DialogDescription>
+              Chọn <span className="font-medium">Actual Location</span> (có thể khác location đề xuất trong task).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label>Actual Location</Label>
+            <Select value={actualLocation} onValueChange={setActualLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn location thực tế" />
+              </SelectTrigger>
+              <SelectContent>
+                {targets.map((l) => (
+                  <SelectItem key={l.id} value={l.locationCode}>
+                    {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Huỷ</Button>
+            <Button
+              onClick={() => {
+                confirm(confirmTaskId, actualLocation);
+                setConfirmOpen(false);
+              }}
+              disabled={!confirmTaskId || !actualLocation}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { confirmTask, cancelTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
@@ -14,8 +16,18 @@ export const Route = createFileRoute("/tasks")({ component: TasksPage });
 
 function TasksPage() {
   const tasks = useStore((s) => s.tasks);
+  const locations = useStore((s) => s.locations);
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTaskId, setConfirmTaskId] = useState<string>("");
+  const [actualLocation, setActualLocation] = useState<string>("");
+
+  const putawayTargets = locations.filter((l) =>
+    l.status === "Active" &&
+    !["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"].includes(l.locationCode) &&
+    l.currentPalletCount < l.capacityPallet
+  );
 
   const filtered = tasks.filter((t) =>
     (typeFilter === "all" || t.taskType === typeFilter) &&
@@ -62,7 +74,25 @@ function TasksPage() {
                   <TableCell className="text-xs">{new Date(t.createdAt).toLocaleString()}</TableCell>
                   <TableCell className="text-right space-x-2">
                     {(t.status === "Open" || t.status === "In Progress") && <>
-                      <Button size="sm" onClick={() => { try { confirmTask(t.id); toast.success("Confirmed"); } catch (e: any) { toast.error(e.message); } }}>Confirm</Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (t.taskType === "PUTAWAY") {
+                            setConfirmTaskId(t.id);
+                            setActualLocation(t.toLocation);
+                            setConfirmOpen(true);
+                            return;
+                          }
+                          try {
+                            confirmTask(t.id);
+                            toast.success("Confirmed");
+                          } catch (e: any) {
+                            toast.error(e.message);
+                          }
+                        }}
+                      >
+                        Confirm
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => cancelTask(t.id)}>Cancel</Button>
                     </>}
                   </TableCell>
@@ -73,6 +103,49 @@ function TasksPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Putaway</DialogTitle>
+            <DialogDescription>Chọn Actual Location cho task PUTAWAY.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label>Actual Location</Label>
+            <Select value={actualLocation} onValueChange={setActualLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn location thực tế" />
+              </SelectTrigger>
+              <SelectContent>
+                {putawayTargets.map((l) => (
+                  <SelectItem key={l.id} value={l.locationCode}>
+                    {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Huỷ</Button>
+            <Button
+              onClick={() => {
+                try {
+                  confirmTask(confirmTaskId, actualLocation);
+                  toast.success("Confirmed");
+                  setConfirmOpen(false);
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+              disabled={!confirmTaskId || !actualLocation}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
