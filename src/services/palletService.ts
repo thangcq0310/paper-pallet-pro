@@ -88,11 +88,15 @@ export function movePallet(palletId: string, toLocation: string, note?: string) 
   const p = getPallet(palletId);
   if (!p) throw new Error("Pallet không tồn tại");
   if (p.status === "Shipped") throw new Error("Pallet đã Shipped");
-  if (p.status !== "In Stock") throw new Error("Chỉ chuyển pallet đang In Stock");
+  if (p.status !== "In Stock" && p.status !== "Staged") throw new Error("Chỉ chuyển pallet đang In Stock hoặc Staged");
   if (p.currentLocation === toLocation) throw new Error("Đã ở location này rồi");
   validateTargetLocation(toLocation);
   const from = p.currentLocation;
-  const updated: Pallet = { ...p, currentLocation: toLocation, updatedAt: new Date().toISOString() };
+  const nextStatus =
+    toLocation === "STAGING-01" ? "Staged"
+      : p.status === "Staged" ? "In Stock"
+        : p.status;
+  const updated: Pallet = { ...p, currentLocation: toLocation, status: nextStatus, updatedAt: new Date().toISOString() };
   setState((s) => ({
     ...s,
     pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
@@ -106,48 +110,12 @@ export function movePallet(palletId: string, toLocation: string, note?: string) 
   return updated;
 }
 
-export function pickToStaging(palletId: string, note?: string) {
+export function pickAndShipPallet(palletId: string, note?: string) {
   const p = getPallet(palletId);
   if (!p) throw new Error("Pallet không tồn tại");
-  if (p.status !== "In Stock") throw new Error("Pallet chưa In Stock");
-  const from = p.currentLocation;
-  const updated: Pallet = { ...p, currentLocation: "STAGING-01", status: "Staged", updatedAt: new Date().toISOString() };
-  setState((s) => ({
-    ...s,
-    pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
-    locations: s.locations.map((l) => {
-      if (l.locationCode === from) return { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) };
-      if (l.locationCode === "STAGING-01") return { ...l, currentPalletCount: l.currentPalletCount + 1 };
-      return l;
-    }),
-  }));
-  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: "STAGING-01", note });
-  return updated;
-}
-
-export function loadPallet(palletId: string, note?: string) {
-  const p = getPallet(palletId);
-  if (!p) throw new Error("Pallet không tồn tại");
-  if (p.status !== "Staged") throw new Error("Pallet chưa Staged");
-  const from = p.currentLocation;
-  const updated: Pallet = { ...p, currentLocation: "DOCK-01", status: "Loaded", updatedAt: new Date().toISOString() };
-  setState((s) => ({
-    ...s,
-    pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
-    locations: s.locations.map((l) => {
-      if (l.locationCode === from) return { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) };
-      if (l.locationCode === "DOCK-01") return { ...l, currentPalletCount: l.currentPalletCount + 1 };
-      return l;
-    }),
-  }));
-  recordMovement({ type: "LOAD", pallet: updated, fromLocation: from, toLocation: "DOCK-01", note });
-  return updated;
-}
-
-export function shipPallet(palletId: string, note?: string) {
-  const p = getPallet(palletId);
-  if (!p) throw new Error("Pallet không tồn tại");
-  if (p.status !== "Loaded") throw new Error("Pallet chưa Loaded");
+  if (p.status !== "In Stock" && p.status !== "Staged") {
+    throw new Error("Chỉ được pick pallet đang In Stock hoặc Staged");
+  }
   const from = p.currentLocation;
   const updated: Pallet = { ...p, currentLocation: "SHIPPED", status: "Shipped", updatedAt: new Date().toISOString() };
   setState((s) => ({
@@ -155,6 +123,7 @@ export function shipPallet(palletId: string, note?: string) {
     pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
     locations: s.locations.map((l) => l.locationCode === from ? { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) } : l),
   }));
+  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: "SHIPPED", note });
   recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation: "SHIPPED", note });
   return updated;
 }

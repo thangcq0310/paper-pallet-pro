@@ -43,7 +43,26 @@ export const mockMovements: Movement[] = [
 ];
 
 export const mockTasks: WarehouseTask[] = [
-  { id: "t1", taskNo: "TASK-0001", taskType: "PUTAWAY", palletId: "PLT-20260525-0004", fromLocation: "RECEIVING", toLocation: "FZ-B-01-01", status: "Open", priority: "Normal", createdAt: now },
+  {
+    id: "t1",
+    taskNo: "TASK-0001",
+    taskType: "PUTAWAY",
+    palletId: "PLT-20260525-0004",
+    skuCode: "PASS-10KG",
+    skuName: "Puree chanh dây 10kg",
+    batchNo: "LOT260515-C",
+    qty: 60,
+    uom: "Carton",
+    weight: 600,
+    fromLocation: "RECEIVING",
+    toLocation: "FZ-B-01-01",
+    status: "Open",
+    printCount: 0,
+    priority: "Normal",
+    createdBy: "demo",
+    createdAt: now,
+    instruction: "Đưa pallet từ RECEIVING vào location chỉ định.",
+  },
 ];
 
 export const mockOutbounds: OutboundDocument[] = [];

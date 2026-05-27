@@ -22,6 +22,7 @@ import { Route as PalletPalletIdRouteImport } from './routes/pallet.$palletId'
 import { Route as MasterSkuRouteImport } from './routes/master.sku'
 import { Route as MasterLocationRouteImport } from './routes/master.location'
 import { Route as MasterBatchRouteImport } from './routes/master.batch'
+import { Route as TasksTaskNoPrintRouteImport } from './routes/tasks.$taskNo.print'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -88,6 +89,11 @@ const MasterBatchRoute = MasterBatchRouteImport.update({
   path: '/master/batch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksTaskNoPrintRoute = TasksTaskNoPrintRouteImport.update({
+  id: '/$taskNo/print',
+  path: '/$taskNo/print',
+  getParentRoute: () => TasksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,12 +103,13 @@ export interface FileRoutesByFullPath {
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
   '/putaway': typeof PutawayRoute
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRoute
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -112,12 +119,13 @@ export interface FileRoutesByTo {
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
   '/putaway': typeof PutawayRoute
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRoute
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,12 +136,13 @@ export interface FileRoutesById {
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
   '/putaway': typeof PutawayRoute
-  '/tasks': typeof TasksRoute
+  '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRoute
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/tasks/$taskNo/print'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/tasks/$taskNo/print'
   id:
     | '__root__'
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/tasks/$taskNo/print'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -191,7 +203,7 @@ export interface RootRouteChildren {
   MovementsRoute: typeof MovementsRoute
   OutboundRoute: typeof OutboundRoute
   PutawayRoute: typeof PutawayRoute
-  TasksRoute: typeof TasksRoute
+  TasksRoute: typeof TasksRouteWithChildren
   MasterBatchRoute: typeof MasterBatchRoute
   MasterLocationRoute: typeof MasterLocationRoute
   MasterSkuRoute: typeof MasterSkuRoute
@@ -292,8 +304,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterBatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks/$taskNo/print': {
+      id: '/tasks/$taskNo/print'
+      path: '/$taskNo/print'
+      fullPath: '/tasks/$taskNo/print'
+      preLoaderRoute: typeof TasksTaskNoPrintRouteImport
+      parentRoute: typeof TasksRoute
+    }
   }
 }
+
+interface TasksRouteChildren {
+  TasksTaskNoPrintRoute: typeof TasksTaskNoPrintRoute
+}
+
+const TasksRouteChildren: TasksRouteChildren = {
+  TasksTaskNoPrintRoute: TasksTaskNoPrintRoute,
+}
+
+const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -303,7 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   MovementsRoute: MovementsRoute,
   OutboundRoute: OutboundRoute,
   PutawayRoute: PutawayRoute,
-  TasksRoute: TasksRoute,
+  TasksRoute: TasksRouteWithChildren,
   MasterBatchRoute: MasterBatchRoute,
   MasterLocationRoute: MasterLocationRoute,
   MasterSkuRoute: MasterSkuRoute,

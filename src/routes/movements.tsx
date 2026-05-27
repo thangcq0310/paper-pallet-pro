@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 
 export const Route = createFileRoute("/movements")({ component: MovementsPage });
 
-const TYPES = ["LABEL_CREATED", "LABEL_ATTACHED", "IN", "PUT", "MOVE", "PICK", "STAGE", "LOAD", "OUT", "ADJ"];
+const TYPES = ["LABEL_CREATED", "LABEL_ATTACHED", "IN", "PUT", "MOVE", "PICK", "OUT", "ADJ"];
 
 function MovementsPage() {
   const movements = useStore((s) => s.movements);

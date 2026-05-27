@@ -49,11 +49,10 @@ function Dashboard() {
   const inReceiving = pallets.filter((p) => p.currentLocation === "RECEIVING").length;
   const inStock = pallets.filter((p) => p.status === "In Stock").length;
   const inStaging = pallets.filter((p) => p.status === "Staged").length;
-  const loaded = pallets.filter((p) => p.status === "Loaded").length;
   const shippedToday = movements.filter((m) => m.movementType === "OUT" && m.timestamp.startsWith(today)).length;
   const inboundToday = movements.filter((m) => m.movementType === "IN" && m.timestamp.startsWith(today)).length;
   const outboundToday = movements.filter((m) => m.movementType === "OUT" && m.timestamp.startsWith(today)).length;
-  const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "In Progress").length;
+  const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "In Progress").length;
 
   const recentMovements = movements.slice(0, 6);
   const waitingPutaway = pallets.filter((p) => p.status === "Labeled");

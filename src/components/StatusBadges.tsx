@@ -6,7 +6,6 @@ const palletColor: Record<PalletStatus, string> = {
   "Labeled": "bg-info/15 text-info",
   "In Stock": "bg-success/15 text-success",
   "Staged": "bg-warning/20 text-warning-foreground",
-  "Loaded": "bg-primary/15 text-primary",
   "Shipped": "bg-destructive/15 text-destructive",
 };
 export function PalletStatusBadge({ status }: { status: PalletStatus }) {
@@ -15,6 +14,7 @@ export function PalletStatusBadge({ status }: { status: PalletStatus }) {
 
 const taskColor: Record<TaskStatus, string> = {
   "Open": "bg-info/15 text-info",
+  "Printed": "bg-primary/15 text-primary",
   "In Progress": "bg-warning/20 text-warning-foreground",
   "Confirmed": "bg-success/15 text-success",
   "Cancelled": "bg-muted text-muted-foreground",

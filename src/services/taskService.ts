@@ -1,36 +1,19 @@
 import { getState, setState } from "./store";
 import { generateTaskNo, uid } from "@/utils/idGenerator";
-import type { WarehouseTask, TaskType } from "@/types";
-import { putawayPallet, movePallet, pickToStaging, loadPallet } from "./palletService";
+import type { Pallet, TaskPriority, TaskType, WarehouseTask } from "@/types";
+import { movePallet, pickAndShipPallet, putawayPallet } from "./palletService";
 
-export function listTasks() { return getState().tasks; }
-
-export function createTask(input: { taskType: TaskType; palletId: string; fromLocation: string; toLocation: string; priority?: WarehouseTask["priority"]; note?: string }) {
-  const taskNo = generateTaskNo(getState().tasks.map((t) => t.taskNo));
-  const task: WarehouseTask = {
-    id: uid(),
-    taskNo,
-    taskType: input.taskType,
-    palletId: input.palletId,
-    fromLocation: input.fromLocation,
-    toLocation: input.toLocation,
-    status: "Open",
-    priority: input.priority ?? "Normal",
-    createdAt: new Date().toISOString(),
-    note: input.note,
-  };
-  setState((s) => ({ ...s, tasks: [task, ...s.tasks] }));
-  return task;
-}
-
+const CURRENT_USER = "demo";
 const RESERVED_PUTAWAY_LOCATIONS = new Set(["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"]);
 
-function validateActualPutawayLocation(locationCode: string) {
+function getPalletOrThrow(palletId: string): Pallet {
+  const p = getState().pallets.find((x) => x.palletId === palletId);
+  if (!p) throw new Error("Pallet không tồn tại");
+  return p;
+}
+
+function validateLocationExistsActiveNotFull(locationCode: string) {
   const code = locationCode.trim();
-  if (!code) throw new Error("Chọn Actual Location");
-  if (RESERVED_PUTAWAY_LOCATIONS.has(code)) {
-    throw new Error("Actual Location không hợp lệ (RECEIVING/STAGING/DOCK/SHIPPED)");
-  }
   const loc = getState().locations.find((l) => l.locationCode === code);
   if (!loc) throw new Error("Location không tồn tại");
   if (loc.status !== "Active") throw new Error("Location đang Blocked");
@@ -38,24 +21,170 @@ function validateActualPutawayLocation(locationCode: string) {
   return loc;
 }
 
+function validatePutawayDestination(locationCode: string) {
+  const code = locationCode.trim();
+  if (!code) throw new Error("Chọn Target Location");
+  if (RESERVED_PUTAWAY_LOCATIONS.has(code)) {
+    throw new Error("Location putaway không hợp lệ (RECEIVING/STAGING/DOCK/SHIPPED)");
+  }
+  validateLocationExistsActiveNotFull(code);
+  return code;
+}
+
+function validateMoveDestination(fromLocation: string, locationCode: string) {
+  const code = locationCode.trim();
+  if (!code) throw new Error("Chọn Target Location");
+  if (code === fromLocation) throw new Error("Đã ở location này rồi");
+  if (code === "SHIPPED") throw new Error("Không được MOVE tới SHIPPED (hãy dùng PICK task)");
+  validateLocationExistsActiveNotFull(code);
+  return code;
+}
+
+export function listTasks() {
+  return getState().tasks;
+}
+
+export function getTaskByNo(taskNo: string) {
+  return getState().tasks.find((t) => t.taskNo === taskNo);
+}
+
+export function createTask(input: {
+  taskType: TaskType;
+  palletId: string;
+  toLocation?: string;
+  priority?: TaskPriority;
+  inboundNo?: string;
+  outboundNo?: string;
+  instruction?: string;
+  note?: string;
+}): WarehouseTask {
+  const p = getPalletOrThrow(input.palletId);
+  const now = new Date().toISOString();
+  const taskNo = generateTaskNo(getState().tasks.map((t) => t.taskNo));
+
+  const fromLocation = p.currentLocation;
+  let toLocation = (input.toLocation ?? "").trim();
+  let instruction = input.instruction?.trim();
+
+  if (input.taskType === "PUTAWAY") {
+    toLocation = validatePutawayDestination(toLocation);
+    instruction ||= "Đưa pallet từ RECEIVING vào location chỉ định.";
+  } else if (input.taskType === "MOVE") {
+    toLocation = validateMoveDestination(fromLocation, toLocation);
+    instruction ||= "Chuyển pallet từ location cũ sang location mới.";
+  } else if (input.taskType === "PICK") {
+    if (p.status !== "In Stock" && p.status !== "Staged") {
+      throw new Error("Chỉ tạo PICK task cho pallet đang In Stock hoặc Staged");
+    }
+    toLocation = "SHIPPED";
+    instruction ||= "Lấy pallet từ location hiện tại và load/xuất luôn. Sau khi confirm, pallet được xem là Shipped.";
+  }
+
+  const task: WarehouseTask = {
+    id: uid(),
+    taskNo,
+    taskType: input.taskType,
+    inboundNo: input.inboundNo,
+    outboundNo: input.outboundNo,
+    palletId: p.palletId,
+    skuCode: p.skuCode,
+    skuName: p.skuName,
+    batchNo: p.batchNo,
+    qty: p.qty,
+    uom: p.uom,
+    weight: p.weight,
+    fromLocation,
+    toLocation,
+    status: "Open",
+    printCount: 0,
+    priority: input.priority ?? "Normal",
+    createdBy: CURRENT_USER,
+    createdAt: now,
+    instruction,
+    note: input.note,
+  };
+
+  setState((s) => ({ ...s, tasks: [task, ...s.tasks] }));
+  return task;
+}
+
+export function printTask(taskId: string) {
+  const t = getState().tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error("Task không tồn tại");
+  if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
+  if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
+
+  const now = new Date().toISOString();
+  setState((s) => ({
+    ...s,
+    tasks: s.tasks.map((x) =>
+      x.id === taskId
+        ? {
+          ...x,
+          status: x.status === "Open" ? "Printed" : x.status,
+          printCount: x.printCount + 1,
+          printedAt: now,
+          printedBy: CURRENT_USER,
+        }
+        : x,
+    ),
+  }));
+}
+
+export function startTask(taskId: string) {
+  const t = getState().tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error("Task không tồn tại");
+  if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
+  if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
+  if (t.status === "Open") throw new Error("Task chưa Printed");
+  if (t.status === "In Progress") throw new Error("Task đã In Progress");
+  setState((s) => ({ ...s, tasks: s.tasks.map((x) => x.id === taskId ? { ...x, status: "In Progress" } : x) }));
+}
+
 export function confirmTask(taskId: string, actualLocation?: string) {
   const t = getState().tasks.find((x) => x.id === taskId);
   if (!t) throw new Error("Task không tồn tại");
+  if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
   if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
+  if (t.status === "Open") throw new Error("Task chưa Printed");
+
   const dest = (actualLocation ?? t.toLocation).trim();
+
   if (t.taskType === "PUTAWAY") {
-    if (!actualLocation) throw new Error("Cần chọn Actual Location khi confirm Putaway");
-    validateActualPutawayLocation(dest);
-    putawayPallet(t.palletId, dest);
-  } else if (t.taskType === "MOVE") movePallet(t.palletId, dest);
-  else if (t.taskType === "PICK") pickToStaging(t.palletId);
-  else if (t.taskType === "LOAD") loadPallet(t.palletId);
+    const validated = validatePutawayDestination(dest);
+    putawayPallet(t.palletId, validated, t.note);
+  } else if (t.taskType === "MOVE") {
+    const validated = validateMoveDestination(t.fromLocation, dest);
+    movePallet(t.palletId, validated, t.note);
+  } else if (t.taskType === "PICK") {
+    pickAndShipPallet(t.palletId, t.note);
+  } else {
+    throw new Error(`TaskType ${t.taskType} chưa hỗ trợ confirm`);
+  }
+
+  const now = new Date().toISOString();
   setState((s) => ({
     ...s,
-    tasks: s.tasks.map((x) => x.id === taskId ? { ...x, status: "Confirmed", toLocation: dest, confirmedAt: new Date().toISOString(), confirmedBy: "demo" } : x),
+    tasks: s.tasks.map((x) =>
+      x.id === taskId
+        ? {
+          ...x,
+          status: "Confirmed",
+          actualLocation: x.taskType === "PICK" ? "SHIPPED" : dest,
+          toLocation: x.taskType === "PICK" ? "SHIPPED" : dest,
+          confirmedAt: now,
+          confirmedBy: CURRENT_USER,
+        }
+        : x,
+    ),
   }));
 }
 
 export function cancelTask(taskId: string) {
+  const t = getState().tasks.find((x) => x.id === taskId);
+  if (!t) throw new Error("Task không tồn tại");
+  if (t.status === "Cancelled") throw new Error("Task đã Cancelled");
+  if (t.status === "Confirmed") throw new Error("Task đã Confirmed");
   setState((s) => ({ ...s, tasks: s.tasks.map((x) => x.id === taskId ? { ...x, status: "Cancelled" } : x) }));
 }
+

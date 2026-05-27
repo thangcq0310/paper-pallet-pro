@@ -38,7 +38,6 @@ export type PalletStatus =
   | "Labeled"
   | "In Stock"
   | "Staged"
-  | "Loaded"
   | "Shipped";
 
 export interface Pallet {
@@ -66,8 +65,6 @@ export type MovementType =
   | "PUT"
   | "MOVE"
   | "PICK"
-  | "STAGE"
-  | "LOAD"
   | "OUT"
   | "ADJ";
 
@@ -87,22 +84,37 @@ export interface Movement {
   note?: string;
 }
 
-export type TaskType = "PUTAWAY" | "MOVE" | "PICK" | "LOAD";
-export type TaskStatus = "Open" | "In Progress" | "Confirmed" | "Cancelled";
+export type TaskType = "PUTAWAY" | "MOVE" | "PICK" | "ADJUST" | "COUNT";
+export type TaskStatus = "Open" | "Printed" | "In Progress" | "Confirmed" | "Cancelled";
 export type TaskPriority = "Low" | "Normal" | "High" | "Urgent";
 
 export interface WarehouseTask {
   id: string;
   taskNo: string;
   taskType: TaskType;
+  inboundNo?: string;
+  outboundNo?: string;
   palletId: string;
+  skuCode: string;
+  skuName: string;
+  batchNo: string;
+  qty: number;
+  uom: string;
+  weight: number;
   fromLocation: string;
   toLocation: string;
+  actualLocation?: string;
   status: TaskStatus;
+  printCount: number;
+  printedAt?: string;
+  printedBy?: string;
   priority: TaskPriority;
+  assignedTo?: string;
+  createdBy: string;
   createdAt: string;
   confirmedAt?: string;
   confirmedBy?: string;
+  instruction?: string;
   note?: string;
 }
 
@@ -113,7 +125,7 @@ export interface OutboundDocument {
   skuCode: string;
   requiredQty: number;
   selectedPalletIds: string[];
-  status: "Draft" | "Picking" | "Staged" | "Loaded" | "Shipped" | "Cancelled";
+  status: "Draft" | "Picking" | "Staged" | "Shipped" | "Cancelled";
   createdAt: string;
   updatedAt: string;
 }

@@ -17,13 +17,61 @@ interface State {
 
 const STORAGE_KEY = "mini-wms-state-v1";
 
+function normalizeTasks(rawTasks: any, pallets: Pallet[]): WarehouseTask[] {
+  if (!Array.isArray(rawTasks)) return mockTasks;
+  return rawTasks.map((t: any) => {
+    const p = pallets.find((x) => x.palletId === t?.palletId);
+    return {
+      id: String(t?.id ?? Math.random().toString(36).slice(2, 11)),
+      taskNo: String(t?.taskNo ?? "TASK-0000"),
+      taskType: t?.taskType,
+      inboundNo: t?.inboundNo,
+      outboundNo: t?.outboundNo,
+      palletId: String(t?.palletId ?? ""),
+      skuCode: String(t?.skuCode ?? p?.skuCode ?? ""),
+      skuName: String(t?.skuName ?? p?.skuName ?? ""),
+      batchNo: String(t?.batchNo ?? p?.batchNo ?? ""),
+      qty: Number.isFinite(t?.qty) ? t.qty : (p?.qty ?? 0),
+      uom: String(t?.uom ?? p?.uom ?? ""),
+      weight: Number.isFinite(t?.weight) ? t.weight : (p?.weight ?? 0),
+      fromLocation: String(t?.fromLocation ?? p?.currentLocation ?? ""),
+      toLocation: String(t?.toLocation ?? ""),
+      actualLocation: t?.actualLocation,
+      status: t?.status,
+      printCount: Number.isFinite(t?.printCount) ? t.printCount : 0,
+      printedAt: t?.printedAt,
+      printedBy: t?.printedBy,
+      priority: t?.priority ?? "Normal",
+      assignedTo: t?.assignedTo,
+      createdBy: t?.createdBy ?? "demo",
+      createdAt: t?.createdAt ?? new Date().toISOString(),
+      confirmedAt: t?.confirmedAt,
+      confirmedBy: t?.confirmedBy,
+      instruction: t?.instruction,
+      note: t?.note,
+    } as WarehouseTask;
+  });
+}
+
 function load(): State {
   if (typeof window === "undefined") {
     return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, outbounds: mockOutbounds };
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as State;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<State>;
+      const pallets = Array.isArray(parsed.pallets) ? (parsed.pallets as Pallet[]) : mockPallets;
+      return {
+        skus: Array.isArray(parsed.skus) ? (parsed.skus as SKU[]) : mockSKUs,
+        batches: Array.isArray(parsed.batches) ? (parsed.batches as Batch[]) : mockBatches,
+        locations: Array.isArray(parsed.locations) ? (parsed.locations as Location[]) : mockLocations,
+        pallets,
+        movements: Array.isArray(parsed.movements) ? (parsed.movements as Movement[]) : mockMovements,
+        tasks: normalizeTasks(parsed.tasks, pallets),
+        outbounds: Array.isArray(parsed.outbounds) ? (parsed.outbounds as OutboundDocument[]) : mockOutbounds,
+      };
+    }
   } catch {}
   return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, outbounds: mockOutbounds };
 }
