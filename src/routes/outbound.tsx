@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { suggestPalletsForOutbound } from "@/services/palletService";
-import { createOutbound, updateOutboundStatus } from "@/services/outboundService";
+import { createOutbound, syncOutboundStatusByNo } from "@/services/outboundService";
 import { cancelTask, confirmTask, createTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ function OutboundPage() {
         });
       }
 
-      updateOutboundStatus(doc.id, "Picking");
+      syncOutboundStatusByNo(doc.outboundNo);
       setLastOutboundNo(doc.outboundNo);
       toast.success(`Đã tạo ${selectedPalletIds.length} PICK task cho ${doc.outboundNo}`);
     } catch (e: any) {
