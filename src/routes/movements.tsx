@@ -1,0 +1,68 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useStore } from "@/services/store";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader } from "@/components/PageHeader";
+
+export const Route = createFileRoute("/movements")({ component: MovementsPage });
+
+const TYPES = ["LABEL_CREATED", "LABEL_ATTACHED", "IN", "PUT", "MOVE", "PICK", "STAGE", "LOAD", "OUT", "ADJ"];
+
+function MovementsPage() {
+  const movements = useStore((s) => s.movements);
+  const [type, setType] = useState("all");
+  const [q, setQ] = useState("");
+
+  const filtered = movements.filter((m) =>
+    (type === "all" || m.movementType === type) &&
+    (q === "" || m.palletId.toLowerCase().includes(q.toLowerCase()) || m.skuCode.toLowerCase().includes(q.toLowerCase()) || m.batchNo.toLowerCase().includes(q.toLowerCase())),
+  );
+
+  return (
+    <div>
+      <PageHeader title="Movement History" description="Toàn bộ giao dịch — không sửa, không xoá" />
+      <Card className="rounded-2xl">
+        <CardContent className="p-4">
+          <div className="flex gap-2 mb-4">
+            <Input placeholder="Search Pallet / SKU / Batch..." className="max-w-sm" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Movement</TableHead><TableHead>Type</TableHead><TableHead>Pallet</TableHead>
+                <TableHead>SKU</TableHead><TableHead>Batch</TableHead><TableHead className="text-right">Qty</TableHead>
+                <TableHead>From → To</TableHead><TableHead>User</TableHead><TableHead>Time</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {filtered.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-mono text-xs">{m.movementId}</TableCell>
+                    <TableCell><span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary">{m.movementType}</span></TableCell>
+                    <TableCell className="font-mono text-xs">{m.palletId}</TableCell>
+                    <TableCell>{m.skuCode}</TableCell>
+                    <TableCell className="font-mono text-xs">{m.batchNo}</TableCell>
+                    <TableCell className="text-right">{m.qty}</TableCell>
+                    <TableCell className="text-xs">{m.fromLocation ?? "-"} → {m.toLocation ?? "-"}</TableCell>
+                    <TableCell className="text-xs">{m.user}</TableCell>
+                    <TableCell className="text-xs">{new Date(m.timestamp).toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Không có movement</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
