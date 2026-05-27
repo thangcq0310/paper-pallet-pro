@@ -94,3 +94,10 @@
   .print-area { position: absolute; left: 0; top: 0; width: 100%; }
   .no-print { display: none !important; }
 }
+
+
+@media print {
+  .print-label { border-width: 2px !important; page-break-inside: avoid; margin-bottom: 1rem; }
+  .print-area { display: flex; flex-direction: column; }
+  .print-label .card-content { padding: 1rem !important; }
+}

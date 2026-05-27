@@ -1,0 +1,1 @@
+﻿const fs=require("fs");const c=fs.readFileSync("src/routes/pallet.create.tsx").toString();const fixed=c.replace("search: { copies: form.copies }","to: \x27/pallet/$palletId?copies=\x27 + form.copies, params: { palletId: p.palletId }");fs.writeFileSync("src/routes/pallet.create.tsx",fixed);
