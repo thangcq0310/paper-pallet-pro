@@ -19,7 +19,7 @@ function AlertsPage() {
   const fullLocs = locations.filter((l) => l.capacityPallet < 9999 && l.currentPalletCount >= l.capacityPallet);
   const blockedLocs = locations.filter((l) => l.status === "Blocked");
   const nearExpiry = pallets.filter((p) => p.status !== "Shipped" && new Date(p.expDate).getTime() - now < sixtyDays);
-  const overdueTasks = tasks.filter((t) => (t.status === "Open" || t.status === "In Progress") && now - new Date(t.createdAt).getTime() > oneDay);
+  const overdueTasks = tasks.filter((t) => (t.status === "Open" || t.status === "Printed" || t.status === "In Progress") && now - new Date(t.createdAt).getTime() > oneDay);
 
   const sections = [
     { title: "Pallet chờ dán nhãn > 1 ngày", icon: Clock, color: "text-warning", items: waitingLabel.map((p) => `${p.palletId} — ${p.skuCode}`) },

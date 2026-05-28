@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { PalletStatusBadge } from "@/components/StatusBadges";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/inventory")({ component: InventoryPage });
 
@@ -18,8 +21,10 @@ function InventoryPage() {
   const [skuFilter, setSkuFilter] = useState("all");
   const [locFilter, setLocFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [includeShipped, setIncludeShipped] = useState(false);
 
   const filteredPallets = pallets.filter((p) =>
+    (includeShipped || (p.status !== "Shipped" && p.currentLocation !== "SHIPPED")) &&
     (skuFilter === "all" || p.skuCode === skuFilter) &&
     (locFilter === "all" || p.currentLocation === locFilter) &&
     (statusFilter === "all" || p.status === statusFilter) &&
@@ -85,7 +90,7 @@ function InventoryPage() {
 
       <Card className="rounded-2xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4 items-center">
             <Input placeholder="Search Pallet / SKU / Batch..." className="max-w-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
             <Select value={skuFilter} onValueChange={setSkuFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
@@ -93,7 +98,7 @@ function InventoryPage() {
             </Select>
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Locations</SelectItem>{locations.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="all">All Locations</SelectItem>{locations.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)</SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -102,6 +107,10 @@ function InventoryPage() {
                 {["Label Created", "Labeled", "In Stock", "Staged", "Shipped"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <div className="flex items-center space-x-2">
+              <Switch id="include-shipped" checked={includeShipped} onCheckedChange={setIncludeShipped} />
+              <Label htmlFor="include-shipped">Include Shipped</Label>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <Table>
