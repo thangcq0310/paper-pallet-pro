@@ -24,9 +24,9 @@ function InventoryPage() {
   const [includeShipped, setIncludeShipped] = useState(false);
 
   const filteredPallets = pallets.filter((p) =>
-    (includeShipped || (p.status !== "Shipped" && p.currentLocation !== "SHIPPED")) &&
+    (includeShipped || p.status !== "Shipped") &&
     (skuFilter === "all" || p.skuCode === skuFilter) &&
-    (locFilter === "all" || p.currentLocation === locFilter) &&
+    (locFilter === "all" || p.currentLocation === locFilter || (p.status === "Shipped" && p.lastLocation === locFilter)) &&
     (statusFilter === "all" || p.status === statusFilter) &&
     (search.trim() === "" ||
       p.palletId.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,7 +98,7 @@ function InventoryPage() {
             </Select>
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Locations</SelectItem>{locations.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)</SelectContent>
+              <SelectContent><SelectItem value="all">All Locations</SelectItem>{locations.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -127,7 +127,7 @@ function InventoryPage() {
               </TableRow></TableHeader>
               <TableBody>
                 {grouped.map((g) => {
-                  const uniqueLocations = Array.from(new Set(g.pallets.map((p) => p.currentLocation))).sort();
+                  const uniqueLocations = Array.from(new Set(g.pallets.map((p) => p.currentLocation || p.lastLocation || "N/A"))).sort();
                   const statusLabel = g.statuses.size === 1 ? Array.from(g.statuses)[0] : "Mixed";
                   return (
                     <TableRow key={`${g.skuCode}__${g.batchNo}`}>

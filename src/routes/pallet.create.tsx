@@ -17,9 +17,11 @@ export const Route = createFileRoute("/pallet/create")({ component: CreatePallet
 function CreatePalletLabelPage() {
   const skus = useStore((s) => s.skus);
   const batches = useStore((s) => s.batches);
+  const locations = useStore((s) => s.locations);
   const nav = useNavigate();
 
   const [form, setForm] = useState({
+    receivingLocation: "",
     skuCode: "",
     batchNo: "",
     qty: 1,
@@ -41,13 +43,20 @@ function CreatePalletLabelPage() {
 
   const batch = availableBatches.find((b) => b.batchNo === form.batchNo);
 
+  const availableReceivingLocations = useMemo(
+    () => locations.filter((l) => l.locationType === "RECEIVING" && l.status === "Active" && l.currentPalletCount < l.capacityPallet),
+    [locations]
+  );
+
   const submit = () => {
     try {
+      if (!form.receivingLocation) throw new Error("Vui lòng chọn Receiving Location");
       if (!form.skuCode) throw new Error("Vui lòng chọn SKU");
       if (!form.batchNo) throw new Error("Vui lòng chọn Batch");
       if (form.qty <= 0) throw new Error("Quantity phải > 0");
 
       const pallet = createPalletLabel({
+        receivingLocation: form.receivingLocation,
         skuCode: form.skuCode,
         batchNo: form.batchNo,
         qty: form.qty,
@@ -76,7 +85,7 @@ function CreatePalletLabelPage() {
         title="Create Pallet Label"
         description="Tạo pallet và in nhiều bản sao nhãn giấy"
         action={
-          <Button onClick={submit} disabled={!form.skuCode || !form.batchNo || form.qty <= 0}>
+          <Button onClick={submit} disabled={!form.receivingLocation || !form.skuCode || !form.batchNo || form.qty <= 0}>
             <Printer className="h-4 w-4 mr-1" />
             Tạo Pallet & In nhãn
           </Button>
@@ -86,6 +95,25 @@ function CreatePalletLabelPage() {
       <Card className="rounded-2xl max-w-3xl">
         <CardContent className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Receiving Location</Label>
+              <Select
+                value={form.receivingLocation}
+                onValueChange={(v) => setForm((f) => ({ ...f, receivingLocation: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn Location nhận" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableReceivingLocations.map((l) => (
+                    <SelectItem key={l.id} value={l.locationCode}>
+                      {l.locationCode} {l.locationName ? `(${l.locationName})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label>SKU</Label>
               <Select
@@ -197,7 +225,7 @@ function CreatePalletLabelPage() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={submit} disabled={!form.skuCode || !form.batchNo || form.qty <= 0}>
+            <Button onClick={submit} disabled={!form.receivingLocation || !form.skuCode || !form.batchNo || form.qty <= 0}>
               Tạo Pallet & In nhãn
             </Button>
           </div>

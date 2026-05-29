@@ -25,7 +25,7 @@ function PutawayPage() {
   const [actualLocation, setActualLocation] = useState<string>("");
 
   const labeled = pallets.filter((p) => p.status === "Labeled" && p.labelAttached);
-  const targets = locations.filter((l) => l.status === "Active" && !["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"].includes(l.locationCode) && l.currentPalletCount < l.capacityPallet);
+  const targets = locations.filter((l) => l.status === "Active" && l.locationType === "STORAGE" && l.currentPalletCount < l.capacityPallet);
   const openTasks = tasks.filter((t) =>
     t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed"),
   );

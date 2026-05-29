@@ -5,7 +5,6 @@ import { movePallet, pickAndShipPallet, putawayPallet } from "./palletService";
 import { syncOutboundStatusByNo } from "./outboundService";
 
 const CURRENT_USER = "demo";
-const RESERVED_PUTAWAY_LOCATIONS = new Set(["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"]);
 
 function getPalletOrThrow(palletId: string): Pallet {
   const p = getState().pallets.find((x) => x.palletId === palletId);
@@ -25,10 +24,10 @@ function validateLocationExistsActiveNotFull(locationCode: string) {
 function validatePutawayDestination(locationCode: string) {
   const code = locationCode.trim();
   if (!code) throw new Error("Chọn Target Location");
-  if (RESERVED_PUTAWAY_LOCATIONS.has(code)) {
-    throw new Error("Location putaway không hợp lệ (RECEIVING/STAGING/DOCK/SHIPPED)");
+  const loc = validateLocationExistsActiveNotFull(code);
+  if (loc.locationType !== "STORAGE") {
+    throw new Error("Location putaway phải thuộc loại STORAGE");
   }
-  validateLocationExistsActiveNotFull(code);
   return code;
 }
 
@@ -36,8 +35,10 @@ function validateMoveDestination(fromLocation: string, locationCode: string) {
   const code = locationCode.trim();
   if (!code) throw new Error("Chọn Target Location");
   if (code === fromLocation) throw new Error("Đã ở location này rồi");
-  if (code === "SHIPPED") throw new Error("Không được MOVE tới SHIPPED (hãy dùng PICK task)");
-  validateLocationExistsActiveNotFull(code);
+  const loc = validateLocationExistsActiveNotFull(code);
+  if (loc.locationType === "RECEIVING" || loc.locationType === "DOCK") {
+    throw new Error("Không được MOVE tới RECEIVING hoặc DOCK");
+  }
   return code;
 }
 
@@ -85,7 +86,7 @@ export function createTask(input: {
     if (p.status !== "In Stock" && p.status !== "Staged") {
       throw new Error("Chỉ tạo PICK task cho pallet đang In Stock hoặc Staged");
     }
-    toLocation = "SHIPPED";
+    toLocation = "";
     instruction ||= "Lấy pallet từ location hiện tại và load/xuất luôn. Sau khi confirm, pallet được xem là Shipped.";
   }
 
@@ -169,8 +170,8 @@ export function confirmTask(taskId: string, actualLocation?: string) {
         ? {
           ...x,
           status: "Confirmed",
-          actualLocation: x.taskType === "PICK" ? "SHIPPED" : dest,
-          toLocation: x.taskType === "PICK" ? "SHIPPED" : dest,
+          actualLocation: x.taskType === "PICK" ? "" : dest,
+          toLocation: x.taskType === "PICK" ? "" : dest,
           confirmedAt: now,
           confirmedBy: CURRENT_USER,
         }

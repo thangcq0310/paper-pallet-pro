@@ -37,15 +37,16 @@ function PalletLabelPreview() {
           <h2 className='text-4xl font-bold mt-1 font-mono'>{pallet.palletId}</h2>
         </div>
         <div className='grid grid-cols-2 gap-y-4 gap-x-8 mt-6 text-lg'>
-          <div><div className='text-xs text-muted-foreground uppercase'>SKU</div><div className='font-semibold'>{pallet.skuCode}</div></div>
+          <div className='col-span-2'><div className='text-xs text-muted-foreground uppercase'>Plant/Warehouse</div><div className='font-semibold'>Paper Pallet Pro Warehouse</div></div>
+          <div><div className='text-xs text-muted-foreground uppercase'>Material / SKU</div><div className='font-semibold'>{pallet.skuCode}</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>Batch</div><div className='font-semibold'>{pallet.batchNo}</div></div>
-          <div className='col-span-2'><div className='text-xs text-muted-foreground uppercase'>Product</div><div className='font-semibold text-xl'>{pallet.skuName}</div></div>
+          <div className='col-span-2'><div className='text-xs text-muted-foreground uppercase'>Material Description</div><div className='font-semibold text-xl'>{pallet.skuName}</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>Quantity</div><div className='text-2xl font-bold'>{pallet.qty} {pallet.uom}</div></div>
-          <div><div className='text-xs text-muted-foreground uppercase'>Weight</div><div className='text-2xl font-bold'>{pallet.weight} kg</div></div>
+          <div><div className='text-xs text-muted-foreground uppercase'>Gross Weight</div><div className='text-2xl font-bold'>{pallet.weight} kg</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>MFG Date</div><div className='font-semibold'>{pallet.mfgDate}</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>EXP Date</div><div className='font-semibold'>{pallet.expDate}</div></div>
-          <div><div className='text-xs text-muted-foreground uppercase'>Created</div><div className='font-semibold'>{pallet.createdAt.slice(0, 10)}</div></div>
-          <div><div className='text-xs text-muted-foreground uppercase'>Location</div><div className='font-semibold'>{pallet.currentLocation}</div></div>
+          <div><div className='text-xs text-muted-foreground uppercase'>Current Location</div><div className='font-semibold'>{pallet.currentLocation || "N/A"}</div></div>
+          <div><div className='text-xs text-muted-foreground uppercase'>Created At / By</div><div className='font-semibold'>{pallet.createdAt.slice(0, 10)} / demo</div></div>
         </div>
       </CardContent>
     </Card>
@@ -73,7 +74,7 @@ function PalletLabelPreview() {
             </div>
             <div className='text-sm'>
               <div className='text-xs text-muted-foreground'>Current Location</div>
-              <div className='font-mono'>{pallet.currentLocation}</div>
+              <div className='font-mono'>{pallet.currentLocation || "N/A"}</div>
             </div>
             <div className='pt-3 border-t text-xs text-muted-foreground'>
               Sau khi in nhan va dan len pallet thuc te, bam Confirm de pallet san sang cho putaway.

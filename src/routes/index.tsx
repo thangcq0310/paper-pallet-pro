@@ -39,14 +39,14 @@ function Dashboard() {
   const totalQty = pallets.reduce((a, p) => a + p.qty, 0);
   const totalWeight = pallets.reduce((a, p) => a + p.weight, 0);
 
-  const userLocations = locations.filter((l) => !["SHIPPED"].includes(l.locationCode));
+  const userLocations = locations.filter((l) => l.locationType === "STORAGE");
   const empty = userLocations.filter((l) => l.currentPalletCount === 0).length;
   const full = userLocations.filter((l) => l.currentPalletCount >= l.capacityPallet && l.capacityPallet < 9999).length;
   const totalCap = userLocations.reduce((a, l) => a + (l.capacityPallet < 9999 ? l.capacityPallet : 0), 0);
   const used = userLocations.reduce((a, l) => a + (l.capacityPallet < 9999 ? l.currentPalletCount : 0), 0);
   const occupancy = totalCap > 0 ? Math.round((used / totalCap) * 100) : 0;
 
-  const inReceiving = pallets.filter((p) => p.currentLocation === "RECEIVING").length;
+  const inReceiving = pallets.filter((p) => p.currentLocation && locations.find(l => l.locationCode === p.currentLocation)?.locationType === "RECEIVING").length;
   const inStock = pallets.filter((p) => p.status === "In Stock").length;
   const inStaging = pallets.filter((p) => p.status === "Staged").length;
   const shippedToday = movements.filter((m) => m.movementType === "OUT" && m.timestamp.startsWith(today)).length;
@@ -55,7 +55,7 @@ function Dashboard() {
   const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "In Progress").length;
 
   const recentMovements = movements.slice(0, 6);
-  const waitingPutaway = pallets.filter((p) => p.status === "Labeled");
+  const waitingPutaway = pallets.filter((p) => p.status === "Labeled" && locations.find(l => l.locationCode === p.currentLocation)?.locationType === "RECEIVING");
   const nearExpiry = pallets.filter((p) => {
     const days = (new Date(p.expDate).getTime() - Date.now()) / 86400000;
     return days < 60 && p.status !== "Shipped";

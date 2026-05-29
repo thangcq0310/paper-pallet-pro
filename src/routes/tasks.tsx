@@ -50,7 +50,7 @@ function TasksPage() {
       return locations.filter(
         (l) =>
           l.status === "Active" &&
-          !["RECEIVING", "STAGING-01", "DOCK-01", "SHIPPED"].includes(l.locationCode) &&
+          l.locationType === "STORAGE" &&
           l.currentPalletCount < l.capacityPallet,
       );
     }
@@ -58,7 +58,7 @@ function TasksPage() {
       return locations.filter(
         (l) =>
           l.status === "Active" &&
-          l.locationCode !== "SHIPPED" &&
+          l.locationType === "STORAGE" &&
           l.locationCode !== confirmTaskObj.fromLocation &&
           l.currentPalletCount < l.capacityPallet,
       );

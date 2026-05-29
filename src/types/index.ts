@@ -20,10 +20,13 @@ export interface Batch {
 }
 
 export type LocationStatus = "Active" | "Blocked";
+export type LocationType = "RECEIVING" | "STORAGE" | "STAGING" | "DOCK";
 
 export interface Location {
   id: string;
   locationCode: string;
+  locationName?: string;
+  locationType: LocationType;
   zone: string;
   block: string;
   capacityPallet: number;
@@ -51,7 +54,8 @@ export interface Pallet {
   weight: number;
   mfgDate: string;
   expDate: string;
-  currentLocation: string;
+  currentLocation: string | null;
+  lastLocation?: string;
   status: PalletStatus;
   labelAttached: boolean;
   createdAt: string;

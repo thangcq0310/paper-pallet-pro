@@ -7,6 +7,7 @@ export function listPallets() { return getState().pallets; }
 export function getPallet(palletId: string) { return getState().pallets.find((p) => p.palletId === palletId); }
 
 export function createPalletLabel(input: {
+  receivingLocation: string;
   skuCode: string; batchNo: string; qty: number; uom: string; weight: number;
   mfgDate: string; expDate: string; note?: string;
 }): Pallet {
@@ -17,6 +18,12 @@ export function createPalletLabel(input: {
   if (!batch) throw new Error("Batch không tồn tại cho SKU này");
   const palletId = generatePalletId(s.pallets.map((p) => p.palletId));
   const now = new Date().toISOString();
+  const rcvLoc = s.locations.find((l) => l.locationCode === input.receivingLocation);
+  if (!rcvLoc) throw new Error("Receiving location không tồn tại");
+  if (rcvLoc.status === "Blocked") throw new Error("Receiving location đang Blocked");
+  if (rcvLoc.locationType !== "RECEIVING") throw new Error("Location phải thuộc loại RECEIVING");
+  if (rcvLoc.currentPalletCount >= rcvLoc.capacityPallet) throw new Error("Receiving location đã đầy");
+
   const pallet: Pallet = {
     id: uid(),
     palletId,
@@ -28,7 +35,7 @@ export function createPalletLabel(input: {
     weight: input.weight,
     mfgDate: input.mfgDate,
     expDate: input.expDate,
-    currentLocation: "RECEIVING",
+    currentLocation: input.receivingLocation,
     status: "Label Created",
     labelAttached: false,
     createdAt: now,
@@ -37,10 +44,10 @@ export function createPalletLabel(input: {
   setState((st) => ({
     ...st,
     pallets: [pallet, ...st.pallets],
-    locations: st.locations.map((l) => l.locationCode === "RECEIVING" ? { ...l, currentPalletCount: l.currentPalletCount + 1 } : l),
+    locations: st.locations.map((l) => l.locationCode === input.receivingLocation ? { ...l, currentPalletCount: l.currentPalletCount + 1 } : l),
   }));
-  recordMovement({ type: "LABEL_CREATED", pallet, fromLocation: null, toLocation: "RECEIVING", note: input.note });
-  recordMovement({ type: "IN", pallet, fromLocation: null, toLocation: "RECEIVING" });
+  recordMovement({ type: "LABEL_CREATED", pallet, fromLocation: null, toLocation: input.receivingLocation, note: input.note });
+  recordMovement({ type: "IN", pallet, fromLocation: null, toLocation: input.receivingLocation });
   return pallet;
 }
 
@@ -51,7 +58,7 @@ export function confirmLabelAttached(palletId: string) {
   if (p.labelAttached) throw new Error("Pallet đã được xác nhận dán nhãn");
   const updated: Pallet = { ...p, labelAttached: true, status: "Labeled", updatedAt: new Date().toISOString() };
   setState((s) => ({ ...s, pallets: s.pallets.map((x) => x.id === p.id ? updated : x) }));
-  recordMovement({ type: "LABEL_ATTACHED", pallet: updated, fromLocation: "RECEIVING", toLocation: "RECEIVING" });
+  recordMovement({ type: "LABEL_ATTACHED", pallet: updated, fromLocation: updated.currentLocation, toLocation: updated.currentLocation });
   return updated;
 }
 
@@ -90,10 +97,13 @@ export function movePallet(palletId: string, toLocation: string, note?: string) 
   if (p.status === "Shipped") throw new Error("Pallet đã Shipped");
   if (p.status !== "In Stock" && p.status !== "Staged") throw new Error("Chỉ chuyển pallet đang In Stock hoặc Staged");
   if (p.currentLocation === toLocation) throw new Error("Đã ở location này rồi");
-  validateTargetLocation(toLocation);
+  const loc = validateTargetLocation(toLocation);
+  if (loc.locationType === "RECEIVING" || loc.locationType === "DOCK") {
+    throw new Error("Không thể Move pallet tới khu vực RECEIVING hoặc DOCK");
+  }
   const from = p.currentLocation;
   const nextStatus =
-    toLocation === "STAGING-01" ? "Staged"
+    loc.locationType === "STAGING" ? "Staged"
       : p.status === "Staged" ? "In Stock"
         : p.status;
   const updated: Pallet = { ...p, currentLocation: toLocation, status: nextStatus, updatedAt: new Date().toISOString() };
@@ -117,14 +127,14 @@ export function pickAndShipPallet(palletId: string, note?: string) {
     throw new Error("Chỉ được pick pallet đang In Stock hoặc Staged");
   }
   const from = p.currentLocation;
-  const updated: Pallet = { ...p, currentLocation: "SHIPPED", status: "Shipped", updatedAt: new Date().toISOString() };
+  const updated: Pallet = { ...p, currentLocation: null, lastLocation: from || undefined, status: "Shipped", updatedAt: new Date().toISOString() };
   setState((s) => ({
     ...s,
     pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
     locations: s.locations.map((l) => l.locationCode === from ? { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) } : l),
   }));
-  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: "SHIPPED", note });
-  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation: "SHIPPED", note });
+  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: null, note });
+  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation: null, note });
   return updated;
 }
 

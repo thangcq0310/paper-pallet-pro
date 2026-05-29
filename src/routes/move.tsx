@@ -37,7 +37,7 @@ function MovePage() {
       (l) =>
         l.status === "Active" &&
         l.locationCode !== pallet.currentLocation &&
-        l.locationCode !== "SHIPPED" &&
+        l.locationType === "STORAGE" &&
         l.currentPalletCount < l.capacityPallet,
     );
   }, [locations, pallet]);
@@ -198,7 +198,7 @@ function MovePage() {
               </SelectTrigger>
               <SelectContent>
                 {locations
-                  .filter((l) => l.status === "Active" && l.locationCode !== "SHIPPED" && l.currentPalletCount < l.capacityPallet)
+                  .filter((l) => l.status === "Active" && l.locationType === "STORAGE" && l.currentPalletCount < l.capacityPallet)
                   .map((l) => (
                     <SelectItem key={l.id} value={l.locationCode}>
                       {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})

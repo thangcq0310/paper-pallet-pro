@@ -47,12 +47,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="vi">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
-    </html>
-  );
+  return (<>
+    <HeadContent />
+    <Scripts />
+    {children}
+  </>);
 }
 
 function RootComponent() {
