@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useLocation } from '@tanstack/react-router';
 import { useStore } from '@/services/store';
-import { confirmLabelAttached } from '@/services/palletService';
+import { cancelPallet } from '@/services/palletService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/PageHeader';
 import { PalletStatusBadge } from '@/components/StatusBadges';
 import { toast } from 'sonner';
-import { Printer, Check } from 'lucide-react';
+import { Printer, XCircle } from 'lucide-react';
 
 export const Route = createFileRoute('/pallet/$palletId')({ component: PalletLabelPreview });
 
@@ -24,9 +24,14 @@ function PalletLabelPreview() {
     </div>
   );
 
-  const confirm = () => {
-    try { confirmLabelAttached(pallet.palletId); toast.success('Da xac nhan dan nhan'); }
-    catch (e: any) { toast.error(e?.message ?? "Xác nhận thất bại"); }
+  const cancel = () => {
+    if (confirm('Bạn có chắc muốn hủy pallet này? Thao tác này không thể hoàn tác.')) {
+      try { 
+        cancelPallet(pallet.palletId); 
+        toast.success('Đã hủy pallet'); 
+      }
+      catch (e: any) { toast.error(e?.message ?? "Hủy thất bại"); }
+    }
   };
 
   const LabelCard = ({ copyIdx }: { copyIdx?: number }) => (
@@ -56,8 +61,12 @@ function PalletLabelPreview() {
     <div>
       <PageHeader title='Pallet Label Preview' description={pallet.palletId + (copies > 1 ? ' (x' + copies + ')' : '')}
         action={<>
+          {pallet.status === "Pending Putaway" && (
+            <Button variant='destructive' className='no-print' onClick={cancel}>
+              <XCircle className='h-4 w-4 mr-1' />Cancel
+            </Button>
+          )}
           <Button variant='outline' className='no-print' onClick={() => window.print()}><Printer className='h-4 w-4 mr-1' />Print</Button>
-          <Button className='no-print' onClick={confirm} disabled={pallet.labelAttached}><Check className='h-4 w-4 mr-1' />Confirm</Button>
         </>}
       />
       <div className='grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 print-area'>
@@ -68,17 +77,21 @@ function PalletLabelPreview() {
           <CardContent className='p-5 space-y-3'>
             <div><div className='text-xs text-muted-foreground'>Status</div><PalletStatusBadge status={pallet.status} /></div>
             <div><div className='text-xs text-muted-foreground'>So ban in</div><div className='font-medium'>{copies}</div></div>
-            <div className='text-sm'>
-              <div className='text-xs text-muted-foreground'>Label Attached</div>
-              <div className='font-medium'>{pallet.labelAttached ? 'Da dan' : 'Chua dan'}</div>
-            </div>
+            {pallet.inboundNo && (
+              <div className='text-sm'>
+                <div className='text-xs text-muted-foreground'>Inbound Doc No</div>
+                <div className='font-medium'>{pallet.inboundNo}</div>
+              </div>
+            )}
             <div className='text-sm'>
               <div className='text-xs text-muted-foreground'>Current Location</div>
               <div className='font-mono'>{pallet.currentLocation || "N/A"}</div>
             </div>
-            <div className='pt-3 border-t text-xs text-muted-foreground'>
-              Sau khi in nhan va dan len pallet thuc te, bam Confirm de pallet san sang cho putaway.
-            </div>
+            {pallet.status === "Pending Putaway" && (
+              <div className='pt-3 border-t text-xs text-muted-foreground'>
+                Pallet đã sẵn sàng cho putaway.
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

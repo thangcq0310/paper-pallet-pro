@@ -37,15 +37,16 @@ export interface Location {
 }
 
 export type PalletStatus =
-  | "Label Created"
-  | "Labeled"
+  | "Pending Putaway"
   | "In Stock"
   | "Staged"
-  | "Shipped";
+  | "Shipped"
+  | "Cancelled";
 
 export interface Pallet {
   id: string;
   palletId: string;
+  inboundNo?: string;
   skuCode: string;
   skuName: string;
   batchNo: string;
@@ -57,7 +58,6 @@ export interface Pallet {
   currentLocation: string | null;
   lastLocation?: string;
   status: PalletStatus;
-  labelAttached: boolean;
   createdAt: string;
   updatedAt: string;
 }

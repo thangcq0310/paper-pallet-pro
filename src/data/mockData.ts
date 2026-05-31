@@ -28,10 +28,10 @@ export const mockLocations: Location[] = [
 ];
 
 export const mockPallets: Pallet[] = [
-  { id: "p1", palletId: "PLT-20260520-0001", skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", batchNo: "LOT260527-A", qty: 50, uom: "Carton", weight: 1000, mfgDate: "2026-05-27", expDate: "2028-05-27", currentLocation: "FZ-A-01-01", status: "In Stock", labelAttached: true, createdAt: now, updatedAt: now },
-  { id: "p2", palletId: "PLT-20260520-0002", skuCode: "PINE-15KG", skuName: "Puree dứa 15kg", batchNo: "LOT260520-B", qty: 40, uom: "Carton", weight: 600, mfgDate: "2026-05-20", expDate: "2028-05-20", currentLocation: "FZ-A-01-02", status: "In Stock", labelAttached: true, createdAt: now, updatedAt: now },
-  { id: "p3", palletId: "PLT-20260521-0003", skuCode: "SUGAR-25KG", skuName: "Đường tinh luyện 25kg", batchNo: "LOT260510-D", qty: 30, uom: "Bag", weight: 750, mfgDate: "2026-05-10", expDate: "2027-05-10", currentLocation: "DRY-A-01-01", status: "In Stock", labelAttached: true, createdAt: now, updatedAt: now },
-  { id: "p4", palletId: "PLT-20260525-0004", skuCode: "PASS-10KG", skuName: "Puree chanh dây 10kg", batchNo: "LOT260515-C", qty: 60, uom: "Carton", weight: 600, mfgDate: "2026-05-15", expDate: "2028-05-15", currentLocation: "RCV-01", status: "Labeled", labelAttached: true, createdAt: now, updatedAt: now },
+  { id: "p1", palletId: "PLT-20260520-0001", skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", batchNo: "LOT260527-A", qty: 50, uom: "Carton", weight: 1000, mfgDate: "2026-05-27", expDate: "2028-05-27", currentLocation: "FZ-A-01-01", status: "In Stock", createdAt: now, updatedAt: now },
+  { id: "p2", palletId: "PLT-20260520-0002", skuCode: "PINE-15KG", skuName: "Puree dứa 15kg", batchNo: "LOT260520-B", qty: 40, uom: "Carton", weight: 600, mfgDate: "2026-05-20", expDate: "2028-05-20", currentLocation: "FZ-A-01-02", status: "In Stock", createdAt: now, updatedAt: now },
+  { id: "p3", palletId: "PLT-20260521-0003", skuCode: "SUGAR-25KG", skuName: "Đường tinh luyện 25kg", batchNo: "LOT260510-D", qty: 30, uom: "Bag", weight: 750, mfgDate: "2026-05-10", expDate: "2027-05-10", currentLocation: "DRY-A-01-01", status: "In Stock", createdAt: now, updatedAt: now },
+  { id: "p4", palletId: "PLT-20260525-0004", skuCode: "PASS-10KG", skuName: "Puree chanh dây 10kg", batchNo: "LOT260515-C", qty: 60, uom: "Carton", weight: 600, mfgDate: "2026-05-15", expDate: "2028-05-15", currentLocation: "RCV-01", status: "Pending Putaway", createdAt: now, updatedAt: now },
 ];
 
 export const mockMovements: Movement[] = [

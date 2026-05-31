@@ -55,7 +55,7 @@ function Dashboard() {
   const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "In Progress").length;
 
   const recentMovements = movements.slice(0, 6);
-  const waitingPutaway = pallets.filter((p) => p.status === "Labeled" && locations.find(l => l.locationCode === p.currentLocation)?.locationType === "RECEIVING");
+  const waitingPutaway = pallets.filter((p) => p.status === "Pending Putaway" && locations.find(l => l.locationCode === p.currentLocation)?.locationType === "RECEIVING");
   const nearExpiry = pallets.filter((p) => {
     const days = (new Date(p.expDate).getTime() - Date.now()) / 86400000;
     return days < 60 && p.status !== "Shipped";

@@ -24,7 +24,7 @@ function PutawayPage() {
   const [confirmTaskId, setConfirmTaskId] = useState<string>("");
   const [actualLocation, setActualLocation] = useState<string>("");
 
-  const labeled = pallets.filter((p) => p.status === "Labeled" && p.labelAttached);
+  const labeled = pallets.filter((p) => p.status === "Pending Putaway");
   const targets = locations.filter((l) => l.status === "Active" && l.locationType === "STORAGE" && l.currentPalletCount < l.capacityPallet);
   const openTasks = tasks.filter((t) =>
     t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed"),
@@ -60,7 +60,7 @@ function PutawayPage() {
           <CardContent className="p-6 space-y-4">
             <h3 className="font-semibold">Tạo Putaway Task</h3>
             <div>
-              <Label>Pallet (đã Labeled)</Label>
+              <Label>Pallet (đã in nhãn)</Label>
               <Select value={palletId} onValueChange={setPalletId}>
                 <SelectTrigger><SelectValue placeholder="Chọn pallet" /></SelectTrigger>
                 <SelectContent>{labeled.map((p) => <SelectItem key={p.id} value={p.palletId}>{p.palletId} — {p.skuCode}</SelectItem>)}</SelectContent>

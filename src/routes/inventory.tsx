@@ -104,7 +104,7 @@ function InventoryPage() {
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {["Label Created", "Labeled", "In Stock", "Staged", "Shipped"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {["Pending Putaway", "In Stock", "Staged", "Shipped", "Cancelled"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <div className="flex items-center space-x-2">

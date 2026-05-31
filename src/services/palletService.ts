@@ -6,59 +6,103 @@ import type { Pallet } from "@/types";
 export function listPallets() { return getState().pallets; }
 export function getPallet(palletId: string) { return getState().pallets.find((p) => p.palletId === palletId); }
 
-export function createPalletLabel(input: {
+export function createPallets(inputs: {
+  inboundNo?: string;
   receivingLocation: string;
   skuCode: string; batchNo: string; qty: number; uom: string; weight: number;
   mfgDate: string; expDate: string; note?: string;
-}): Pallet {
+}[]): Pallet[] {
   const s = getState();
-  const sku = s.skus.find((x) => x.skuCode === input.skuCode);
-  if (!sku) throw new Error("SKU không tồn tại");
-  const batch = s.batches.find((b) => b.batchNo === input.batchNo && b.skuCode === input.skuCode);
-  if (!batch) throw new Error("Batch không tồn tại cho SKU này");
-  const palletId = generatePalletId(s.pallets.map((p) => p.palletId));
   const now = new Date().toISOString();
-  const rcvLoc = s.locations.find((l) => l.locationCode === input.receivingLocation);
-  if (!rcvLoc) throw new Error("Receiving location không tồn tại");
-  if (rcvLoc.status === "Blocked") throw new Error("Receiving location đang Blocked");
-  if (rcvLoc.locationType !== "RECEIVING") throw new Error("Location phải thuộc loại RECEIVING");
-  if (rcvLoc.currentPalletCount >= rcvLoc.capacityPallet) throw new Error("Receiving location đã đầy");
+  
+  const newPallets: Pallet[] = [];
+  const locationUpdates: Record<string, number> = {};
 
-  const pallet: Pallet = {
-    id: uid(),
-    palletId,
-    skuCode: input.skuCode,
-    skuName: sku.skuName,
-    batchNo: input.batchNo,
-    qty: input.qty,
-    uom: input.uom,
-    weight: input.weight,
-    mfgDate: input.mfgDate,
-    expDate: input.expDate,
-    currentLocation: input.receivingLocation,
-    status: "Label Created",
-    labelAttached: false,
-    createdAt: now,
-    updatedAt: now,
-  };
+  // First we need to calculate starting sequence for IDs to avoid collision during map
+  let currentExisting = s.pallets.map(p => p.palletId);
+  
+  for (const input of inputs) {
+    const sku = s.skus.find((x) => x.skuCode === input.skuCode);
+    if (!sku) throw new Error(`SKU ${input.skuCode} không tồn tại`);
+    const batch = s.batches.find((b) => b.batchNo === input.batchNo && b.skuCode === input.skuCode);
+    if (!batch) throw new Error(`Batch ${input.batchNo} không tồn tại cho SKU ${input.skuCode}`);
+    
+    const rcvLoc = s.locations.find((l) => l.locationCode === input.receivingLocation);
+    if (!rcvLoc) throw new Error(`Receiving location ${input.receivingLocation} không tồn tại`);
+    if (rcvLoc.status === "Blocked") throw new Error(`Receiving location ${input.receivingLocation} đang Blocked`);
+    if (rcvLoc.locationType !== "RECEIVING") throw new Error("Location phải thuộc loại RECEIVING");
+    
+    const addedCount = locationUpdates[input.receivingLocation] || 0;
+    if (rcvLoc.currentPalletCount + addedCount >= rcvLoc.capacityPallet) {
+      throw new Error(`Receiving location ${input.receivingLocation} đã đầy`);
+    }
+
+    const palletId = generatePalletId(currentExisting);
+    currentExisting.push(palletId);
+
+    const pallet: Pallet = {
+      id: uid(),
+      palletId,
+      inboundNo: input.inboundNo,
+      skuCode: input.skuCode,
+      skuName: sku.skuName,
+      batchNo: input.batchNo,
+      qty: input.qty,
+      uom: input.uom,
+      weight: input.weight,
+      mfgDate: input.mfgDate,
+      expDate: input.expDate,
+      currentLocation: input.receivingLocation,
+      status: "Pending Putaway",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    newPallets.push(pallet);
+    locationUpdates[input.receivingLocation] = addedCount + 1;
+  }
+
   setState((st) => ({
     ...st,
-    pallets: [pallet, ...st.pallets],
-    locations: st.locations.map((l) => l.locationCode === input.receivingLocation ? { ...l, currentPalletCount: l.currentPalletCount + 1 } : l),
+    pallets: [...newPallets, ...st.pallets],
+    locations: st.locations.map((l) => 
+      locationUpdates[l.locationCode] 
+        ? { ...l, currentPalletCount: l.currentPalletCount + locationUpdates[l.locationCode] } 
+        : l
+    ),
   }));
-  recordMovement({ type: "LABEL_CREATED", pallet, fromLocation: null, toLocation: input.receivingLocation, note: input.note });
-  recordMovement({ type: "IN", pallet, fromLocation: null, toLocation: input.receivingLocation });
-  return pallet;
+
+  for (const pallet of newPallets) {
+    recordMovement({ type: "IN", pallet, fromLocation: null, toLocation: pallet.currentLocation });
+  }
+
+  return newPallets;
 }
 
-export function confirmLabelAttached(palletId: string) {
+export function cancelPallet(palletId: string) {
   const p = getPallet(palletId);
   if (!p) throw new Error("Pallet không tồn tại");
-  if (p.status === "Shipped") throw new Error("Pallet đã Shipped");
-  if (p.labelAttached) throw new Error("Pallet đã được xác nhận dán nhãn");
-  const updated: Pallet = { ...p, labelAttached: true, status: "Labeled", updatedAt: new Date().toISOString() };
-  setState((s) => ({ ...s, pallets: s.pallets.map((x) => x.id === p.id ? updated : x) }));
-  recordMovement({ type: "LABEL_ATTACHED", pallet: updated, fromLocation: updated.currentLocation, toLocation: updated.currentLocation });
+  if (p.status !== "Pending Putaway") throw new Error("Chỉ có thể hủy pallet đang ở trạng thái Pending Putaway");
+
+  const s = getState();
+  const tasks = s.tasks.filter(t => t.palletId === palletId && (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"));
+  if (tasks.length > 0) {
+    throw new Error("Không thể hủy pallet đang có Task hoạt động. Vui lòng hủy Task trước.");
+  }
+
+  const updated: Pallet = { ...p, status: "Cancelled", currentLocation: null, updatedAt: new Date().toISOString() };
+  
+  setState((st) => ({
+    ...st,
+    pallets: st.pallets.map((x) => x.id === p.id ? updated : x),
+    locations: st.locations.map((l) => 
+      l.locationCode === p.currentLocation 
+        ? { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) } 
+        : l
+    ),
+  }));
+
+  recordMovement({ type: "OUT", pallet: updated, fromLocation: p.currentLocation, toLocation: null, note: "Cancelled unused pallet" });
   return updated;
 }
 
@@ -73,8 +117,7 @@ function validateTargetLocation(code: string) {
 export function putawayPallet(palletId: string, toLocation: string, note?: string) {
   const p = getPallet(palletId);
   if (!p) throw new Error("Pallet không tồn tại");
-  if (!p.labelAttached) throw new Error("Pallet chưa xác nhận dán nhãn");
-  if (p.status !== "Labeled") throw new Error("Pallet không ở trạng thái Labeled");
+  if (p.status !== "Pending Putaway") throw new Error("Pallet không ở trạng thái Pending Putaway");
   validateTargetLocation(toLocation);
   const from = p.currentLocation;
   const updated: Pallet = { ...p, currentLocation: toLocation, status: "In Stock", updatedAt: new Date().toISOString() };

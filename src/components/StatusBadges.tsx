@@ -2,11 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import type { PalletStatus, TaskStatus, LocationStatus } from "@/types";
 
 const palletColor: Record<PalletStatus, string> = {
-  "Label Created": "bg-muted text-foreground",
-  "Labeled": "bg-info/15 text-info",
+  "Pending Putaway": "bg-info/15 text-info",
   "In Stock": "bg-success/15 text-success",
-  "Staged": "bg-warning/20 text-warning-foreground",
-  "Shipped": "bg-destructive/15 text-destructive",
+  "Staged": "bg-warning/15 text-warning",
+  "Shipped": "bg-primary/15 text-primary",
+  "Cancelled": "bg-destructive/15 text-destructive",
 };
 export function PalletStatusBadge({ status }: { status: PalletStatus }) {
   return <Badge variant="outline" className={`${palletColor[status]} border-0 font-medium`}>{status}</Badge>;

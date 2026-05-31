@@ -14,8 +14,7 @@ function AlertsPage() {
   const sixtyDays = oneDay * 60;
   const now = Date.now();
 
-  const waitingLabel = pallets.filter((p) => p.status === "Label Created" && now - new Date(p.createdAt).getTime() > oneDay);
-  const waitingPutaway = pallets.filter((p) => p.status === "Labeled");
+  const waitingPutaway = pallets.filter((p) => p.status === "Pending Putaway");
   const fullLocs = locations.filter((l) => l.capacityPallet < 9999 && l.currentPalletCount >= l.capacityPallet);
   const blockedLocs = locations.filter((l) => l.status === "Blocked");
   const nearExpiry = pallets.filter((p) => p.status !== "Shipped" && new Date(p.expDate).getTime() - now < sixtyDays);
