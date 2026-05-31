@@ -3,6 +3,11 @@ import type { Location, Pallet, SKU, WarehouseTask } from "@/types";
 import { cancelPallet, createPallets } from "./palletService";
 import { createTask } from "./taskService";
 
+export interface PutawayAssignment {
+  palletId: string;
+  targetLocation: string;
+}
+
 export interface PalletPreviewRow {
   rowId: string;
   rowNo: number;
@@ -131,6 +136,129 @@ export function getTargetBinCapacity(locationCode: string): {
   return { location, openPutawayTaskCount, availableCapacity };
 }
 
+export function getMultiTargetBinCapacity(locationCodes: string[]) {
+  const codes = Array.from(new Set(locationCodes.map((c) => c.trim()).filter(Boolean)));
+  return codes.map((c) => ({
+    locationCode: c,
+    ...getTargetBinCapacity(c),
+  }));
+}
+
+export function autoAllocatePalletsToBins(input: { palletIds: string[]; targetLocations: string[] }): PutawayAssignment[] {
+  const palletIds = input.palletIds.map((p) => p.trim()).filter(Boolean);
+  if (palletIds.length === 0) throw new Error("Chọn pallet để allocate");
+  const targetLocations = input.targetLocations.map((l) => l.trim()).filter(Boolean);
+  if (targetLocations.length === 0) throw new Error("Chọn Target Bin");
+
+  const caps = getMultiTargetBinCapacity(targetLocations);
+  const remainingByLoc = new Map<string, number>(caps.map((c) => [c.location.locationCode, c.availableCapacity]));
+  const totalAvailable = caps.reduce((s, c) => s + c.availableCapacity, 0);
+  if (totalAvailable < palletIds.length) throw new Error("Tổng available capacity không đủ để allocate");
+
+  const assignments: PutawayAssignment[] = [];
+  let binIndex = 0;
+
+  for (const palletId of palletIds) {
+    while (binIndex < targetLocations.length) {
+      const loc = targetLocations[binIndex];
+      const remain = remainingByLoc.get(loc) ?? 0;
+      if (remain > 0) {
+        assignments.push({ palletId, targetLocation: loc });
+        remainingByLoc.set(loc, remain - 1);
+        break;
+      }
+      binIndex++;
+    }
+    if (assignments.length === 0 || assignments[assignments.length - 1].palletId !== palletId) {
+      throw new Error("Allocate thất bại do thiếu capacity");
+    }
+  }
+  return assignments;
+}
+
+function validatePutawayAssignments(input: { inboundNo?: string; assignments: PutawayAssignment[] }) {
+  const inboundNo = input.inboundNo?.trim() ?? "";
+  const assignments = input.assignments;
+  if (!assignments?.length) throw new Error("Chưa có allocation hợp lệ");
+
+  const s = getState();
+  const palletIdSet = new Set<string>();
+  const assignCountByLoc = new Map<string, number>();
+
+  for (const a of assignments) {
+    const palletId = a.palletId.trim();
+    const targetLocation = a.targetLocation.trim();
+    if (!palletId) throw new Error("Assignment palletId không hợp lệ");
+    if (!targetLocation) throw new Error("Assignment targetLocation không hợp lệ");
+    if (palletIdSet.has(palletId)) throw new Error(`Pallet ${palletId} bị assign trùng`);
+    palletIdSet.add(palletId);
+
+    const p = s.pallets.find((x) => x.palletId === palletId);
+    if (!p) throw new Error(`Pallet ${palletId} không tồn tại`);
+    if (p.status === "Cancelled") throw new Error(`Pallet ${palletId} đã Cancelled`);
+    if (p.status !== "Pending Putaway") throw new Error(`Pallet ${palletId} không ở trạng thái Pending Putaway`);
+
+    if (!p.currentLocation) throw new Error(`Pallet ${palletId} chưa có currentLocation`);
+    const fromLoc = s.locations.find((l) => l.locationCode === p.currentLocation);
+    if (!fromLoc) throw new Error(`Location ${p.currentLocation} không tồn tại`);
+    if (fromLoc.locationType !== "RECEIVING") throw new Error(`Pallet ${palletId} không nằm ở RECEIVING`);
+
+    const openTask = s.tasks.some(
+      (t) =>
+        t.palletId === palletId &&
+        (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+    );
+    if (openTask) throw new Error(`Pallet ${palletId} đang có task mở`);
+
+    if (inboundNo && (p.referenceDocumentNo ?? "").trim() !== inboundNo) {
+      throw new Error(`Pallet ${palletId} không thuộc inboundNo ${inboundNo}`);
+    }
+
+    const target = s.locations.find((l) => l.locationCode === targetLocation);
+    if (!target) throw new Error(`Target Bin ${targetLocation} không tồn tại`);
+    if (target.locationType !== "STORAGE") throw new Error(`Target Bin ${targetLocation} không phải STORAGE`);
+    if (target.status !== "Active") throw new Error(`Target Bin ${targetLocation} đang Blocked`);
+
+    assignCountByLoc.set(targetLocation, (assignCountByLoc.get(targetLocation) ?? 0) + 1);
+  }
+
+  // capacity check per bin
+  const caps = getMultiTargetBinCapacity(Array.from(assignCountByLoc.keys()));
+  for (const cap of caps) {
+    const assigned = assignCountByLoc.get(cap.location.locationCode) ?? 0;
+    if (assigned > cap.availableCapacity) {
+      throw new Error(`Bin ${cap.location.locationCode} không đủ capacity (assigned ${assigned} > available ${cap.availableCapacity})`);
+    }
+  }
+
+  return {
+    inboundNo,
+    assignCountByLoc,
+  };
+}
+
+export function createPutawayTasksFromAssignments(input: {
+  inboundNo?: string;
+  assignments: PutawayAssignment[];
+}): WarehouseTask[] {
+  const { inboundNo } = validatePutawayAssignments(input);
+
+  // create tasks only after all validation passes
+  const tasks: WarehouseTask[] = [];
+  for (const a of input.assignments) {
+    const t = createTask({
+      taskType: "PUTAWAY",
+      palletId: a.palletId,
+      toLocation: a.targetLocation,
+      inboundNo: inboundNo || undefined,
+      instruction: "Đưa pallet từ RECEIVING vào location chỉ định.",
+      note: inboundNo ? `Inbound ${inboundNo}` : undefined,
+    });
+    tasks.push(t);
+  }
+  return tasks;
+}
+
 export function createBulkPutawayTasks(input: {
   inboundNo: string;
   palletIds: string[];
@@ -181,4 +309,3 @@ export function buildPalletLabelsPrintUrl(palletIds: string[]) {
 export function buildTaskPrintUrl(taskNo: string) {
   return `/tasks/${encodeURIComponent(taskNo)}/print`;
 }
-

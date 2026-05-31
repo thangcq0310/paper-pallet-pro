@@ -17,10 +17,12 @@ import { AlertCircle, Layers, Pencil, Plus, Printer, Trash2, Zap } from "lucide-
 import {
   calculatePalletPreview,
   cancelUnusedPallet,
-  createBulkPutawayTasks,
+  autoAllocatePalletsToBins,
+  createPutawayTasksFromAssignments,
   generatePalletIdsFromPreview,
-  getTargetBinCapacity,
+  getMultiTargetBinCapacity,
   type PalletPreviewRow,
+  type PutawayAssignment,
 } from "@/services/inboundPalletizeService";
 
 export const Route = createFileRoute("/pallet/create")({ component: InboundPalletizePutawayPage });
@@ -55,7 +57,9 @@ function InboundPalletizePutawayPage() {
 
   const [generatedPalletIds, setGeneratedPalletIds] = useState<string[]>([]);
   const [selectedPallet, setSelectedPallet] = useState<Record<string, boolean>>({});
-  const [targetBin, setTargetBin] = useState("");
+  const [targetBins, setTargetBins] = useState<string[]>([]);
+  const [binPicker, setBinPicker] = useState("");
+  const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [createdTaskIds, setCreatedTaskIds] = useState<string[]>([]);
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -109,20 +113,38 @@ function InboundPalletizePutawayPage() {
     [selectedPallet],
   );
 
-  const targetCapacity = useMemo(() => {
-    if (!targetBin) return null;
+  const selectedPalletIdsOrdered = useMemo(() => {
+    const selected = new Set(selectedPalletIds);
+    return generatedPalletIds.filter((id) => selected.has(id));
+  }, [generatedPalletIds, selectedPalletIds]);
+
+  const binCaps = useMemo(() => {
+    if (targetBins.length === 0) return [];
     try {
-      const cap = getTargetBinCapacity(targetBin);
-      const selectedPalletCount = selectedPalletIds.length;
-      return {
-        ...cap,
-        selectedPalletCount,
-        remainingAfterCreation: cap.availableCapacity - selectedPalletCount,
-      };
-    } catch (e: any) {
-      return { error: e.message as string };
+      return getMultiTargetBinCapacity(targetBins);
+    } catch {
+      return [];
     }
-  }, [selectedPalletIds.length, targetBin]);
+  }, [targetBins]);
+
+  const assignedCountByBin = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const [palletId, bin] of Object.entries(assignments)) {
+      if (!selectedPallet[palletId]) continue;
+      if (!bin) continue;
+      map.set(bin, (map.get(bin) ?? 0) + 1);
+    }
+    return map;
+  }, [assignments, selectedPallet]);
+
+  const allocationSummary = useMemo(() => {
+    const caps = binCaps;
+    const totalAvailable = caps.reduce((s, c) => s + c.availableCapacity, 0);
+    const totalSelected = selectedPalletIdsOrdered.length;
+    const totalAssigned = selectedPalletIdsOrdered.filter((id) => !!assignments[id]).length;
+    const perBinOver = caps.some((c) => (assignedCountByBin.get(c.location.locationCode) ?? 0) > c.availableCapacity);
+    return { totalAvailable, totalSelected, totalAssigned, perBinOver };
+  }, [assignedCountByBin, assignments, binCaps, selectedPalletIdsOrdered]);
 
   const canGenerateIds =
     previewRows.length > 0 &&
@@ -138,11 +160,11 @@ function InboundPalletizePutawayPage() {
 
   const canCreatePutaway =
     generatedPalletIds.length > 0 &&
-    !!targetBin &&
-    selectedPalletIds.length > 0 &&
-    targetCapacity &&
-    !("error" in targetCapacity) &&
-    selectedPalletIds.length <= targetCapacity.availableCapacity;
+    targetBins.length > 0 &&
+    selectedPalletIdsOrdered.length > 0 &&
+    allocationSummary.totalAssigned === allocationSummary.totalSelected &&
+    allocationSummary.totalAvailable >= allocationSummary.totalSelected &&
+    !allocationSummary.perBinOver;
 
   const doCalculate = () => {
     try {
@@ -228,13 +250,27 @@ function InboundPalletizePutawayPage() {
     }
   };
 
+  const doAutoAllocate = () => {
+    try {
+      const asg = autoAllocatePalletsToBins({ palletIds: selectedPalletIdsOrdered, targetLocations: targetBins });
+      setAssignments(Object.fromEntries(asg.map((a) => [a.palletId, a.targetLocation])));
+      toast.success("Đã auto allocate");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const doClearAllocation = () => {
+    setAssignments({});
+  };
+
   const doCreatePutawayTasks = () => {
     try {
-      const created = createBulkPutawayTasks({
-        inboundNo: form.inboundNo,
-        palletIds: selectedPalletIds,
-        targetLocation: targetBin,
-      });
+      const asg: PutawayAssignment[] = selectedPalletIdsOrdered.map((palletId) => ({
+        palletId,
+        targetLocation: assignments[palletId],
+      }));
+      const created = createPutawayTasksFromAssignments({ inboundNo: form.inboundNo, assignments: asg });
       setCreatedTaskIds((prev) => Array.from(new Set([...prev, ...created.map((t) => t.id)])));
       toast.success(`Đã tạo ${created.length} PUTAWAY task`);
     } catch (e: any) {
@@ -257,6 +293,11 @@ function InboundPalletizePutawayPage() {
     try {
       cancelUnusedPallet(cancelPalletId, cancelReason);
       setSelectedPallet((prev) => ({ ...prev, [cancelPalletId]: false }));
+      setAssignments((prev) => {
+        const next = { ...prev };
+        delete next[cancelPalletId];
+        return next;
+      });
       toast.success("Đã cancel pallet");
       setCancelDialogOpen(false);
     } catch (e: any) {
@@ -557,69 +598,173 @@ function InboundPalletizePutawayPage() {
 
       <Card className="rounded-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Section 3 — Target Bin Capacity</CardTitle>
+          <CardTitle className="text-base">Section 3 — Target Bin Allocation</CardTitle>
         </CardHeader>
         <CardContent className="p-5 pt-0 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div>
-              <Label>Target Bin (STORAGE, Active)</Label>
-              <Select value={targetBin} onValueChange={setTargetBin} disabled={generatedPalletIds.length === 0}>
+              <Label>Add Target Bin</Label>
+              <Select value={binPicker} onValueChange={setBinPicker} disabled={generatedPalletIds.length === 0}>
                 <SelectTrigger><SelectValue placeholder="Chọn STORAGE bin" /></SelectTrigger>
                 <SelectContent>
-                  {storageBins.map((l) => (
-                    <SelectItem key={l.id} value={l.locationCode}>
-                      {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                    </SelectItem>
-                  ))}
+                  {storageBins
+                    .filter((l) => !targetBins.includes(l.locationCode))
+                    .map((l) => (
+                      <SelectItem key={l.id} value={l.locationCode}>
+                        {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!binPicker) return;
+                  setTargetBins((prev) => [...prev, binPicker]);
+                  setBinPicker("");
+                }}
+                disabled={!binPicker}
+              >
+                Add Target Bin
+              </Button>
+              <Button variant="outline" onClick={doAutoAllocate} disabled={selectedPalletIdsOrdered.length === 0 || targetBins.length === 0}>
+                Auto Allocate
+              </Button>
+              <Button variant="outline" onClick={doClearAllocation} disabled={Object.keys(assignments).length === 0}>
+                Clear Allocation
+              </Button>
               <Button onClick={doCreatePutawayTasks} disabled={!canCreatePutaway}>
-                Create PUTAWAY Tasks ({selectedPalletIds.length})
+                Create PUTAWAY Tasks ({selectedPalletIdsOrdered.length})
               </Button>
             </div>
           </div>
 
-          {targetCapacity && "error" in targetCapacity && <div className="text-sm text-destructive">{targetCapacity.error}</div>}
+          <div className="overflow-x-auto border rounded-xl">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Target Bin</TableHead>
+                  <TableHead className="text-right">Capacity</TableHead>
+                  <TableHead className="text-right">Current</TableHead>
+                  <TableHead className="text-right">Open Putaway Tasks</TableHead>
+                  <TableHead className="text-right">Available</TableHead>
+                  <TableHead className="text-right">Assigned</TableHead>
+                  <TableHead className="text-right">Remaining</TableHead>
+                  <TableHead className="text-right">Remove</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {binCaps.map((c) => {
+                  const assigned = assignedCountByBin.get(c.location.locationCode) ?? 0;
+                  const remaining = c.availableCapacity - assigned;
+                  const warn = remaining < 0;
+                  return (
+                    <TableRow key={c.location.locationCode} className={warn ? "bg-destructive/5" : ""}>
+                      <TableCell className="font-mono text-xs">{c.location.locationCode}</TableCell>
+                      <TableCell className="text-right font-mono">{c.location.capacityPallet}</TableCell>
+                      <TableCell className="text-right font-mono">{c.location.currentPalletCount}</TableCell>
+                      <TableCell className="text-right font-mono">{c.openPutawayTaskCount}</TableCell>
+                      <TableCell className="text-right font-mono">{c.availableCapacity}</TableCell>
+                      <TableCell className="text-right font-mono">{assigned}</TableCell>
+                      <TableCell className={`text-right font-mono ${warn ? "text-destructive" : ""}`}>{remaining}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const loc = c.location.locationCode;
+                            setTargetBins((prev) => prev.filter((x) => x !== loc));
+                            setAssignments((prev) => {
+                              const next: Record<string, string> = {};
+                              for (const [palletId, b] of Object.entries(prev)) {
+                                if (b === loc) continue;
+                                next[palletId] = b;
+                              }
+                              return next;
+                            });
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {binCaps.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                      Chưa chọn Target Bin nào
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-          {targetCapacity && !("error" in targetCapacity) && (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
-                <div className="p-3 rounded-xl border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">capacityPallet</div>
-                  <div className="font-mono font-semibold">{targetCapacity.location.capacityPallet}</div>
-                </div>
-                <div className="p-3 rounded-xl border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">currentPalletCount</div>
-                  <div className="font-mono font-semibold">{targetCapacity.location.currentPalletCount}</div>
-                </div>
-                <div className="p-3 rounded-xl border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">openPutawayTaskCount</div>
-                  <div className="font-mono font-semibold">{targetCapacity.openPutawayTaskCount}</div>
-                </div>
-                <div className="p-3 rounded-xl border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">availableCapacity</div>
-                  <div className="font-mono font-semibold">{targetCapacity.availableCapacity}</div>
-                </div>
-                <div className="p-3 rounded-xl border bg-muted/30">
-                  <div className="text-xs text-muted-foreground">selectedPalletCount</div>
-                  <div className="font-mono font-semibold">{targetCapacity.selectedPalletCount}</div>
-                </div>
-                <div className={`p-3 rounded-xl border ${targetCapacity.remainingAfterCreation < 0 ? "bg-destructive/10 border-destructive text-destructive" : "bg-muted/30"}`}>
-                  <div className="text-xs text-muted-foreground">remainingAfterCreation</div>
-                  <div className="font-mono font-semibold">{targetCapacity.remainingAfterCreation}</div>
-                </div>
-              </div>
+          <div className="overflow-x-auto border rounded-xl">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pallet ID</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Batch</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead>Target Bin</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {selectedPalletIdsOrdered.map((palletId) => {
+                  const p = generatedPallets.find((x) => x.palletId === palletId);
+                  if (!p) return null;
+                  const assignedBin = assignments[palletId] ?? "";
+                  return (
+                    <TableRow key={palletId}>
+                      <TableCell className="font-mono text-xs">{p.palletId}</TableCell>
+                      <TableCell className="text-xs">{p.skuCode}</TableCell>
+                      <TableCell className="font-mono text-xs">{p.batchNo}</TableCell>
+                      <TableCell className="text-right font-mono">{p.qty}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={assignedBin}
+                          onValueChange={(v) => setAssignments((prev) => ({ ...prev, [palletId]: v }))}
+                          disabled={targetBins.length === 0}
+                        >
+                          <SelectTrigger className="w-44"><SelectValue placeholder="Chọn bin" /></SelectTrigger>
+                          <SelectContent>
+                            {targetBins.map((b) => (
+                              <SelectItem key={b} value={b}>{b}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {selectedPalletIdsOrdered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      Chưa chọn pallet
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-              {targetCapacity.selectedPalletCount > targetCapacity.availableCapacity && (
-                <div className="flex items-center gap-2 text-sm text-destructive p-3 rounded-lg bg-destructive/10">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  Selected pallet vượt quá available capacity → disable Create PUTAWAY Tasks.
-                </div>
-              )}
-            </>
+          {allocationSummary.totalAvailable < allocationSummary.totalSelected && (
+            <div className="flex items-center gap-2 text-sm text-destructive p-3 rounded-lg bg-destructive/10">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Tổng available capacity ({allocationSummary.totalAvailable}) không đủ cho pallet đã chọn ({allocationSummary.totalSelected}).
+            </div>
+          )}
+          {allocationSummary.perBinOver && (
+            <div className="flex items-center gap-2 text-sm text-destructive p-3 rounded-lg bg-destructive/10">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              Có bin bị assign vượt available capacity.
+            </div>
           )}
         </CardContent>
       </Card>
@@ -720,4 +865,3 @@ function InboundPalletizePutawayPage() {
     </div>
   );
 }
-
