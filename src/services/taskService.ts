@@ -73,10 +73,14 @@ export function createTask(input: {
   const taskNo = generateTaskNo(getState().tasks.map((t) => t.taskNo));
 
   const fromLocation = p.currentLocation;
+  if (!fromLocation) throw new Error("Pallet chưa có currentLocation");
   let toLocation = (input.toLocation ?? "").trim();
   let instruction = input.instruction?.trim();
 
   if (input.taskType === "PUTAWAY") {
+    if (p.status !== "Pending Putaway") {
+      throw new Error("Chỉ tạo PUTAWAY task cho pallet đang Pending Putaway");
+    }
     toLocation = validatePutawayDestination(toLocation);
     instruction ||= "Đưa pallet từ RECEIVING vào location chỉ định.";
   } else if (input.taskType === "MOVE") {

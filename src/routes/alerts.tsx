@@ -15,14 +15,17 @@ function AlertsPage() {
   const now = Date.now();
 
   const waitingPutaway = pallets.filter((p) => p.status === "Pending Putaway");
+  const pendingPutawayOver1Day = pallets.filter(
+    (p) => p.status === "Pending Putaway" && now - new Date(p.createdAt).getTime() > oneDay,
+  );
   const fullLocs = locations.filter((l) => l.capacityPallet < 9999 && l.currentPalletCount >= l.capacityPallet);
   const blockedLocs = locations.filter((l) => l.status === "Blocked");
   const nearExpiry = pallets.filter((p) => p.status !== "Shipped" && new Date(p.expDate).getTime() - now < sixtyDays);
   const overdueTasks = tasks.filter((t) => (t.status === "Open" || t.status === "Printed" || t.status === "In Progress") && now - new Date(t.createdAt).getTime() > oneDay);
 
-  const sections = [
-    { title: "Pallet chờ dán nhãn > 1 ngày", icon: Clock, color: "text-warning", items: waitingLabel.map((p) => `${p.palletId} — ${p.skuCode}`) },
-    { title: "Pallet đã dán nhãn nhưng chưa Putaway", icon: AlertTriangle, color: "text-info", items: waitingPutaway.map((p) => `${p.palletId} — ${p.skuCode}`) },
+  const sections: Array<{ title: string; icon: typeof Clock; color: string; items: string[] }> = [
+    { title: "Pallet Pending Putaway > 1 ngày", icon: Clock, color: "text-warning", items: pendingPutawayOver1Day.map((p) => `${p.palletId} — ${p.skuCode}`) },
+    { title: "Pallet Pending Putaway", icon: AlertTriangle, color: "text-info", items: waitingPutaway.map((p) => `${p.palletId} — ${p.skuCode}`) },
     { title: "Location đầy", icon: MapPin, color: "text-destructive", items: fullLocs.map((l) => `${l.locationCode} (${l.currentPalletCount}/${l.capacityPallet})`) },
     { title: "Location bị block", icon: Ban, color: "text-destructive", items: blockedLocs.map((l) => l.locationCode) },
     { title: "Pallet gần hết hạn (< 60 ngày)", icon: Clock, color: "text-warning", items: nearExpiry.map((p) => `${p.palletId} — EXP ${p.expDate}`) },

@@ -21,7 +21,14 @@ function LocationPage() {
   const [open, setOpen] = useState(false);
   const [zoneFilter, setZoneFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [form, setForm] = useState({ locationCode: "", zone: "", block: "", capacityPallet: 2, status: "Active" as "Active" | "Blocked" });
+  const [form, setForm] = useState({
+    locationCode: "",
+    zone: "",
+    block: "",
+    locationType: "STORAGE" as "RECEIVING" | "STORAGE" | "STAGING" | "DOCK",
+    capacityPallet: 2,
+    status: "Active" as "Active" | "Blocked",
+  });
 
   const zones = Array.from(new Set(locations.map((l) => l.zone)));
   const filtered = locations.filter((l) =>
@@ -30,7 +37,12 @@ function LocationPage() {
   );
 
   const submit = () => {
-    try { addLocation(form); toast.success("Đã thêm location"); setOpen(false); setForm({ locationCode: "", zone: "", block: "", capacityPallet: 2, status: "Active" }); }
+    try {
+      addLocation(form);
+      toast.success("Đã thêm location");
+      setOpen(false);
+      setForm({ locationCode: "", zone: "", block: "", locationType: "STORAGE", capacityPallet: 2, status: "Active" });
+    }
     catch (e: any) { toast.error(e.message); }
   };
 
@@ -47,6 +59,17 @@ function LocationPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Zone</Label><Input value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })} /></div>
                   <div><Label>Block</Label><Input value={form.block} onChange={(e) => setForm({ ...form, block: e.target.value })} /></div>
+                </div>
+                <div>
+                  <Label>Location Type</Label>
+                  <Select value={form.locationType} onValueChange={(v) => setForm({ ...form, locationType: v as any })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(["STORAGE", "RECEIVING", "STAGING", "DOCK"] as const).map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div><Label>Capacity (pallet)</Label><Input type="number" value={form.capacityPallet} onChange={(e) => setForm({ ...form, capacityPallet: +e.target.value })} /></div>
               </div>
