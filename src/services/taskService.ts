@@ -358,12 +358,24 @@ function recomputeTaskHeaderStatus(taskId: string) {
   const lines = s.taskLines.filter((l) => l.taskId === taskId);
   if (lines.length === 0) return;
 
+  const openCount = lines.filter((l) => l.status === "Open").length;
+  const cancelledCount = lines.filter((l) => l.status === "Cancelled").length;
   const confirmedCount = lines.filter((l) => l.status === "Confirmed").length;
   const allConfirmed = confirmedCount === lines.length;
   const anyConfirmed = confirmedCount > 0;
+  const allCancelled = cancelledCount === lines.length;
+  const noOpenRemaining = openCount === 0;
 
   const nextStatus: WarehouseTask["status"] =
-    allConfirmed ? "Confirmed" : anyConfirmed ? "Partially Confirmed" : task.status;
+    allConfirmed
+      ? "Confirmed"
+      : allCancelled
+        ? "Cancelled"
+        : anyConfirmed && noOpenRemaining
+          ? "Confirmed"
+          : anyConfirmed
+            ? "Partially Confirmed"
+            : task.status;
 
   const now = new Date().toISOString();
   setState((st) => ({
@@ -468,4 +480,5 @@ export function cancelTaskLine(taskLineId: string) {
     taskLines: st.taskLines.map((l) => l.id === taskLineId ? { ...l, status: "Cancelled" } : l),
   }));
   recomputeTaskHeaderStatus(task.id);
+  if (task.outboundNo) syncOutboundStatusByNo(task.outboundNo);
 }

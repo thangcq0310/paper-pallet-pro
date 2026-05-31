@@ -32,6 +32,12 @@ npm run dev
 
 Mở http://localhost:5173
 
+## Build & Deploy
+
+- Build production: `npm run build` (output vào thư mục `dist/`).
+- Firebase deploy dùng cấu hình `hosting.public = "dist"` trong `firebase.json`.
+- Không deploy từ `public/` hoặc các thư mục artifact tạm.
+
 ## Cấu trúc
 
 ```
@@ -98,5 +104,5 @@ Bảo mật: thêm Firestore rules theo `auth.uid` và role nhân viên kho.
 Mở DevTools Console:
 
 ```js
-localStorage.removeItem("mini-wms-state-v1"); location.reload();
+localStorage.removeItem("mini-wms-state-v2"); location.reload();
 ```
