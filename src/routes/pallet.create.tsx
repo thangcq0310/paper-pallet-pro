@@ -385,25 +385,29 @@ function InboundPalletizePutawayPage() {
               </Select>
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <Label>batchNo <span className="text-destructive">*</span></Label>
-              <Select
-                value={form.batchNo}
-                onValueChange={(v) => {
-                  const b = availableBatches.find((x) => x.batchNo === v);
-                  setForm((f) => ({ ...f, batchNo: v, mfgDate: b?.mfgDate ?? "", expDate: b?.expDate ?? "" }));
-                }}
-                disabled={!form.skuCode}
-              >
-                <SelectTrigger><SelectValue placeholder="Chọn Batch" /></SelectTrigger>
-                <SelectContent>
-                  {availableBatches.map((b) => (
-                    <SelectItem key={b.id} value={b.batchNo}>
-                      {b.batchNo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="mt-2 flex flex-wrap gap-2 rounded-xl border p-3 min-h-12">
+                {!form.skuCode && (
+                  <span className="text-sm text-muted-foreground">Chọn SKU trước để hiện danh sách batch</span>
+                )}
+                {form.skuCode && availableBatches.length === 0 && (
+                  <span className="text-sm text-muted-foreground">SKU này chưa có batch</span>
+                )}
+                {availableBatches.map((b) => (
+                  <Button
+                    key={b.id}
+                    type="button"
+                    size="sm"
+                    variant={form.batchNo === b.batchNo ? "default" : "outline"}
+                    onClick={() => {
+                      setForm((f) => ({ ...f, batchNo: b.batchNo, mfgDate: b.mfgDate ?? "", expDate: b.expDate ?? "" }));
+                    }}
+                  >
+                    {b.batchNo}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div>

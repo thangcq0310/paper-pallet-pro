@@ -168,20 +168,29 @@ function MovePage() {
           </div>
           <div>
             <Label>Batch</Label>
-            <Select
-              value={batchNo}
-              onValueChange={(v) => {
-                setBatchNo(v);
-                setSelectedPallet({});
-                setAssignments({});
-              }}
-              disabled={!skuCode}
-            >
-              <SelectTrigger><SelectValue placeholder="Chọn Batch" /></SelectTrigger>
-              <SelectContent>
-                {batchesBySku.map((b) => <SelectItem key={b.id} value={b.batchNo}>{b.batchNo}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="mt-2 flex flex-wrap gap-2 rounded-xl border p-3 min-h-12">
+              {!skuCode && (
+                <span className="text-sm text-muted-foreground">Chọn SKU trước để hiện danh sách batch</span>
+              )}
+              {skuCode && batchesBySku.length === 0 && (
+                <span className="text-sm text-muted-foreground">SKU này chưa có batch</span>
+              )}
+              {batchesBySku.map((b) => (
+                <Button
+                  key={b.id}
+                  type="button"
+                  size="sm"
+                  variant={batchNo === b.batchNo ? "default" : "outline"}
+                  onClick={() => {
+                    setBatchNo(b.batchNo);
+                    setSelectedPallet({});
+                    setAssignments({});
+                  }}
+                >
+                  {b.batchNo}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
