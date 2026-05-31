@@ -189,10 +189,9 @@ export function pickAndShipPallet(palletId: string, note?: string) {
     throw new Error("Chỉ được pick pallet đang In Stock hoặc Staged");
   }
   const from = p.currentLocation;
-  const toLocation = "SHIPPED";
   const updated: Pallet = {
     ...p,
-    currentLocation: toLocation,
+    currentLocation: null,
     lastLocation: from || undefined,
     status: "Shipped",
     updatedAt: new Date().toISOString(),
@@ -202,8 +201,8 @@ export function pickAndShipPallet(palletId: string, note?: string) {
     pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
     locations: s.locations.map((l) => l.locationCode === from ? { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) } : l),
   }));
-  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation, note });
-  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation, note });
+  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: null, note });
+  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation: null, note });
   return updated;
 }
 

@@ -3,6 +3,7 @@ import { generateTaskNo, uid } from "@/utils/idGenerator";
 import type { Pallet, TaskPriority, TaskType, WarehouseTask, WarehouseTaskLine } from "@/types";
 import { movePallet, pickAndShipPallet, putawayPallet } from "./palletService";
 import { syncOutboundStatusByNo } from "./outboundService";
+import { hasOpenTaskLineForPallet } from "./taskQueryService";
 
 const CURRENT_USER = "demo";
 
@@ -41,18 +42,6 @@ export function getTaskWithLinesByNo(taskNo: string) {
   if (!task) return null;
   const lines = getTaskLinesByNo(taskNo);
   return { task, lines };
-}
-
-function hasOpenTaskLineForPallet(palletId: string) {
-  const s = getState();
-  const openHeaderIds = new Set(
-    s.tasks
-      .filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed")
-      .map((t) => t.id),
-  );
-  return s.taskLines.some(
-    (l) => l.palletId === palletId && l.status === "Open" && openHeaderIds.has(l.taskId),
-  );
 }
 
 function validateLocationExistsActiveNotFull(locationCode: string) {
@@ -172,6 +161,123 @@ export function addTaskLines(taskId: string, linesInput: Array<{
 
   setState((st) => ({ ...st, taskLines: [...newLines, ...st.taskLines] }));
   return newLines;
+}
+
+export function getOpenTaskLineCountToLocation(input: { locationCode: string; taskType: TaskType }) {
+  const s = getState();
+  const locationCode = input.locationCode.trim();
+  const openHeaderIds = new Set(
+    s.tasks
+      .filter((t) => t.taskType === input.taskType && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed"))
+      .map((t) => t.id),
+  );
+  return s.taskLines.filter((l) => l.status === "Open" && l.toLocation === locationCode && openHeaderIds.has(l.taskId)).length;
+}
+
+function validateMoveAssignments(input: Array<{ palletId: string; toLocation: string }>) {
+  const s = getState();
+  if (!input.length) throw new Error("Chưa có pallet để tạo task MOVE");
+  const seen = new Set<string>();
+  const assignedCountByLoc = new Map<string, number>();
+  for (const item of input) {
+    const palletId = item.palletId.trim();
+    const toLocation = item.toLocation.trim();
+    if (!palletId) throw new Error("Assignment palletId không hợp lệ");
+    if (!toLocation) throw new Error("Assignment targetLocation không hợp lệ");
+    if (seen.has(palletId)) throw new Error(`Pallet ${palletId} bị chọn trùng`);
+    seen.add(palletId);
+
+    const pallet = getPalletOrThrow(palletId);
+    if (pallet.status === "Pending Putaway" || pallet.status === "Cancelled" || pallet.status === "Shipped") {
+      throw new Error(`Pallet ${palletId} không hợp lệ để MOVE`);
+    }
+    if (pallet.status !== "In Stock" && pallet.status !== "Staged") {
+      throw new Error(`Pallet ${palletId} không ở trạng thái In Stock/Staged`);
+    }
+    if (!pallet.currentLocation) throw new Error(`Pallet ${palletId} chưa có currentLocation`);
+    const fromLoc = s.locations.find((l) => l.locationCode === pallet.currentLocation);
+    if (!fromLoc || fromLoc.locationType !== "STORAGE") throw new Error(`Pallet ${palletId} không nằm trong STORAGE`);
+    validateMoveDestination(pallet.currentLocation, toLocation);
+    if (hasOpenTaskLineForPallet(palletId)) throw new Error(`Pallet ${palletId} đang có task line mở`);
+
+    assignedCountByLoc.set(toLocation, (assignedCountByLoc.get(toLocation) ?? 0) + 1);
+  }
+
+  for (const [locationCode, assigned] of assignedCountByLoc.entries()) {
+    const loc = s.locations.find((l) => l.locationCode === locationCode);
+    if (!loc) throw new Error(`Location ${locationCode} không tồn tại`);
+    const openMoveLineCount = getOpenTaskLineCountToLocation({ locationCode, taskType: "MOVE" });
+    const available = Math.max(0, loc.capacityPallet - loc.currentPalletCount - openMoveLineCount);
+    if (assigned > available) {
+      throw new Error(`Bin ${locationCode} không đủ capacity cho MOVE (assigned ${assigned} > available ${available})`);
+    }
+  }
+}
+
+export function createMoveTaskWithLines(input: {
+  assignments: Array<{ palletId: string; targetLocation: string }>;
+  note?: string;
+}): { task: WarehouseTask; lines: WarehouseTaskLine[] } {
+  const assignments = input.assignments.map((x) => ({
+    palletId: x.palletId.trim(),
+    toLocation: x.targetLocation.trim(),
+  })).filter((x) => x.palletId && x.toLocation);
+
+  validateMoveAssignments(assignments);
+
+  const task = createTaskHeader({
+    taskType: "MOVE",
+    instruction: "Chuyển pallet từ location cũ sang location mới.",
+    note: input.note?.trim() || undefined,
+  });
+
+  const lines = addTaskLines(task.id, assignments.map((x) => ({ palletId: x.palletId, toLocation: x.toLocation, note: input.note })));
+  return { task, lines };
+}
+
+function validatePickPallets(palletIds: string[]) {
+  if (!palletIds.length) throw new Error("Chưa chọn pallet để tạo PICK task");
+  const seen = new Set<string>();
+  for (const palletId of palletIds) {
+    const id = palletId.trim();
+    if (!id) throw new Error("Pallet ID không hợp lệ");
+    if (seen.has(id)) throw new Error(`Pallet ${id} bị chọn trùng`);
+    seen.add(id);
+    const pallet = getPalletOrThrow(id);
+    if (pallet.status === "Pending Putaway" || pallet.status === "Cancelled" || pallet.status === "Shipped") {
+      throw new Error(`Pallet ${id} không hợp lệ để PICK`);
+    }
+    if (pallet.status !== "In Stock" && pallet.status !== "Staged") {
+      throw new Error(`Pallet ${id} không ở trạng thái In Stock/Staged`);
+    }
+    if (!pallet.currentLocation) throw new Error(`Pallet ${id} chưa có currentLocation`);
+    if (hasOpenTaskLineForPallet(id)) throw new Error(`Pallet ${id} đang có task line mở`);
+  }
+}
+
+export function createPickTaskWithLines(input: {
+  outboundNo: string;
+  palletIds: string[];
+  destination: string;
+  note?: string;
+}): { task: WarehouseTask; lines: WarehouseTaskLine[] } {
+  const outboundNo = input.outboundNo.trim();
+  if (!outboundNo) throw new Error("Thiếu outboundNo");
+  const destination = input.destination.trim();
+  if (!destination) throw new Error("Thiếu destination");
+
+  const palletIds = input.palletIds.map((x) => x.trim()).filter(Boolean);
+  validatePickPallets(palletIds);
+
+  const task = createTaskHeader({
+    taskType: "PICK",
+    outboundNo,
+    instruction: `PICK = lấy pallet từ bin và xuất trực tiếp (${destination}).`,
+    note: input.note?.trim() || `Destination: ${destination}`,
+  });
+
+  const lines = addTaskLines(task.id, palletIds.map((palletId) => ({ palletId, toLocation: null, note: input.note })));
+  return { task, lines };
 }
 
 export function createSingleLineTask(input: {
@@ -308,7 +414,7 @@ export function confirmTaskLine(taskLineId: string, actualLocation?: string) {
           ...l,
           status: "Confirmed",
           actualLocation: task.taskType === "PICK" ? null : dest || null,
-          toLocation: task.taskType === "PICK" ? "SHIPPED" : (dest || null),
+          toLocation: task.taskType === "PICK" ? null : (dest || null),
           confirmedAt: now,
           confirmedBy: CURRENT_USER,
         }

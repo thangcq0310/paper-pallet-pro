@@ -4,14 +4,17 @@ import type { OutboundDocument } from "@/types";
 
 export function listOutbounds() { return getState().outbounds; }
 
-export function createOutbound(input: { destination: string; skuCode: string; requiredQty: number; selectedPalletIds: string[] }): OutboundDocument {
+export function createOutbound(input: { outboundNo?: string; destination: string; skuCode: string; batchNo?: string; requiredQty: number; selectedPalletIds: string[] }): OutboundDocument {
   const outboundNo = generateOutboundNo(getState().outbounds.map((o) => o.outboundNo));
+  const resolvedNo = input.outboundNo?.trim() || outboundNo;
+  if (getState().outbounds.some((o) => o.outboundNo === resolvedNo)) throw new Error(`Outbound No ${resolvedNo} đã tồn tại`);
   const now = new Date().toISOString();
   const doc: OutboundDocument = {
     id: uid(),
-    outboundNo,
+    outboundNo: resolvedNo,
     destination: input.destination,
     skuCode: input.skuCode,
+    batchNo: input.batchNo?.trim() || undefined,
     requiredQty: input.requiredQty,
     selectedPalletIds: input.selectedPalletIds,
     status: "Draft",

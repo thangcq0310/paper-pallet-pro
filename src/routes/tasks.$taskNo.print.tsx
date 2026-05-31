@@ -11,8 +11,10 @@ function TaskPrintPage() {
   const { taskNo } = Route.useParams();
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
+  const outbounds = useStore((s) => s.outbounds);
   const task = tasks.find((t) => t.taskNo === taskNo);
   const lines = taskLines.filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
+  const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
 
   if (!task) {
     return (
@@ -89,8 +91,8 @@ function TaskPrintPage() {
                     <th className="p-2">Batch</th>
                     <th className="p-2 text-right">Qty/UOM</th>
                     <th className="p-2">From</th>
-                    <th className="p-2">To</th>
-                    <th className="p-2">Actual Bin</th>
+                    <th className="p-2">{task.taskType === "PICK" ? "Destination" : "To Bin"}</th>
+                    <th className="p-2">{task.taskType === "PICK" ? "Actual" : "Actual Bin"}</th>
                     <th className="p-2">Remark</th>
                   </tr>
                 </thead>
@@ -103,7 +105,7 @@ function TaskPrintPage() {
                       <td className="p-2 font-mono">{l.batchNo}</td>
                       <td className="p-2 text-right font-mono">{l.qty} {l.uom}</td>
                       <td className="p-2 font-mono">{l.fromLocation ?? "-"}</td>
-                      <td className="p-2 font-mono">{task.taskType === "PICK" ? "SHIPPED" : (l.toLocation ?? "-")}</td>
+                      <td className="p-2">{task.taskType === "PICK" ? (outboundDoc?.destination ?? "External") : (l.toLocation ?? "-")}</td>
                       <td className="p-2">
                         <div className="border-b border-foreground/40 h-4" />
                       </td>

@@ -146,6 +146,7 @@ export interface OutboundDocument {
   outboundNo: string;
   destination: string;
   skuCode: string;
+  batchNo?: string;
   requiredQty: number;
   selectedPalletIds: string[];
   status: "Draft" | "Picking" | "Staged" | "Shipped" | "Cancelled";
