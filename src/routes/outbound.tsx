@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
-import { SkuBatchSearchPanel } from "@/components/SkuBatchSearchPanel";
+import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
 import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
 import { cn } from "@/lib/utils";
 import { formatLocationPath } from "@/utils/location";
@@ -255,25 +255,8 @@ function OutboundPage() {
             <Label>Destination</Label>
             <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="External / Truck / Container" />
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <Label>Qty yêu cầu</Label>
-              <div className="mt-2 flex flex-col gap-2">
-                <Input
-                  type="number"
-                  value={requiredQty}
-                  onChange={(e) => {
-                    setRequiredQty(+e.target.value);
-                    setAutoSelectResult(null);
-                  }}
-                />
-                <Button variant="outline" onClick={doAutoSelect} disabled={!skuCode || !batchNo || requiredQty <= 0}>
-                  Tự chọn theo FEFO / Qty yêu cầu
-                </Button>
-              </div>
-            </div>
-          </div>
-          <SkuBatchSearchPanel
+          <SkuBatchSelectionSection
+            title="Chọn SKU/Batch"
             purposeLabel="PICK"
             skus={skus}
             availableSkuSummaries={availableSkuSummaries}
@@ -292,63 +275,60 @@ function OutboundPage() {
               setAutoSelectResult(null);
             }}
             formatLocationLabel={(locationCode) => locationPathByCode[locationCode] ?? locationCode}
-          />
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardContent className="space-y-3 pt-6" ref={palletListRef}>
-          <div className="text-sm text-muted-foreground">Pallet đã chọn: {selectedPallets.length}/{availablePallets.length}</div>
-          <PalletSelectionPanel
-            title="Pallet khả dụng của batch đã chọn"
-            pallets={availablePallets}
-            selectedPalletIds={selected}
-            onSelectPalletIds={(ids) => setSelected((prev) => { const next = { ...prev }; for (const id of ids) next[id] = true; return next; })}
-            onClearPalletIds={(ids) => setSelected((prev) => { const next = { ...prev }; for (const id of ids) delete next[id]; return next; })}
-            locationPathByCode={locationPathByCode}
-            locationZoneByCode={locationZoneByCode}
-            daysToExpiry={daysToExpiry}
-            fefoRankByPalletId={fefoRankByPalletId}
-            searchPlaceholder="Tìm Pallet ID / Current Bin"
-            emptyMessage="Chọn SKU/Batch để hiển thị pallet phù hợp"
-            locationLabel="Bin"
-            zoneLabel="Zone"
-          />
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Tóm tắt chọn hàng</CardTitle></CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <div>
-              <div className="text-xs uppercase text-muted-foreground">Available Qty của batch</div>
-              <div className="font-mono text-lg">{selectedBatchSummary?.totalQty ?? 0}</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase text-muted-foreground">Qty yêu cầu</div>
-              <div className="font-mono text-lg">{requiredQty || "—"}</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase text-muted-foreground">Recommended Pallet Count</div>
-              <div className="font-mono text-lg">{recommendedSelection?.palletIds.length ?? 0}</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase text-muted-foreground">Expected Over / Under</div>
-              <div className="font-mono text-lg">
-                +{recommendedSelection?.overQty ?? 0} / -{recommendedSelection?.underQty ?? 0}
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <Label>Qty yêu cầu</Label>
+                <div className="mt-2 flex flex-col gap-2">
+                  <Input
+                    type="number"
+                    value={requiredQty}
+                    onChange={(e) => {
+                      setRequiredQty(+e.target.value);
+                      setAutoSelectResult(null);
+                    }}
+                  />
+                  <Button variant="outline" onClick={doAutoSelect} disabled={!skuCode || !batchNo || requiredQty <= 0}>
+                    Tự chọn theo FEFO / Qty yêu cầu
+                  </Button>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Pallet đã chọn: {selectedPallets.length}/{availablePallets.length}
               </div>
             </div>
-          </div>
-          <div>Qty đã chọn: <span className="font-mono">{selectedQty}</span></div>
-          <div>Qty còn thiếu: <span className="font-mono">{remainingQty}</span></div>
-          {isUnder && <div className="text-warning">Cảnh báo: Chọn thiếu so với Qty yêu cầu.</div>}
-          {isOver && <div className="text-destructive">Cảnh báo: Chọn vượt Qty yêu cầu (được phép nếu xuất nguyên pallet).</div>}
-          {autoSelectResult && (
-            <div className="rounded-xl border bg-muted/30 p-3 text-sm">
-              Auto select summary: SelectedQty <span className="font-mono">{autoSelectResult.selectedQty}</span> | OverQty <span className="font-mono">{autoSelectResult.overQty}</span> | UnderQty <span className="font-mono">{autoSelectResult.underQty}</span>
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-4 text-sm">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div>
+                  <div className="text-xs uppercase text-muted-foreground">Available Qty của batch</div>
+                  <div className="font-mono text-lg">{selectedBatchSummary?.totalQty ?? 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase text-muted-foreground">Qty yêu cầu</div>
+                  <div className="font-mono text-lg">{requiredQty || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase text-muted-foreground">Recommended Pallet Count</div>
+                  <div className="font-mono text-lg">{recommendedSelection?.palletIds.length ?? 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase text-muted-foreground">Expected Over / Under</div>
+                  <div className="font-mono text-lg">
+                    +{recommendedSelection?.overQty ?? 0} / -{recommendedSelection?.underQty ?? 0}
+                  </div>
+                </div>
+              </div>
+              <div>Qty đã chọn: <span className="font-mono">{selectedQty}</span></div>
+              <div>Qty còn thiếu: <span className="font-mono">{remainingQty}</span></div>
+              {isUnder && <div className="text-warning">Cảnh báo: Chọn thiếu so với Qty yêu cầu.</div>}
+              {isOver && <div className="text-destructive">Cảnh báo: Chọn vượt Qty yêu cầu (được phép nếu xuất nguyên pallet).</div>}
+              {autoSelectResult && (
+                <div className="rounded-xl border bg-background p-3 text-sm">
+                  Auto select summary: SelectedQty <span className="font-mono">{autoSelectResult.selectedQty}</span> | OverQty <span className="font-mono">{autoSelectResult.overQty}</span> | UnderQty <span className="font-mono">{autoSelectResult.underQty}</span>
+                </div>
+              )}
             </div>
-          )}
+          </SkuBatchSelectionSection>
         </CardContent>
       </Card>
 

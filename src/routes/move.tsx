@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
-import { SkuBatchSearchPanel } from "@/components/SkuBatchSearchPanel";
+import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
 import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
 import { cn } from "@/lib/utils";
 import { formatLocationPath } from "@/utils/location";
@@ -247,39 +247,34 @@ function MovePage() {
         </Card>
       )}
 
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Section 1 - Chọn SKU/Batch</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <SkuBatchSearchPanel
-            purposeLabel="MOVE"
-            skus={skus}
-            availableSkuSummaries={availableSkuSummaries}
-            availableBatchSummaries={availableBatchSummaries}
-            selectedSkuCode={skuCode}
-            selectedBatchNo={batchNo}
-            onSkuSelect={(nextSkuCode) => {
-              setSkuCode(nextSkuCode);
-              setBatchNo("");
-              setSelectedPallet({});
-              setAssignments({});
-            }}
-            onBatchSelect={(nextBatchNo) => {
-              setBatchNo(nextBatchNo);
-              setSelectedPallet({});
-              setAssignments({});
-            }}
-            formatLocationLabel={(locationCode) => locationPathByCode[locationCode] ?? locationCode}
-          />
-        </CardContent>
-      </Card>
+      <SkuBatchSelectionSection
+        title="Section 1 - Chọn SKU/Batch"
+        purposeLabel="MOVE"
+        skus={skus}
+        availableSkuSummaries={availableSkuSummaries}
+        availableBatchSummaries={availableBatchSummaries}
+        selectedSkuCode={skuCode}
+        selectedBatchNo={batchNo}
+        onSkuSelect={(nextSkuCode) => {
+          setSkuCode(nextSkuCode);
+          setBatchNo("");
+          setSelectedPallet({});
+          setAssignments({});
+        }}
+        onBatchSelect={(nextBatchNo) => {
+          setBatchNo(nextBatchNo);
+          setSelectedPallet({});
+          setAssignments({});
+        }}
+        formatLocationLabel={(locationCode) => locationPathByCode[locationCode] ?? locationCode}
+      >
+        <div className="text-sm text-muted-foreground">
+          Pallet đã chọn: {selectedIds.length}/{availablePallets.length} | Qty đã chọn: {totalSelectedQty}
+        </div>
+      </SkuBatchSelectionSection>
 
       <Card className="rounded-2xl">
         <CardContent className="space-y-3 pt-6">
-          <div className="text-sm text-muted-foreground">
-            Pallet đã chọn: {selectedIds.length}/{availablePallets.length} | Qty đã chọn: {totalSelectedQty}
-          </div>
           <PalletSelectionPanel
             title="Pallet khả dụng của batch đã chọn"
             pallets={availablePallets}
