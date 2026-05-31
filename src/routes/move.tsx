@@ -10,12 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
+import { CreatedTaskBanner } from "@/components/CreatedTaskBanner";
 import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
 import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
-import { cn } from "@/lib/utils";
+import { WorkflowStepperCard } from "@/components/WorkflowStepperCard";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 
@@ -192,59 +192,19 @@ function MovePage() {
     <div className="space-y-6">
       <PageHeader title="Move Bin" description="Chọn SKU/Batch → chọn pallet → allocate target bin → tạo 1 MOVE task nhiều lines" />
 
-      <Card className="rounded-2xl">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-            {[
-              "Chọn SKU/Batch",
-              "Chọn pallet",
-              "Phân bổ target bin",
-              "Tạo/In MOVE task",
-            ].map((label, idx) => {
-              const done = stepIndex > idx;
-              const active = stepIndex === idx;
-              return (
-                <div
-                  key={label}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl border px-3 py-2",
-                    active ? "border-primary bg-primary/5" : done ? "border-emerald-500/40 bg-emerald-500/5" : "opacity-75",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
-                      active ? "bg-primary text-primary-foreground" : done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {idx + 1}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">{label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {active ? "Đang làm" : done ? "Đã xong" : "Chưa tới"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      <WorkflowStepperCard
+        steps={["Chọn SKU/Batch", "Chọn pallet", "Phân bổ target bin", "Tạo/In MOVE task"]}
+        activeStepIndex={stepIndex}
+      />
 
       {createdTask && (
-        <Card className="rounded-2xl border-primary/40 bg-primary/5">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div>
-              <div className="text-xs uppercase text-muted-foreground">MOVE task vừa tạo</div>
-              <div className="font-mono text-sm font-semibold">{createdTask.taskNo}</div>
-              <div className="text-sm text-muted-foreground">{createdTask.status} • {createdTask.taskType}</div>
-            </div>
-            <Button variant="outline" onClick={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}>
-              Print
-            </Button>
-          </CardContent>
-        </Card>
+        <CreatedTaskBanner
+          label="MOVE task vừa tạo"
+          taskNo={createdTask.taskNo}
+          status={createdTask.status}
+          taskType={createdTask.taskType}
+          onPrint={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}
+        />
       )}
 
       <SkuBatchSelectionSection
