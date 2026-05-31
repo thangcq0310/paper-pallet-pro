@@ -45,7 +45,6 @@ function InboundPalletizePutawayPage() {
     weightPerPallet: 0,
     mfgDate: "",
     expDate: "",
-    receivingLocation: "",
     note: "",
   });
 
@@ -76,10 +75,6 @@ function InboundPalletizePutawayPage() {
   );
 
   const availableBatches = useMemo(() => batches.filter((b) => b.skuCode === form.skuCode), [batches, form.skuCode]);
-  const availableReceivingLocations = useMemo(
-    () => locations.filter((l) => l.locationType === "RECEIVING" && l.status === "Active"),
-    [locations],
-  );
   const storageBins = useMemo(
     () => locations.filter((l) => l.locationType === "STORAGE" && l.status === "Active"),
     [locations],
@@ -183,7 +178,6 @@ function InboundPalletizePutawayPage() {
     !!form.inboundNo.trim() &&
     !!form.skuCode &&
     !!form.batchNo &&
-    !!form.receivingLocation &&
     !!effectiveUom &&
     !!(form.mfgDate || batch?.mfgDate) &&
     !!(form.expDate || batch?.expDate) &&
@@ -263,7 +257,6 @@ function InboundPalletizePutawayPage() {
         inboundNo: form.inboundNo,
         skuCode: form.skuCode,
         batchNo: form.batchNo,
-        receivingLocation: form.receivingLocation,
         uom: effectiveUom,
         mfgDate: form.mfgDate || batch?.mfgDate || "",
         expDate: form.expDate || batch?.expDate || "",
@@ -363,20 +356,6 @@ function InboundPalletizePutawayPage() {
             <div className="lg:col-span-3">
               <Label>inboundNo <span className="text-destructive">*</span></Label>
               <Input value={form.inboundNo} onChange={(e) => setForm((f) => ({ ...f, inboundNo: e.target.value }))} />
-            </div>
-
-            <div>
-              <Label>receivingLocation <span className="text-destructive">*</span></Label>
-              <Select value={form.receivingLocation} onValueChange={(v) => setForm((f) => ({ ...f, receivingLocation: v }))}>
-                <SelectTrigger><SelectValue placeholder="Chọn RECEIVING location" /></SelectTrigger>
-                <SelectContent>
-                  {availableReceivingLocations.map((l) => (
-                    <SelectItem key={l.id} value={l.locationCode}>
-                      {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             <div>

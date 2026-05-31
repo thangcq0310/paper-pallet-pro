@@ -68,7 +68,6 @@ export function generatePalletIdsFromPreview(input: {
   inboundNo: string;
   skuCode: string;
   batchNo: string;
-  receivingLocation: string;
   uom: string;
   mfgDate: string;
   expDate: string;
@@ -79,20 +78,25 @@ export function generatePalletIdsFromPreview(input: {
   if (!inboundNo) throw new Error("Nhập inboundNo");
   if (!input.skuCode) throw new Error("Chọn SKU");
   if (!input.batchNo) throw new Error("Chọn Batch");
-  if (!input.receivingLocation) throw new Error("Chọn Receiving Location");
   if (!input.uom) throw new Error("Nhập UOM");
   if (!input.mfgDate) throw new Error("Nhập MFG Date");
   if (!input.expDate) throw new Error("Nhập EXP Date");
   if (!input.rows?.length) throw new Error("Chưa có pallet preview");
 
   getSkuOrThrow(input.skuCode);
+  const receivingLocations = getState()
+    .locations
+    .filter((l) => l.locationType === "RECEIVING" && l.status === "Active")
+    .sort((a, b) => a.currentPalletCount - b.currentPalletCount);
+  const receivingLocation = receivingLocations[0]?.locationCode;
+  if (!receivingLocation) throw new Error("Không có RECEIVING location Active để tạo pallet");
 
   const inputs = input.rows.map((r) => {
     if (!Number.isFinite(r.qty) || r.qty <= 0) throw new Error("Qty pallet phải > 0");
     if (!Number.isFinite(r.weight) || r.weight < 0) throw new Error("Weight pallet không hợp lệ");
     return {
       referenceDocumentNo: inboundNo,
-      receivingLocation: input.receivingLocation,
+      receivingLocation,
       skuCode: input.skuCode,
       batchNo: input.batchNo,
       qty: r.qty,

@@ -24,7 +24,7 @@ const groups = [
   {
     label: "Inbound",
     items: [
-      { title: "Create Pallet Label", url: "/pallet/create", icon: Tag },
+      { title: "Inbound & Putaway", url: "/pallet/create", icon: Tag },
     ],
   },
   {
