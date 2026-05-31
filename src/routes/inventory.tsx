@@ -22,9 +22,11 @@ function InventoryPage() {
   const [locFilter, setLocFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [includeShipped, setIncludeShipped] = useState(false);
+  const [includeCancelled, setIncludeCancelled] = useState(false);
 
   const filteredPallets = pallets.filter((p) =>
     (includeShipped || p.status !== "Shipped") &&
+    (includeCancelled || p.status !== "Cancelled") &&
     (skuFilter === "all" || p.skuCode === skuFilter) &&
     (locFilter === "all" || p.currentLocation === locFilter || (p.status === "Shipped" && p.lastLocation === locFilter)) &&
     (statusFilter === "all" || p.status === statusFilter) &&
@@ -107,9 +109,15 @@ function InventoryPage() {
                 {["Pending Putaway", "In Stock", "Staged", "Shipped", "Cancelled"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2">
-              <Switch id="include-shipped" checked={includeShipped} onCheckedChange={setIncludeShipped} />
-              <Label htmlFor="include-shipped">Include Shipped</Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Switch id="include-shipped" checked={includeShipped} onCheckedChange={setIncludeShipped} />
+                <Label htmlFor="include-shipped">Include Shipped</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="include-cancelled" checked={includeCancelled} onCheckedChange={setIncludeCancelled} />
+                <Label htmlFor="include-cancelled">Include Cancelled</Label>
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto">

@@ -46,7 +46,9 @@ export type PalletStatus =
 export interface Pallet {
   id: string;
   palletId: string;
-  inboundNo?: string;
+  referenceDocumentNo?: string;
+  referenceLineNo?: string;
+  sourceSystem?: string;
   skuCode: string;
   skuName: string;
   batchNo: string;
@@ -58,6 +60,9 @@ export interface Pallet {
   currentLocation: string | null;
   lastLocation?: string;
   status: PalletStatus;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  cancelReason?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,6 +70,7 @@ export interface Pallet {
 export type MovementType =
   | "LABEL_CREATED"
   | "LABEL_ATTACHED"
+  | "LABEL_CANCELLED"
   | "IN"
   | "PUT"
   | "MOVE"

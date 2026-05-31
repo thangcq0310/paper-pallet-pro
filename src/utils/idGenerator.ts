@@ -1,13 +1,20 @@
 export function generatePalletId(existing: string[]): string {
+  return generatePalletIds(existing, 1)[0];
+}
+
+export function generatePalletIds(existing: string[], count: number): string[] {
+  if (count <= 0) return [];
   const today = new Date();
   const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
   const prefix = `PLT-${ymd}-`;
+  
   const max = existing
     .filter((p) => p.startsWith(prefix))
     .map((p) => parseInt(p.slice(prefix.length), 10))
     .filter((n) => !isNaN(n))
     .reduce((a, b) => Math.max(a, b), 0);
-  return `${prefix}${String(max + 1).padStart(4, "0")}`;
+
+  return Array.from({ length: count }, (_, i) => `${prefix}${String(max + 1 + i).padStart(4, "0")}`);
 }
 
 export function generateMovementId(existing: string[]): string {

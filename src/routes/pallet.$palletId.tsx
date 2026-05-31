@@ -25,12 +25,19 @@ function PalletLabelPreview() {
   );
 
   const cancel = () => {
-    if (confirm('Bạn có chắc muốn hủy pallet này? Thao tác này không thể hoàn tác.')) {
-      try { 
-        cancelPallet(pallet.palletId); 
-        toast.success('Đã hủy pallet'); 
+    const reason = prompt('Nhập lý do hủy pallet:');
+    if (reason !== null) {
+      if (!reason.trim()) {
+        toast.error('Vui lòng nhập lý do hủy');
+        return;
       }
-      catch (e: any) { toast.error(e?.message ?? "Hủy thất bại"); }
+      if (confirm('Bạn có chắc muốn hủy pallet này? Thao tác này không thể hoàn tác.')) {
+        try { 
+          cancelPallet(pallet.palletId, reason); 
+          toast.success('Đã hủy pallet'); 
+        }
+        catch (e: any) { toast.error(e?.message ?? "Hủy thất bại"); }
+      }
     }
   };
 
@@ -77,10 +84,10 @@ function PalletLabelPreview() {
           <CardContent className='p-5 space-y-3'>
             <div><div className='text-xs text-muted-foreground'>Status</div><PalletStatusBadge status={pallet.status} /></div>
             <div><div className='text-xs text-muted-foreground'>So ban in</div><div className='font-medium'>{copies}</div></div>
-            {pallet.inboundNo && (
+            {pallet.referenceDocumentNo && (
               <div className='text-sm'>
-                <div className='text-xs text-muted-foreground'>Inbound Doc No</div>
-                <div className='font-medium'>{pallet.inboundNo}</div>
+                <div className='text-xs text-muted-foreground'>Ref Doc No</div>
+                <div className='font-medium'>{pallet.referenceDocumentNo}</div>
               </div>
             )}
             <div className='text-sm'>

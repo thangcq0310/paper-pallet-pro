@@ -17,6 +17,7 @@ import { Route as MoveRouteImport } from './routes/move'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PalletPrintBatchRouteImport } from './routes/pallet.print-batch'
 import { Route as PalletCreateRouteImport } from './routes/pallet.create'
 import { Route as PalletPalletIdRouteImport } from './routes/pallet.$palletId'
 import { Route as MasterSkuRouteImport } from './routes/master.sku'
@@ -64,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PalletPrintBatchRoute = PalletPrintBatchRouteImport.update({
+  id: '/pallet/print-batch',
+  path: '/pallet/print-batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PalletCreateRoute = PalletCreateRouteImport.update({
   id: '/pallet/create',
   path: '/pallet/create',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesByTo {
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesById {
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/master/sku': typeof MasterSkuRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
+  '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRouteTypes {
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/pallet/print-batch'
     | '/tasks/$taskNo/print'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/pallet/print-batch'
     | '/tasks/$taskNo/print'
   id:
     | '__root__'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/pallet/$palletId'
     | '/pallet/create'
+    | '/pallet/print-batch'
     | '/tasks/$taskNo/print'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +221,7 @@ export interface RootRouteChildren {
   MasterSkuRoute: typeof MasterSkuRoute
   PalletPalletIdRoute: typeof PalletPalletIdRoute
   PalletCreateRoute: typeof PalletCreateRoute
+  PalletPrintBatchRoute: typeof PalletPrintBatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pallet/print-batch': {
+      id: '/pallet/print-batch'
+      path: '/pallet/print-batch'
+      fullPath: '/pallet/print-batch'
+      preLoaderRoute: typeof PalletPrintBatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pallet/create': {
@@ -338,6 +358,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterSkuRoute: MasterSkuRoute,
   PalletPalletIdRoute: PalletPalletIdRoute,
   PalletCreateRoute: PalletCreateRoute,
+  PalletPrintBatchRoute: PalletPrintBatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
