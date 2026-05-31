@@ -67,6 +67,73 @@ function generateBatchesForSku(sku: SKU, skuIndex: number): Batch[] {
 
 export const mockBatches: Batch[] = mockSKUs.flatMap((sku, idx) => generateBatchesForSku(sku, idx));
 
+type PalletSeed = Omit<Pallet, "id" | "createdAt" | "updatedAt">;
+
+const explicitPalletSeedsBySkuCode: Record<string, PalletSeed & { id: string }> = {
+  "MANGO-20KG": {
+    id: "p1",
+    palletId: "PLT-20260520-0001",
+    skuCode: "MANGO-20KG",
+    skuName: "Puree xoài 20kg",
+    batchNo: "LOT260527-A",
+    qty: 50,
+    uom: "Carton",
+    weight: 1000,
+    mfgDate: "2026-05-27",
+    expDate: "2028-05-27",
+    currentLocation: "FZ-A-01-01",
+    status: "In Stock",
+  },
+  "PINE-15KG": {
+    id: "p2",
+    palletId: "PLT-20260520-0002",
+    skuCode: "PINE-15KG",
+    skuName: "Puree dứa 15kg",
+    batchNo: "LOT260520-B",
+    qty: 40,
+    uom: "Carton",
+    weight: 600,
+    mfgDate: "2026-05-20",
+    expDate: "2028-05-20",
+    currentLocation: "FZ-A-01-02",
+    status: "In Stock",
+  },
+  "SUGAR-25KG": {
+    id: "p3",
+    palletId: "PLT-20260521-0003",
+    skuCode: "SUGAR-25KG",
+    skuName: "Đường tinh luyện 25kg",
+    batchNo: "LOT260510-D",
+    qty: 30,
+    uom: "Bag",
+    weight: 750,
+    mfgDate: "2026-05-10",
+    expDate: "2027-05-10",
+    currentLocation: "DRY-A-01-01",
+    status: "In Stock",
+  },
+  "PASS-10KG": {
+    id: "p4",
+    palletId: "PLT-20260525-0004",
+    skuCode: "PASS-10KG",
+    skuName: "Puree chanh dây 10kg",
+    batchNo: "LOT260515-C",
+    qty: 60,
+    uom: "Carton",
+    weight: 600,
+    mfgDate: "2026-05-15",
+    expDate: "2028-05-15",
+    currentLocation: "RCV-01",
+    status: "Pending Putaway",
+  },
+};
+
+const reservedStorageOccupancy: Record<string, number> = {
+  "FZ-A-01-01": 1,
+  "FZ-A-01-02": 1,
+  "DRY-A-01-01": 1,
+};
+
 const operationalLocations: Location[] = [
   { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", locationType: "RECEIVING", zone: "RECV", block: "-", aisle: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
   { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", locationType: "STAGING", zone: "STG", block: "-", aisle: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
@@ -85,13 +152,81 @@ const specialBinStatus: Record<string, Location["status"]> = {
   "DRY-A-01-02": "Blocked",
 };
 
-const specialBinPalletCount: Record<string, number> = {
-  "FZ-A-01-01": 1,
-  "FZ-A-01-02": 1,
-  "DRY-A-01-01": 1,
-};
+function buildStorageSlots(): string[] {
+  const slots: string[] = [];
+  storageZones.forEach((zoneDef, zoneIdx) => {
+    for (let aisle = 1; aisle <= 20; aisle += 1) {
+      for (let tier = 1; tier <= 5; tier += 1) {
+        const aisleCode = String(aisle).padStart(2, "0");
+        const tierCode = String(tier).padStart(2, "0");
+        const locationCode = `${zoneDef.zone}-${aisleCode}-${tierCode}`;
+        if (specialBinStatus[locationCode] === "Blocked") continue;
+        const reservedCount = reservedStorageOccupancy[locationCode] ?? 0;
+        const availableSlots = Math.max(0, zoneDef.capacityPallet - reservedCount);
+        for (let slot = 0; slot < availableSlots; slot += 1) {
+          slots.push(locationCode);
+        }
+      }
+    }
+  });
+  return slots;
+}
 
-function buildStorageBins(): Location[] {
+function buildGeneratedPallets(): Pallet[] {
+  const storageSlots = buildStorageSlots();
+  let storageSlotIndex = 0;
+  let nextPalletNumber = 5;
+
+  // Seed 10 pallets per SKU. The first 4 preserve the original demo pallets;
+  // the rest consume storage slots sequentially so bin occupancy stays coherent.
+  return mockSKUs.flatMap((sku, skuIndex) => {
+    return Array.from({ length: 10 }, (_, batchOffset) => {
+      const batchIndex = batchOffset + 1;
+      const explicit = batchIndex === 1 ? explicitPalletSeedsBySkuCode[sku.skuCode] : undefined;
+      const batchNo = batchIndex === 1
+        ? explicit?.batchNo ?? `${sku.skuCode.replace(/[^A-Z0-9]/g, "")}-B${String(batchIndex).padStart(2, "0")}`
+        : `${sku.skuCode.replace(/[^A-Z0-9]/g, "")}-B${String(batchIndex).padStart(2, "0")}`;
+      const status = explicit?.status ?? (batchIndex % 6 === 0 ? "Staged" : "In Stock");
+      const currentLocation = explicit?.currentLocation ?? (status === "Pending Putaway" ? "RCV-01" : storageSlots[storageSlotIndex++] ?? null);
+      const qty = explicit?.qty ?? 24 + ((skuIndex * 7 + batchIndex * 5) % 37);
+      const palletId = explicit?.palletId ?? `PLT-20260601-${String(nextPalletNumber).padStart(4, "0")}`;
+      const id = explicit?.id ?? `p${nextPalletNumber}`;
+      const weight = explicit?.weight ?? qty * sku.weightPerUnit;
+      const mfgDate = explicit?.mfgDate ?? addDays(30 + skuIndex * 5 + batchIndex * 3);
+      const expDate = explicit?.expDate ?? addDays(760 + skuIndex * 5 + batchIndex * 3);
+
+      if (!explicit) nextPalletNumber += 1;
+
+      return {
+        id,
+        palletId,
+        skuCode: sku.skuCode,
+        skuName: sku.skuName,
+        batchNo,
+        qty,
+        uom: sku.uom,
+        weight,
+        mfgDate,
+        expDate,
+        currentLocation,
+        status,
+        createdAt: now,
+        updatedAt: now,
+      } as Pallet;
+    });
+  });
+}
+
+function buildLocationCounts(pallets: Pallet[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  pallets.forEach((pallet) => {
+    if (!pallet.currentLocation) return;
+    counts.set(pallet.currentLocation, (counts.get(pallet.currentLocation) ?? 0) + 1);
+  });
+  return counts;
+}
+
+function buildStorageBins(locationCounts: Map<string, number>): Location[] {
   const bins: Location[] = [];
   storageZones.forEach((zoneDef, zoneIdx) => {
     for (let aisle = 1; aisle <= 20; aisle += 1) {
@@ -109,7 +244,7 @@ function buildStorageBins(): Location[] {
           aisle: aisleCode,
           tier: tierCode,
           capacityPallet: zoneDef.capacityPallet,
-          currentPalletCount: specialBinPalletCount[locationCode] ?? 0,
+          currentPalletCount: locationCounts.get(locationCode) ?? 0,
           status: specialBinStatus[locationCode] ?? "Active",
           createdAt: now,
           updatedAt: now,
@@ -120,13 +255,22 @@ function buildStorageBins(): Location[] {
   return bins;
 }
 
-export const mockLocations: Location[] = [...operationalLocations, ...buildStorageBins()];
-
-export const mockPallets: Pallet[] = [
-  { id: "p1", palletId: "PLT-20260520-0001", skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", batchNo: "LOT260527-A", qty: 50, uom: "Carton", weight: 1000, mfgDate: "2026-05-27", expDate: "2028-05-27", currentLocation: "FZ-A-01-01", status: "In Stock", createdAt: now, updatedAt: now },
-  { id: "p2", palletId: "PLT-20260520-0002", skuCode: "PINE-15KG", skuName: "Puree dứa 15kg", batchNo: "LOT260520-B", qty: 40, uom: "Carton", weight: 600, mfgDate: "2026-05-20", expDate: "2028-05-20", currentLocation: "FZ-A-01-02", status: "In Stock", createdAt: now, updatedAt: now },
-  { id: "p3", palletId: "PLT-20260521-0003", skuCode: "SUGAR-25KG", skuName: "Đường tinh luyện 25kg", batchNo: "LOT260510-D", qty: 30, uom: "Bag", weight: 750, mfgDate: "2026-05-10", expDate: "2027-05-10", currentLocation: "DRY-A-01-01", status: "In Stock", createdAt: now, updatedAt: now },
-  { id: "p4", palletId: "PLT-20260525-0004", skuCode: "PASS-10KG", skuName: "Puree chanh dây 10kg", batchNo: "LOT260515-C", qty: 60, uom: "Carton", weight: 600, mfgDate: "2026-05-15", expDate: "2028-05-15", currentLocation: "RCV-01", status: "Pending Putaway", createdAt: now, updatedAt: now },
+export const mockPallets: Pallet[] = buildGeneratedPallets();
+const locationCounts = buildLocationCounts(mockPallets);
+export const mockLocations: Location[] = [
+  {
+    ...operationalLocations[0],
+    currentPalletCount: locationCounts.get("RCV-01") ?? operationalLocations[0].currentPalletCount,
+  },
+  {
+    ...operationalLocations[1],
+    currentPalletCount: locationCounts.get("STG-01") ?? operationalLocations[1].currentPalletCount,
+  },
+  {
+    ...operationalLocations[2],
+    currentPalletCount: locationCounts.get("DOCK-01") ?? operationalLocations[2].currentPalletCount,
+  },
+  ...buildStorageBins(locationCounts),
 ];
 
 export const mockMovements: Movement[] = [
