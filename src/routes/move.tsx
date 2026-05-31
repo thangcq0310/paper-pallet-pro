@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/move")({ component: MovePage });
@@ -27,6 +28,7 @@ function MovePage() {
   const [skuCode, setSkuCode] = useState("");
   const [batchNo, setBatchNo] = useState("");
   const [search, setSearch] = useState("");
+  const [showOnlyAvailableSku, setShowOnlyAvailableSku] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [groupMode, setGroupMode] = useState<"location" | "zone">("location");
 
@@ -48,15 +50,27 @@ function MovePage() {
   );
   const skuOptions = useMemo(() => {
     const availableOrder = new Map(availableSkuSummaries.map((s, idx) => [s.skuCode, idx]));
-    return [...skus].sort((a, b) => {
-      const ai = availableOrder.get(a.skuCode);
-      const bi = availableOrder.get(b.skuCode);
-      if (ai != null && bi != null && ai !== bi) return ai - bi;
-      if (ai != null) return -1;
-      if (bi != null) return 1;
-      return a.skuCode.localeCompare(b.skuCode);
-    });
-  }, [availableSkuSummaries, skus]);
+    return [...skus]
+      .map((sku) => ({ sku, summary: skuSummaryByCode.get(sku.skuCode) }))
+      .filter(({ summary }) => !showOnlyAvailableSku || !!summary)
+      .sort((a, b) => {
+        const ai = availableOrder.get(a.sku.skuCode);
+        const bi = availableOrder.get(b.sku.skuCode);
+        if (showOnlyAvailableSku) {
+          if (ai != null && bi != null && ai !== bi) return ai - bi;
+          if (ai != null) return -1;
+          if (bi != null) return 1;
+          return a.sku.skuCode.localeCompare(b.sku.skuCode);
+        }
+        if (ai != null && bi != null && ai !== bi) return ai - bi;
+        if (ai != null) return -1;
+        if (bi != null) return 1;
+        const aAvailable = !!a.summary;
+        const bAvailable = !!b.summary;
+        if (aAvailable !== bAvailable) return aAvailable ? -1 : 1;
+        return a.sku.skuCode.localeCompare(b.sku.skuCode);
+      });
+  }, [availableSkuSummaries, skuSummaryByCode, showOnlyAvailableSku, skus]);
 
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
@@ -165,6 +179,11 @@ function MovePage() {
     return map;
   }, [taskLines]);
 
+  const createdTask = useMemo(
+    () => (lastTaskNo ? tasks.find((t) => t.taskNo === lastTaskNo) ?? null : null),
+    [lastTaskNo, tasks],
+  );
+
   const toggleSelection = (palletId: string, checked: boolean) => {
     setSelectedPallet((prev) => ({ ...prev, [palletId]: checked }));
   };
@@ -208,6 +227,16 @@ function MovePage() {
     });
   };
 
+  const stepIndex = !skuCode
+    ? 0
+    : !batchNo
+      ? 1
+      : selectedIds.length === 0
+        ? 2
+        : targetBins.length === 0
+          ? 3
+          : 4;
+
   const doAutoAllocate = () => {
     try {
       const auto = autoAllocatePalletsToBins({ palletIds: selectedIds, targetLocations: targetBins, taskType: "MOVE" });
@@ -225,6 +254,8 @@ function MovePage() {
         note: `MOVE ${skuCode}/${batchNo}`,
       });
       setLastTaskNo(created.task.taskNo);
+      setSelectedPallet({});
+      setAssignments({});
       toast.success(`Đã tạo MOVE task ${created.task.taskNo} (${created.lines.length} lines)`);
     } catch (e: any) {
       toast.error(e.message);
@@ -236,38 +267,108 @@ function MovePage() {
       <PageHeader title="Move Location" description="Chọn SKU/Batch → chọn pallet → allocate target bin → tạo 1 MOVE task nhiều lines" />
 
       <Card className="rounded-2xl">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+            {[
+              "Chọn SKU/Batch",
+              "Chọn pallet",
+              "Phân bổ target bin",
+              "Tạo/In MOVE task",
+            ].map((label, idx) => {
+              const done = stepIndex > idx;
+              const active = stepIndex === idx;
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border px-3 py-2",
+                    active ? "border-primary bg-primary/5" : done ? "border-emerald-500/40 bg-emerald-500/5" : "opacity-75",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
+                      active ? "bg-primary text-primary-foreground" : done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">{label}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {active ? "Đang làm" : done ? "Đã xong" : "Chưa tới"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {createdTask && (
+        <Card className="rounded-2xl border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">MOVE task vừa tạo</div>
+              <div className="font-mono text-sm font-semibold">{createdTask.taskNo}</div>
+              <div className="text-sm text-muted-foreground">{createdTask.status} • {createdTask.taskType}</div>
+            </div>
+            <Button variant="outline" onClick={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}>
+              Print
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="rounded-2xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Section 1 - Chọn SKU/Batch</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>SKU khả dụng</Label>
+            <div className="flex items-center gap-2">
+              <Switch checked={showOnlyAvailableSku} onCheckedChange={setShowOnlyAvailableSku} />
+              <span className="text-sm text-muted-foreground">
+                Chỉ hiện SKU có pallet khả dụng
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {availableSkuSummaries.length === 0 && (
-                <span className="text-sm text-muted-foreground">Chưa có SKU khả dụng để MOVE.</span>
+              {skuOptions.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {showOnlyAvailableSku ? "Chưa có SKU khả dụng để MOVE." : "Chưa có SKU nào."}
+                </span>
               )}
-              {availableSkuSummaries.map((s) => (
+              {skuOptions.map(({ sku, summary }) => (
                 <button
-                  key={s.skuCode}
+                  key={sku.skuCode}
                   type="button"
                   onClick={() => {
-                    setSkuCode(s.skuCode);
+                    setSkuCode(sku.skuCode);
                     setBatchNo("");
                     setSelectedPallet({});
                     setAssignments({});
                   }}
                   className={cn(
                     "flex min-w-56 items-center justify-between rounded-xl border px-3 py-2 text-left transition",
-                    skuCode === s.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
+                    skuCode === sku.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
+                    !summary ? "opacity-75" : "",
                   )}
                 >
                   <div>
-                    <div className="font-mono text-sm">{s.skuCode}</div>
-                    <div className="text-xs text-muted-foreground">{s.skuName}</div>
+                    <div className="font-mono text-sm">{sku.skuCode}</div>
+                    <div className="text-xs text-muted-foreground">{sku.skuName}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant="outline">{s.palletCount} pal</Badge>
-                    <span className="text-xs text-muted-foreground">{s.totalQty}</span>
+                    {summary ? (
+                      <>
+                        <Badge variant="outline">{summary.palletCount} pal</Badge>
+                        <span className="text-xs text-muted-foreground">{summary.totalQty}</span>
+                      </>
+                    ) : (
+                      <Badge variant="destructive">No available pallet</Badge>
+                    )}
                   </div>
                 </button>
               ))}
@@ -290,14 +391,13 @@ function MovePage() {
                   <SelectValue placeholder="Chọn SKU" />
                 </SelectTrigger>
                 <SelectContent>
-                  {skuOptions.map((s) => {
-                    const summary = skuSummaryByCode.get(s.skuCode);
+                  {skuOptions.map(({ sku, summary }) => {
                     return (
-                      <SelectItem key={s.id} value={s.skuCode}>
+                      <SelectItem key={sku.id} value={sku.skuCode}>
                         <div className="flex w-full items-center justify-between gap-3">
-                          <span>{s.skuCode} - {s.skuName}</span>
+                          <span>{sku.skuCode} - {sku.skuName}</span>
                           <Badge variant="outline" className="ml-3">
-                            {summary ? `${summary.palletCount} / ${summary.totalQty}` : "0 / 0"}
+                            {summary ? `${summary.palletCount} / ${summary.totalQty}` : "No available pallet"}
                           </Badge>
                         </div>
                       </SelectItem>
@@ -309,6 +409,9 @@ function MovePage() {
                 <div className="mt-2 text-xs text-muted-foreground">
                   Khả dụng: {skuSummaryByCode.get(skuCode)?.palletCount} pallets, {skuSummaryByCode.get(skuCode)?.totalQty} {skuSummaryByCode.get(skuCode)?.uom}
                 </div>
+              )}
+              {skuCode && !skuSummaryByCode.get(skuCode) && (
+                <div className="mt-2 text-xs text-muted-foreground">SKU này hiện không có pallet khả dụng.</div>
               )}
             </div>
 
@@ -335,15 +438,16 @@ function MovePage() {
                       setAssignments({});
                     }}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-mono text-xs">{b.batchNo}</div>
-                      <div className="flex gap-1">
-                        {batchDaysToExpiry(b.nearestExpDate) != null && batchDaysToExpiry(b.nearestExpDate)! <= 60 && (
-                          <Badge variant="destructive">Near Expiry</Badge>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-mono text-xs">{b.batchNo}</div>
+                    <div className="flex gap-1">
+                      {b.isFefoFirst && <Badge className="bg-amber-500 text-white hover:bg-amber-500">FEFO</Badge>}
+                      {batchDaysToExpiry(b.nearestExpDate) != null && batchDaysToExpiry(b.nearestExpDate)! <= 60 && (
+                        <Badge variant="destructive">Near Expiry</Badge>
+                      )}
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
                       <Badge variant="outline">{b.palletCount} pallets</Badge>
                       <Badge variant="outline">{b.totalQty} {b.uom || ""}</Badge>
                       <Badge variant="outline">EXP {b.nearestExpDate || "—"}</Badge>

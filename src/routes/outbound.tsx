@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/outbound")({ component: OutboundPage });
@@ -38,6 +39,8 @@ function OutboundPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastOutboundNo, setLastOutboundNo] = useState("");
+  const [lastTaskNo, setLastTaskNo] = useState("");
+  const [showOnlyAvailableSku, setShowOnlyAvailableSku] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [groupMode, setGroupMode] = useState<"location" | "zone">("location");
   const [autoSelectResult, setAutoSelectResult] = useState<{
@@ -53,15 +56,27 @@ function OutboundPage() {
   );
   const skuOptions = useMemo(() => {
     const availableOrder = new Map(availableSkuSummaries.map((s, idx) => [s.skuCode, idx]));
-    return [...skus].sort((a, b) => {
-      const ai = availableOrder.get(a.skuCode);
-      const bi = availableOrder.get(b.skuCode);
-      if (ai != null && bi != null && ai !== bi) return ai - bi;
-      if (ai != null) return -1;
-      if (bi != null) return 1;
-      return a.skuCode.localeCompare(b.skuCode);
-    });
-  }, [availableSkuSummaries, skus]);
+    return [...skus]
+      .map((sku) => ({ sku, summary: skuSummaryByCode.get(sku.skuCode) }))
+      .filter(({ summary }) => !showOnlyAvailableSku || !!summary)
+      .sort((a, b) => {
+        const ai = availableOrder.get(a.sku.skuCode);
+        const bi = availableOrder.get(b.sku.skuCode);
+        if (showOnlyAvailableSku) {
+          if (ai != null && bi != null && ai !== bi) return ai - bi;
+          if (ai != null) return -1;
+          if (bi != null) return 1;
+          return a.sku.skuCode.localeCompare(b.sku.skuCode);
+        }
+        if (ai != null && bi != null && ai !== bi) return ai - bi;
+        if (ai != null) return -1;
+        if (bi != null) return 1;
+        const aAvailable = !!a.summary;
+        const bAvailable = !!b.summary;
+        if (aAvailable !== bAvailable) return aAvailable ? -1 : 1;
+        return a.sku.skuCode.localeCompare(b.sku.skuCode);
+      });
+  }, [availableSkuSummaries, skuSummaryByCode, showOnlyAvailableSku, skus]);
 
   const availableBatchSummaries = useMemo(() => {
     if (!skuCode) return [];
@@ -115,6 +130,10 @@ function OutboundPage() {
     }
   }, [skuCode, batchNo, requiredQty, tasks, taskLines, locations]);
   const batchDaysToExpiry = (expDate?: string) => daysToExpiry(expDate);
+  const selectedBatchSummary = useMemo(
+    () => availableBatchSummaries.find((b) => b.batchNo === batchNo) ?? null,
+    [availableBatchSummaries, batchNo],
+  );
 
   const pickTasks = useMemo(() => {
     const no = outboundNo.trim() || lastOutboundNo;
@@ -133,6 +152,19 @@ function OutboundPage() {
   }, [taskLines]);
 
   const canCreate = !!skuCode && !!batchNo && !!destination.trim() && requiredQty > 0 && selectedPallets.length > 0;
+  const createdTask = useMemo(
+    () => (lastTaskNo ? tasks.find((t) => t.taskNo === lastTaskNo) ?? null : null),
+    [lastTaskNo, tasks],
+  );
+  const stepIndex = !outboundNo.trim() || !destination.trim()
+    ? 0
+    : !skuCode
+      ? 1
+      : !batchNo
+        ? 2
+        : selectedPallets.length === 0
+          ? 3
+          : 4;
 
   const toggleSelection = (palletId: string, checked: boolean) => {
     setSelected((prev) => ({ ...prev, [palletId]: checked }));
@@ -229,8 +261,11 @@ function OutboundPage() {
       });
 
       syncOutboundStatusByNo(doc.outboundNo);
+      setLastTaskNo(created.task.taskNo);
       setLastOutboundNo(doc.outboundNo);
       setOutboundNo(doc.outboundNo);
+      setSelected({});
+      setAutoSelectResult(null);
       toast.success(`Đã tạo PICK task ${created.task.taskNo} (${created.lines.length} lines)`);
     } catch (e: any) {
       toast.error(e.message);
@@ -240,6 +275,61 @@ function OutboundPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Outbound / PICK" description="Chọn SKU/Batch → chọn pallet → tạo 1 PICK task nhiều lines" />
+
+      <Card className="rounded-2xl">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+            {[
+              "Nhập outbound info",
+              "Chọn SKU/Batch",
+              "Chọn/Auto select pallet",
+              "Tạo/In PICK task",
+            ].map((label, idx) => {
+              const done = stepIndex > idx;
+              const active = stepIndex === idx;
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border px-3 py-2",
+                    active ? "border-primary bg-primary/5" : done ? "border-emerald-500/40 bg-emerald-500/5" : "opacity-75",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
+                      active ? "bg-primary text-primary-foreground" : done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {idx + 1}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">{label}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {active ? "Đang làm" : done ? "Đã xong" : "Chưa tới"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {createdTask && (
+        <Card className="rounded-2xl border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">PICK task vừa tạo</div>
+              <div className="font-mono text-sm font-semibold">{createdTask.taskNo}</div>
+              <div className="text-sm text-muted-foreground">{createdTask.status} • {createdTask.taskType}</div>
+            </div>
+            <Button variant="outline" onClick={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}>
+              Print
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="rounded-2xl">
         <CardHeader className="pb-2"><CardTitle className="text-base">Thông tin outbound</CardTitle></CardHeader>
@@ -254,32 +344,45 @@ function OutboundPage() {
           </div>
           <div className="space-y-2">
             <Label>SKU khả dụng</Label>
+            <div className="flex items-center gap-2">
+              <Switch checked={showOnlyAvailableSku} onCheckedChange={setShowOnlyAvailableSku} />
+              <span className="text-sm text-muted-foreground">Chỉ hiện SKU có pallet khả dụng</span>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {availableSkuSummaries.length === 0 && (
-                <span className="text-sm text-muted-foreground">Chưa có SKU khả dụng để PICK.</span>
+              {skuOptions.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {showOnlyAvailableSku ? "Chưa có SKU khả dụng để PICK." : "Chưa có SKU nào."}
+                </span>
               )}
-              {availableSkuSummaries.map((s) => (
+              {skuOptions.map(({ sku, summary }) => (
                 <button
-                  key={s.skuCode}
+                  key={sku.skuCode}
                   type="button"
                   onClick={() => {
-                    setSkuCode(s.skuCode);
+                    setSkuCode(sku.skuCode);
                     setBatchNo("");
                     setSelected({});
                     setAutoSelectResult(null);
                   }}
                   className={cn(
                     "flex min-w-56 items-center justify-between rounded-xl border px-3 py-2 text-left transition",
-                    skuCode === s.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
+                    skuCode === sku.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
+                    !summary ? "opacity-75" : "",
                   )}
                 >
                   <div>
-                    <div className="font-mono text-sm">{s.skuCode}</div>
-                    <div className="text-xs text-muted-foreground">{s.skuName}</div>
+                    <div className="font-mono text-sm">{sku.skuCode}</div>
+                    <div className="text-xs text-muted-foreground">{sku.skuName}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant="outline">{s.palletCount} pal</Badge>
-                    <span className="text-xs text-muted-foreground">{s.totalQty}</span>
+                    {summary ? (
+                      <>
+                        <Badge variant="outline">{summary.palletCount} pal</Badge>
+                        <span className="text-xs text-muted-foreground">{summary.totalQty}</span>
+                      </>
+                    ) : (
+                      <Badge variant="destructive">No available pallet</Badge>
+                    )}
                   </div>
                 </button>
               ))}
@@ -299,13 +402,12 @@ function OutboundPage() {
               >
                 <SelectTrigger><SelectValue placeholder="Chọn SKU" /></SelectTrigger>
                 <SelectContent>
-                  {skuOptions.map((s) => {
-                    const summary = skuSummaryByCode.get(s.skuCode);
+                  {skuOptions.map(({ sku, summary }) => {
                     return (
-                      <SelectItem key={s.id} value={s.skuCode}>
+                      <SelectItem key={sku.id} value={sku.skuCode}>
                         <div className="flex w-full items-center justify-between gap-3">
-                          <span>{s.skuCode} - {s.skuName}</span>
-                          <Badge variant="outline" className="ml-3">{summary ? `${summary.palletCount} / ${summary.totalQty}` : "0 / 0"}</Badge>
+                          <span>{sku.skuCode} - {sku.skuName}</span>
+                          <Badge variant="outline" className="ml-3">{summary ? `${summary.palletCount} / ${summary.totalQty}` : "No available pallet"}</Badge>
                         </div>
                       </SelectItem>
                     );
@@ -316,6 +418,9 @@ function OutboundPage() {
                 <div className="mt-2 text-xs text-muted-foreground">
                   Khả dụng: {skuSummaryByCode.get(skuCode)?.palletCount} pallets, {skuSummaryByCode.get(skuCode)?.totalQty} {skuSummaryByCode.get(skuCode)?.uom}
                 </div>
+              )}
+              {skuCode && !skuSummaryByCode.get(skuCode) && (
+                <div className="mt-2 text-xs text-muted-foreground">SKU này hiện không có pallet khả dụng.</div>
               )}
             </div>
             <div>
@@ -454,8 +559,12 @@ function OutboundPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium">{groupMode === "location" ? "Location" : "Zone"}: {group.label}</span>
                             <Badge variant="outline">{group.pallets.length} pallets</Badge>
-                            <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Select all in this {groupMode}</Button>
-                            <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Clear this {groupMode}</Button>
+                            <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>
+                              Chọn tất cả trong {groupMode === "location" ? "location" : "zone"} này
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>
+                              Bỏ chọn {groupMode === "location" ? "location" : "zone"} này
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -496,8 +605,12 @@ function OutboundPage() {
                   <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
                     <span className="font-medium">{groupMode === "location" ? "Location" : "Zone"}: {group.label}</span>
                     <Badge variant="outline">{group.pallets.length} pallets</Badge>
-                    <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Select all in this {groupMode}</Button>
-                    <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Clear this {groupMode}</Button>
+                    <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>
+                      Chọn tất cả trong {groupMode === "location" ? "location" : "zone"} này
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>
+                      Bỏ chọn {groupMode === "location" ? "location" : "zone"} này
+                    </Button>
                   </div>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {group.pallets.map((p) => {
@@ -569,17 +682,35 @@ function OutboundPage() {
 
       <Card className="rounded-2xl">
         <CardHeader className="pb-2"><CardTitle className="text-base">Tóm tắt chọn hàng</CardTitle></CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div>Qty yêu cầu: <span className="font-mono">{requiredQty}</span></div>
+        <CardContent className="space-y-3 text-sm">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">Available Qty của batch</div>
+              <div className="font-mono text-lg">{selectedBatchSummary?.totalQty ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">Qty yêu cầu</div>
+              <div className="font-mono text-lg">{requiredQty || "—"}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">Recommended Pallet Count</div>
+              <div className="font-mono text-lg">{recommendedSelection?.palletIds.length ?? 0}</div>
+            </div>
+            <div>
+              <div className="text-xs uppercase text-muted-foreground">Expected Over / Under</div>
+              <div className="font-mono text-lg">
+                +{recommendedSelection?.overQty ?? 0} / -{recommendedSelection?.underQty ?? 0}
+              </div>
+            </div>
+          </div>
           <div>Qty đã chọn: <span className="font-mono">{selectedQty}</span></div>
           <div>Qty còn thiếu: <span className="font-mono">{remainingQty}</span></div>
           {isUnder && <div className="text-warning">Cảnh báo: Chọn thiếu so với Qty yêu cầu.</div>}
           {isOver && <div className="text-destructive">Cảnh báo: Chọn vượt Qty yêu cầu (được phép nếu xuất nguyên pallet).</div>}
-          {autoSelectResult && autoSelectResult.underQty > 0 && (
-            <div className="text-warning">Auto Select: không đủ tồn khả dụng, thiếu {autoSelectResult.underQty}.</div>
-          )}
-          {autoSelectResult && autoSelectResult.overQty > 0 && (
-            <div className="text-destructive">Auto Select: vượt {autoSelectResult.overQty} do chọn theo nguyên pallet.</div>
+          {autoSelectResult && (
+            <div className="rounded-xl border bg-muted/30 p-3 text-sm">
+              Auto select summary: SelectedQty <span className="font-mono">{autoSelectResult.selectedQty}</span> | OverQty <span className="font-mono">{autoSelectResult.overQty}</span> | UnderQty <span className="font-mono">{autoSelectResult.underQty}</span>
+            </div>
           )}
         </CardContent>
       </Card>
