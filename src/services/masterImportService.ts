@@ -46,6 +46,14 @@ function mapRow(header: string[], row: string[]) {
   return obj;
 }
 
+function pickField(o: Record<string, string>, names: string[]) {
+  for (const name of names) {
+    const value = o[name]?.trim();
+    if (value) return value;
+  }
+  return "";
+}
+
 export function importSkusFromCsv(text: string): BulkImportResult {
   const { header, rows } = parseTable(text);
   const required = ["skuCode", "skuName", "uom", "weightPerUnit", "storageType"];
@@ -158,11 +166,17 @@ export function importBatchesFromCsv(text: string): BulkImportResult {
 
 export function importLocationsFromCsv(text: string): BulkImportResult {
   const { header, rows } = parseTable(text);
-  const required = ["locationCode", "zone", "locationType", "capacityPallet", "status"];
-  for (const h of required) {
-    if (!header.includes(h)) throw new Error(`Thiếu cột ${h}`);
-  }
-  const hasLocationName = header.includes("locationName");
+  const hasLocationCode = header.includes("locationCode") || header.includes("binCode");
+  const hasZone = header.includes("zone");
+  const hasLocationType = header.includes("locationType") || header.includes("binType");
+  const hasCapacityPallet = header.includes("capacityPallet");
+  const hasStatus = header.includes("status");
+  if (!hasLocationCode) throw new Error("Thiếu cột locationCode/binCode");
+  if (!hasZone) throw new Error("Thiếu cột zone");
+  if (!hasLocationType) throw new Error("Thiếu cột locationType/binType");
+  if (!hasCapacityPallet) throw new Error("Thiếu cột capacityPallet");
+  if (!hasStatus) throw new Error("Thiếu cột status");
+  const hasLocationName = header.includes("locationName") || header.includes("binName");
   const hasAisle = header.includes("aisle");
   const hasBlock = header.includes("block");
   const hasTier = header.includes("tier");
@@ -183,14 +197,14 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
     const rowNo = idx + 2;
     try {
       const o = mapRow(header, r);
-      const locationCode = assertNonEmpty(o.locationCode, "locationCode");
-      const locationName = hasLocationName ? (o.locationName ?? "").trim() : "";
+      const locationCode = assertNonEmpty(pickField(o, ["locationCode", "binCode"]), "locationCode");
+      const locationName = hasLocationName ? pickField(o, ["locationName", "binName"]) : "";
       const zone = assertNonEmpty(o.zone, "zone");
       const aisle = hasAisle ? (o.aisle ?? "").trim() : "";
       const block = hasBlock ? (o.block ?? "").trim() : "";
       const tier = hasTier ? (o.tier ?? "").trim() : "";
       const nextAisle = aisle || block;
-      const locationType = assertNonEmpty(o.locationType, "locationType");
+      const locationType = assertNonEmpty(pickField(o, ["locationType", "binType"]), "locationType");
       if (!["RECEIVING", "STORAGE", "STAGING", "DOCK"].includes(locationType)) {
         throw new Error("locationType phải là RECEIVING/STORAGE/STAGING/DOCK");
       }
@@ -198,6 +212,8 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
       if (capacityPallet === null || capacityPallet <= 0) throw new Error("capacityPallet phải > 0");
       const status = assertNonEmpty(o.status, "status");
       if (!["Active", "Blocked"].includes(status)) throw new Error("status phải là Active/Blocked");
+      if (locationType === "STORAGE" && !nextAisle) throw new Error("Dãy (aisle/block) bắt buộc với STORAGE");
+      if (tier && !nextAisle) throw new Error("Tầng chỉ hợp lệ khi có Dãy");
 
       const existing = byCode.get(locationCode);
       if (existing) {

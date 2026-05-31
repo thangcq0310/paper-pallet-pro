@@ -103,7 +103,7 @@ function InventoryPage() {
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
+                <SelectItem value="all">All Bins</SelectItem>
                 {locations.map((l) => (
                   <SelectItem key={l.id} value={l.locationCode}>
                     {l.locationCode} · {locationPathByCode[l.locationCode]}
@@ -138,7 +138,7 @@ function InventoryPage() {
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead>UOM</TableHead>
                 <TableHead className="text-right">Weight</TableHead>
-                <TableHead>Locations</TableHead>
+                <TableHead>Bins</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>EXP (earliest)</TableHead>
               </TableRow></TableHeader>

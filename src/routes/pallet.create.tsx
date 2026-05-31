@@ -569,7 +569,7 @@ function InboundPalletizePutawayPage() {
                       <TableHead className="text-right">qty</TableHead>
                       <TableHead className="text-right">weight</TableHead>
                       <TableHead>status</TableHead>
-                      <TableHead>Current Location</TableHead>
+                      <TableHead>Current Bin</TableHead>
                       <TableHead className="text-right">action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -913,8 +913,8 @@ function InboundPalletizePutawayPage() {
                     <TableHead>SKU</TableHead>
                     <TableHead>Batch</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
-                    <TableHead>From</TableHead>
-                    <TableHead>To</TableHead>
+                    <TableHead>From Bin</TableHead>
+                    <TableHead>To Bin</TableHead>
                     <TableHead>Line Status</TableHead>
                   </TableRow>
                 </TableHeader>

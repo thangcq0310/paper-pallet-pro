@@ -53,7 +53,7 @@ function LocationPage() {
         aisle: form.aisle.trim() || undefined,
         tier: form.tier.trim() || undefined,
       });
-      toast.success("Đã thêm location");
+      toast.success("Đã thêm bin");
       setOpen(false);
       setForm({ locationCode: "", locationName: "", zone: "", aisle: "", tier: "", locationType: "STORAGE", capacityPallet: 2, status: "Active" });
     }
@@ -62,21 +62,21 @@ function LocationPage() {
 
   return (
     <div>
-      <PageHeader title="Location Master" description="Bin / Slot trong kho"
+      <PageHeader title="Bin Master" description="Bin / Slot trong kho"
         action={
           <>
               <Button
               variant="outline"
               onClick={() => {
                 const csv = toCsv([
-                  ["locationCode", "locationName", "zone", "aisle", "tier", "block", "locationType", "capacityPallet", "status"],
+                  ["binCode", "binName", "zone", "aisle", "tier", "block", "binType", "capacityPallet", "status"],
                   ["FZ-A-01-01", "Frozen Zone A - Aisle 01 - Tier 01", "FZ-A", "01", "01", "01", "STORAGE", 10, "Active"],
                 ]);
-                downloadTextFile("location_template.csv", csv, "text/csv;charset=utf-8");
+                downloadTextFile("bin_template.csv", csv, "text/csv;charset=utf-8");
               }}
             >
               <FileDown className="h-4 w-4 mr-1" />
-              Tải mẫu CSV
+              Tải mẫu Bin CSV
             </Button>
 
             <input
@@ -91,7 +91,7 @@ function LocationPage() {
                 try {
                   const text = await file.text();
                   const res = importLocationsFromCsv(text);
-                  toast.success(`Import Location: +${res.created} tạo mới, ${res.updated} cập nhật, ${res.skipped} lỗi`);
+                  toast.success(`Import Bin: +${res.created} tạo mới, ${res.updated} cập nhật, ${res.skipped} lỗi`);
                   if (res.errors.length > 0) {
                     setImportErrors(res.errors);
                     setErrorsOpen(true);
@@ -107,19 +107,19 @@ function LocationPage() {
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Thêm Location</Button></DialogTrigger>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Thêm Bin</Button></DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Thêm Location</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Thêm Bin</DialogTitle></DialogHeader>
                 <div className="space-y-3">
-                  <div><Label>Location Code</Label><Input value={form.locationCode} onChange={(e) => setForm({ ...form, locationCode: e.target.value })} /></div>
-                  <div><Label>Location Name (optional)</Label><Input value={form.locationName} onChange={(e) => setForm({ ...form, locationName: e.target.value })} /></div>
+                  <div><Label>Bin Code</Label><Input value={form.locationCode} onChange={(e) => setForm({ ...form, locationCode: e.target.value })} /></div>
+                  <div><Label>Bin Name (optional)</Label><Input value={form.locationName} onChange={(e) => setForm({ ...form, locationName: e.target.value })} /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Zone</Label><Input value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })} /></div>
                     <div><Label>Dãy (Aisle)</Label><Input value={form.aisle} onChange={(e) => setForm({ ...form, aisle: e.target.value })} /></div>
                     <div><Label>Tầng (optional)</Label><Input value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} /></div>
                   </div>
                   <div>
-                    <Label>Location Type</Label>
+                    <Label>Bin Type</Label>
                     <Select value={form.locationType} onValueChange={(v) => setForm({ ...form, locationType: v as any })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -138,14 +138,14 @@ function LocationPage() {
             <Dialog open={errorsOpen} onOpenChange={setErrorsOpen}>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Lỗi import Location</DialogTitle>
+                  <DialogTitle>Lỗi import Bin</DialogTitle>
                 </DialogHeader>
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
                     onClick={() => {
                       const csv = toCsv([["row", "message"], ...importErrors.map((x) => [x.row, x.message])]);
-                      downloadTextFile("location_import_errors.csv", csv, "text/csv;charset=utf-8");
+                      downloadTextFile("bin_import_errors.csv", csv, "text/csv;charset=utf-8");
                     }}
                   >
                     <FileDown className="h-4 w-4 mr-1" />
@@ -197,7 +197,7 @@ function LocationPage() {
           </div>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Location</TableHead><TableHead>Zone</TableHead>
+              <TableHead>Bin</TableHead><TableHead>Zone</TableHead>
               <TableHead>Dãy</TableHead><TableHead>Tầng</TableHead>
               <TableHead className="text-right">Capacity</TableHead><TableHead className="text-right">Current</TableHead>
               <TableHead>Status</TableHead><TableHead></TableHead>

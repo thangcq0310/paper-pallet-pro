@@ -67,7 +67,7 @@ function PrintBatchPage() {
             <div className="font-semibold font-mono">{pallet.batchNo}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">Location</div>
+            <div className="text-xs text-muted-foreground uppercase">Bin</div>
             <div className="font-semibold">{pallet.currentLocation ?? "—"}</div>
             <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
           </div>

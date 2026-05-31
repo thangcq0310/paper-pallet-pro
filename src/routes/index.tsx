@@ -71,8 +71,8 @@ function Dashboard() {
         <Stat label="Total Quantity" value={totalQty.toLocaleString()} icon={Package} />
         <Stat label="Total Weight (kg)" value={totalWeight.toLocaleString()} icon={Scale} />
         <Stat label="Occupancy" value={`${occupancy}%`} hint={`${used}/${totalCap} pallet slots`} icon={MapPin} accent="bg-info/10 text-info" />
-        <Stat label="Empty Locations" value={empty} icon={MapPin} accent="bg-success/15 text-success" />
-        <Stat label="Full Locations" value={full} icon={MapPin} accent="bg-destructive/15 text-destructive" />
+        <Stat label="Empty Bins" value={empty} icon={MapPin} accent="bg-success/15 text-success" />
+        <Stat label="Full Bins" value={full} icon={MapPin} accent="bg-destructive/15 text-destructive" />
         <Stat label="Open Tasks" value={openTasks} icon={ListChecks} accent="bg-warning/20 text-warning-foreground" />
         <Stat label="Inbound Today" value={inboundToday} icon={ArrowDownToLine} accent="bg-success/15 text-success" />
         <Stat label="Outbound Today" value={outboundToday} icon={ArrowUpFromLine} accent="bg-info/10 text-info" />

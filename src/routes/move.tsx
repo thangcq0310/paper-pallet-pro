@@ -150,7 +150,7 @@ function MovePage() {
     for (const pallet of filteredPallets) {
       const currentLocation = pallet.currentLocation ?? "";
       const key = groupMode === "location"
-        ? (currentLocation || "Chưa có location")
+        ? (currentLocation || "Chưa có bin")
         : (locationZoneByCode[currentLocation] ?? "Chưa có zone");
       const label = groupMode === "location"
         ? (locationPathByCode[currentLocation] ?? key)
@@ -218,7 +218,7 @@ function MovePage() {
 
   const selectGroup = (groupKey: string) => {
     const ids = filteredPallets.filter((p) => {
-      if (groupMode === "location") return (p.currentLocation ?? "Chưa có location") === groupKey;
+      if (groupMode === "location") return (p.currentLocation ?? "Chưa có bin") === groupKey;
       return (locationZoneByCode[p.currentLocation ?? ""] ?? "Chưa có zone") === groupKey;
     }).map((p) => p.palletId);
     selectPalletIds(ids);
@@ -229,7 +229,7 @@ function MovePage() {
       const next = { ...prev };
       for (const pallet of filteredPallets) {
         const matches = groupMode === "location"
-          ? (pallet.currentLocation ?? "Chưa có location") === groupKey
+          ? (pallet.currentLocation ?? "Chưa có bin") === groupKey
           : (locationZoneByCode[pallet.currentLocation ?? ""] ?? "Chưa có zone") === groupKey;
         if (matches) delete next[pallet.palletId];
       }
@@ -274,7 +274,7 @@ function MovePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Move Location" description="Chọn SKU/Batch → chọn pallet → allocate target bin → tạo 1 MOVE task nhiều lines" />
+      <PageHeader title="Move Bin" description="Chọn SKU/Batch → chọn pallet → allocate target bin → tạo 1 MOVE task nhiều lines" />
 
       <Card className="rounded-2xl">
         <CardContent className="p-4">
@@ -485,7 +485,7 @@ function MovePage() {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Input
-              placeholder="Tìm Pallet ID / Current Location"
+              placeholder="Tìm Pallet ID / Current Bin"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
@@ -503,7 +503,7 @@ function MovePage() {
               <Select value={groupMode} onValueChange={(v) => setGroupMode(v as "location" | "zone")}>
                 <SelectTrigger className="w-48"><SelectValue placeholder="Nhóm theo" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="location">Nhóm theo Location</SelectItem>
+                  <SelectItem value="location">Nhóm theo Bin</SelectItem>
                   <SelectItem value="zone">Nhóm theo Zone</SelectItem>
                 </SelectContent>
               </Select>
@@ -527,8 +527,8 @@ function MovePage() {
                     <TableHead>UOM</TableHead>
                     <TableHead>EXP Date</TableHead>
                     <TableHead>Days to Expiry</TableHead>
-                    <TableHead>Current Location</TableHead>
-                    <TableHead>Location Zone</TableHead>
+                    <TableHead>Current Bin</TableHead>
+                    <TableHead>Bin Zone</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -538,7 +538,7 @@ function MovePage() {
                       <TableRow className="bg-muted/40">
                         <TableCell colSpan={11}>
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{groupMode === "location" ? "Location" : "Zone"}: {group.label}</span>
+                            <span className="font-medium">{groupMode === "location" ? "Bin" : "Zone"}: {group.label}</span>
                             <Badge variant="outline">{group.pallets.length} pallets</Badge>
                             <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Chọn hết trong nhóm này</Button>
                             <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Bỏ chọn nhóm này</Button>
@@ -584,7 +584,7 @@ function MovePage() {
               {groupedVisiblePallets.map((group) => (
                 <div key={group.key} className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
-                    <span className="font-medium">{groupMode === "location" ? "Location" : "Zone"}: {group.label}</span>
+                            <span className="font-medium">{groupMode === "location" ? "Bin" : "Zone"}: {group.label}</span>
                     <Badge variant="outline">{group.pallets.length} pallets</Badge>
                     <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Chọn hết trong nhóm này</Button>
                     <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Bỏ chọn nhóm này</Button>
@@ -626,7 +626,7 @@ function MovePage() {
                               <div className="font-medium">{p.qty} {p.uom}</div>
                             </div>
                             <div className="rounded-lg bg-muted/40 p-2">
-                              <div className="text-muted-foreground">Current Location</div>
+                              <div className="text-muted-foreground">Current Bin</div>
                               <div className="font-mono">{p.currentLocation ?? "—"}</div>
                               <div className="mt-1 text-[11px] text-muted-foreground">
                                 {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
@@ -742,7 +742,7 @@ function MovePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Pallet ID</TableHead>
-                  <TableHead>Current Location</TableHead>
+                    <TableHead>Current Bin</TableHead>
                   <TableHead>Target Bin</TableHead>
                 </TableRow>
               </TableHeader>

@@ -203,15 +203,15 @@ function TaskDetailPage() {
           <DialogHeader>
             <DialogTitle>Confirm Task Line</DialogTitle>
             <DialogDescription>
-              Chọn <span className="font-medium">Actual Location</span> (nếu khác To Location).
+              Chọn <span className="font-medium">Actual Bin</span> (nếu khác To Bin).
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label>Actual Location</Label>
+            <Label>Actual Bin</Label>
             <Select value={actualLocation} onValueChange={setActualLocation}>
               <SelectTrigger>
-                <SelectValue placeholder="Chọn location thực tế" />
+                <SelectValue placeholder="Chọn bin thực tế" />
               </SelectTrigger>
               <SelectContent>
                 {actualLocationOptions.map((l) => (

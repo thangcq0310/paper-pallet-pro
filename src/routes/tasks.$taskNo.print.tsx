@@ -5,6 +5,7 @@ import { printTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/tasks/$taskNo/print")({ component: TaskPrintPage });
 
@@ -13,6 +14,7 @@ function TaskPrintPage() {
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const outbounds = useStore((s) => s.outbounds);
+  const locations = useStore((s) => s.locations);
   const task = tasks.find((t) => t.taskNo === taskNo);
   const lines = taskLines.filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
   const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
@@ -120,11 +122,11 @@ function TaskPrintPage() {
                       <td className="p-2">{l.skuCode}</td>
                       <td className="p-2 font-mono">{l.batchNo}</td>
                       <td className="p-2 text-right font-mono">{l.qty} {l.uom}</td>
-                      <td className="p-2 font-mono">{l.fromLocation ?? "-"}</td>
-                      <td className="p-2">{task.taskType === "PICK" ? (outboundDoc?.destination ?? "External") : (l.toLocation ?? "-")}</td>
+                      <td className="p-2 font-mono">{formatLocationPath(locations.find((loc) => loc.locationCode === l.fromLocation) ?? null)}</td>
+                      <td className="p-2">{task.taskType === "PICK" ? (outboundDoc?.destination ?? "External") : formatLocationPath(locations.find((loc) => loc.locationCode === l.toLocation) ?? null)}</td>
                       <td className="p-2">
                         {l.actualLocation
-                          ? <span className="font-mono">{l.actualLocation}</span>
+                          ? <span className="font-mono">{formatLocationPath(locations.find((loc) => loc.locationCode === l.actualLocation) ?? null)}</span>
                           : <div className="border-b border-foreground/40 h-4" />}
                       </td>
                       <td className="p-2">

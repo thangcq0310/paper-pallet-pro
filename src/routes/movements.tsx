@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/movements")({ component: MovementsPage });
 
@@ -13,6 +14,7 @@ const TYPES = ["LABEL_CREATED", "LABEL_ATTACHED", "LABEL_CANCELLED", "IN", "PUT"
 
 function MovementsPage() {
   const movements = useStore((s) => s.movements);
+  const locations = useStore((s) => s.locations);
   const [type, setType] = useState("all");
   const [q, setQ] = useState("");
 
@@ -52,7 +54,7 @@ function MovementsPage() {
                     <TableCell>{m.skuCode}</TableCell>
                     <TableCell className="font-mono text-xs">{m.batchNo}</TableCell>
                     <TableCell className="text-right">{m.qty}</TableCell>
-                    <TableCell className="text-xs">{m.fromLocation ?? "-"} → {m.toLocation ?? "-"}</TableCell>
+                    <TableCell className="text-xs">{formatLocationPath(locations.find((l) => l.locationCode === m.fromLocation) ?? null)} → {formatLocationPath(locations.find((l) => l.locationCode === m.toLocation) ?? null)}</TableCell>
                     <TableCell className="text-xs">{m.user}</TableCell>
                     <TableCell className="text-xs">{new Date(m.timestamp).toLocaleString()}</TableCell>
                   </TableRow>

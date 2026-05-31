@@ -60,7 +60,7 @@ function PalletLabelPreview() {
           <div><div className='text-xs text-muted-foreground uppercase'>MFG Date</div><div className='font-semibold'>{pallet.mfgDate}</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>EXP Date</div><div className='font-semibold'>{pallet.expDate}</div></div>
           <div>
-            <div className='text-xs text-muted-foreground uppercase'>Current Location</div>
+            <div className='text-xs text-muted-foreground uppercase'>Current Bin</div>
             <div className='font-semibold'>{pallet.currentLocation || "N/A"}</div>
             <div className='text-xs text-muted-foreground'>{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
           </div>
@@ -97,7 +97,7 @@ function PalletLabelPreview() {
               </div>
             )}
             <div className='text-sm'>
-              <div className='text-xs text-muted-foreground'>Current Location</div>
+              <div className='text-xs text-muted-foreground'>Current Bin</div>
               <div className='font-mono'>{pallet.currentLocation || "N/A"}</div>
               <div className='text-xs text-muted-foreground'>{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
             </div>
