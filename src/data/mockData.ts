@@ -1,31 +1,126 @@
 import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument } from "@/types";
 
 const now = new Date().toISOString();
+const baseDate = new Date("2026-01-01T00:00:00.000Z");
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function addDays(days: number) {
+  return new Date(baseDate.getTime() + days * DAY_MS).toISOString().slice(0, 10);
+}
+
+const skuSeeds = [
+  { skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", uom: "Carton", weightPerUnit: 20, storageType: "Frozen" },
+  { skuCode: "PINE-15KG", skuName: "Puree dứa 15kg", uom: "Carton", weightPerUnit: 15, storageType: "Frozen" },
+  { skuCode: "PASS-10KG", skuName: "Puree chanh dây 10kg", uom: "Carton", weightPerUnit: 10, storageType: "Frozen" },
+  { skuCode: "SUGAR-25KG", skuName: "Đường tinh luyện 25kg", uom: "Bag", weightPerUnit: 25, storageType: "Dry" },
+] as const;
+
+const genericSkuTypes = ["Frozen", "Chilled", "Dry"] as const;
 
 export const mockSKUs: SKU[] = [
-  { id: "1", skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", uom: "Carton", weightPerUnit: 20, storageType: "Frozen", createdAt: now, updatedAt: now },
-  { id: "2", skuCode: "PINE-15KG", skuName: "Puree dứa 15kg", uom: "Carton", weightPerUnit: 15, storageType: "Frozen", createdAt: now, updatedAt: now },
-  { id: "3", skuCode: "PASS-10KG", skuName: "Puree chanh dây 10kg", uom: "Carton", weightPerUnit: 10, storageType: "Frozen", createdAt: now, updatedAt: now },
-  { id: "4", skuCode: "SUGAR-25KG", skuName: "Đường tinh luyện 25kg", uom: "Bag", weightPerUnit: 25, storageType: "Dry", createdAt: now, updatedAt: now },
-];
+  ...skuSeeds,
+  ...Array.from({ length: 96 }, (_, idx) => {
+    const no = idx + 5;
+    const skuCode = `SKU-${String(no).padStart(3, "0")}`;
+    const storageType = genericSkuTypes[idx % genericSkuTypes.length];
+    const uom = storageType === "Dry" ? "Bag" : "Carton";
+    return {
+      skuCode,
+      skuName: `Sample SKU ${String(no).padStart(3, "0")}`,
+      uom,
+      weightPerUnit: 5 + ((idx * 3) % 26),
+      storageType,
+    };
+  }),
+].map((sku, idx) => ({
+  ...sku,
+  id: String(idx + 1),
+  createdAt: now,
+  updatedAt: now,
+}));
 
-export const mockBatches: Batch[] = [
-  { id: "b1", batchNo: "LOT260527-A", skuCode: "MANGO-20KG", mfgDate: "2026-05-27", expDate: "2028-05-27", createdAt: now, updatedAt: now },
-  { id: "b2", batchNo: "LOT260520-B", skuCode: "PINE-15KG", mfgDate: "2026-05-20", expDate: "2028-05-20", createdAt: now, updatedAt: now },
-  { id: "b3", batchNo: "LOT260515-C", skuCode: "PASS-10KG", mfgDate: "2026-05-15", expDate: "2028-05-15", createdAt: now, updatedAt: now },
-  { id: "b4", batchNo: "LOT260510-D", skuCode: "SUGAR-25KG", mfgDate: "2026-05-10", expDate: "2027-05-10", createdAt: now, updatedAt: now },
-];
+const explicitBatches: Record<string, { batchNo: string; mfgDate: string; expDate: string }> = {
+  "MANGO-20KG": { batchNo: "LOT260527-A", mfgDate: "2026-05-27", expDate: "2028-05-27" },
+  "PINE-15KG": { batchNo: "LOT260520-B", mfgDate: "2026-05-20", expDate: "2028-05-20" },
+  "PASS-10KG": { batchNo: "LOT260515-C", mfgDate: "2026-05-15", expDate: "2028-05-15" },
+  "SUGAR-25KG": { batchNo: "LOT260510-D", mfgDate: "2026-05-10", expDate: "2027-05-10" },
+};
 
-export const mockLocations: Location[] = [
+function generateBatchesForSku(sku: SKU, skuIndex: number): Batch[] {
+  return Array.from({ length: 50 }, (_, idx) => {
+    const batchIndex = idx + 1;
+    const explicit = batchIndex === 1 ? explicitBatches[sku.skuCode] : undefined;
+    const batchNo = explicit?.batchNo ?? `${sku.skuCode.replace(/[^A-Z0-9]/g, "")}-B${String(batchIndex).padStart(2, "0")}`;
+    const mfgDate = explicit?.mfgDate ?? addDays(30 + skuIndex * 5 + batchIndex * 3);
+    const expDate = explicit?.expDate ?? addDays(760 + skuIndex * 5 + batchIndex * 3);
+    return {
+      id: `b${String(skuIndex + 1).padStart(3, "0")}-${String(batchIndex).padStart(2, "0")}`,
+      batchNo,
+      skuCode: sku.skuCode,
+      mfgDate,
+      expDate,
+      createdAt: now,
+      updatedAt: now,
+    };
+  });
+}
+
+export const mockBatches: Batch[] = mockSKUs.flatMap((sku, idx) => generateBatchesForSku(sku, idx));
+
+const operationalLocations: Location[] = [
   { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", locationType: "RECEIVING", zone: "RECV", block: "-", aisle: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
   { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", locationType: "STAGING", zone: "STG", block: "-", aisle: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
   { id: "l2", locationCode: "DOCK-01", locationName: "Loading Dock 1", locationType: "DOCK", zone: "DOCK", block: "-", aisle: "-", capacityPallet: 30, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l4", locationCode: "FZ-A-01-01", locationName: "Frozen Zone A - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "FZ-A", block: "01", aisle: "01", tier: "01", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l5", locationCode: "FZ-A-01-02", locationName: "Frozen Zone A - Aisle 01 - Tier 02", locationType: "STORAGE", zone: "FZ-A", block: "01", aisle: "01", tier: "02", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l6", locationCode: "FZ-B-01-01", locationName: "Frozen Zone B - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "FZ-B", block: "01", aisle: "01", tier: "01", capacityPallet: 2, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l7", locationCode: "DRY-A-01-01", locationName: "Dry Zone A - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "DRY-A", block: "01", aisle: "01", tier: "01", capacityPallet: 4, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l8", locationCode: "DRY-A-01-02", locationName: "Dry Zone A - Aisle 01 - Tier 02", locationType: "STORAGE", zone: "DRY-A", block: "01", aisle: "01", tier: "02", capacityPallet: 4, currentPalletCount: 0, status: "Blocked", createdAt: now, updatedAt: now },
 ];
+
+const storageZones = [
+  { zone: "FZ-A", label: "Frozen Zone A", capacityPallet: 2 },
+  { zone: "FZ-B", label: "Frozen Zone B", capacityPallet: 2 },
+  { zone: "CHL-A", label: "Chilled Zone A", capacityPallet: 2 },
+  { zone: "DRY-A", label: "Dry Zone A", capacityPallet: 4 },
+  { zone: "DRY-B", label: "Dry Zone B", capacityPallet: 4 },
+] as const;
+
+const specialBinStatus: Record<string, Location["status"]> = {
+  "DRY-A-01-02": "Blocked",
+};
+
+const specialBinPalletCount: Record<string, number> = {
+  "FZ-A-01-01": 1,
+  "FZ-A-01-02": 1,
+  "DRY-A-01-01": 1,
+};
+
+function buildStorageBins(): Location[] {
+  const bins: Location[] = [];
+  storageZones.forEach((zoneDef, zoneIdx) => {
+    for (let aisle = 1; aisle <= 20; aisle += 1) {
+      for (let tier = 1; tier <= 5; tier += 1) {
+        const aisleCode = String(aisle).padStart(2, "0");
+        const tierCode = String(tier).padStart(2, "0");
+        const locationCode = `${zoneDef.zone}-${aisleCode}-${tierCode}`;
+        bins.push({
+          id: `l${String(zoneIdx + 3).padStart(2, "0")}${aisleCode}${tierCode}`,
+          locationCode,
+          locationName: `${zoneDef.label} - Aisle ${aisleCode} - Tier ${tierCode}`,
+          locationType: "STORAGE",
+          zone: zoneDef.zone,
+          block: aisleCode,
+          aisle: aisleCode,
+          tier: tierCode,
+          capacityPallet: zoneDef.capacityPallet,
+          currentPalletCount: specialBinPalletCount[locationCode] ?? 0,
+          status: specialBinStatus[locationCode] ?? "Active",
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+  });
+  return bins;
+}
+
+export const mockLocations: Location[] = [...operationalLocations, ...buildStorageBins()];
 
 export const mockPallets: Pallet[] = [
   { id: "p1", palletId: "PLT-20260520-0001", skuCode: "MANGO-20KG", skuName: "Puree xoài 20kg", batchNo: "LOT260527-A", qty: 50, uom: "Carton", weight: 1000, mfgDate: "2026-05-27", expDate: "2028-05-27", currentLocation: "FZ-A-01-01", status: "In Stock", createdAt: now, updatedAt: now },
@@ -51,7 +146,7 @@ export const mockTasks: WarehouseTask[] = [
     priority: "Normal",
     createdBy: "demo",
     createdAt: now,
-    instruction: "Đưa pallet từ RCV-01 vào location chỉ định.",
+    instruction: "Đưa pallet từ RCV-01 vào bin chỉ định.",
   },
 ];
 
