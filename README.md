@@ -101,8 +101,11 @@ Bảo mật: thêm Firestore rules theo `auth.uid` và role nhân viên kho.
 
 ## Reset dữ liệu demo
 
-Mở DevTools Console:
+Mở trang `Bin Master` và bấm `Reset demo data`.
+
+Nếu cần reset thủ công trong DevTools Console:
 
 ```js
-localStorage.removeItem("mini-wms-state-v2"); location.reload();
+localStorage.removeItem("mini-wms-state-v2");
+location.reload();
 ```

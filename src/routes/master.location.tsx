@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useStore } from "@/services/store";
 import { addLocation, toggleLocationBlock } from "@/services/masterService";
+import { resetDemoData } from "@/services/demoResetService";
 import { importLocationsFromCsv, type BulkImportError } from "@/services/masterImportService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { LocationStatusBadge } from "@/components/StatusBadges";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
-import { FileDown, FileUp, Plus } from "lucide-react";
+import { FileDown, FileUp, Plus, RotateCcw } from "lucide-react";
 import { downloadTextFile, toCsv } from "@/utils/csv";
 
 export const Route = createFileRoute("/master/location")({ component: LocationPage });
@@ -65,7 +66,19 @@ function LocationPage() {
       <PageHeader title="Bin Master" description="Bin / Slot trong kho"
         action={
           <>
-              <Button
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirm("Reset toàn bộ demo data về trạng thái ban đầu? Thao tác này sẽ xóa dữ liệu đang lưu trên máy hiện tại.")) {
+                  resetDemoData();
+                }
+              }}
+            >
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reset demo data
+            </Button>
+
+            <Button
               variant="outline"
               onClick={() => {
                 const csv = toCsv([
