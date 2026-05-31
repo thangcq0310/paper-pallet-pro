@@ -158,10 +158,15 @@ export function importBatchesFromCsv(text: string): BulkImportResult {
 
 export function importLocationsFromCsv(text: string): BulkImportResult {
   const { header, rows } = parseTable(text);
-  const required = ["locationCode", "zone", "block", "locationType", "capacityPallet", "status"];
+  const required = ["locationCode", "zone", "locationType", "capacityPallet", "status"];
   for (const h of required) {
     if (!header.includes(h)) throw new Error(`Thiếu cột ${h}`);
   }
+  const hasLocationName = header.includes("locationName");
+  const hasAisle = header.includes("aisle");
+  const hasBlock = header.includes("block");
+  const hasTier = header.includes("tier");
+  if (!hasAisle && !hasBlock) throw new Error("Thiếu cột aisle hoặc block");
 
   const s = getState();
   const byCode = new Map(s.locations.map((l) => [l.locationCode, l]));
@@ -179,8 +184,12 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
     try {
       const o = mapRow(header, r);
       const locationCode = assertNonEmpty(o.locationCode, "locationCode");
+      const locationName = hasLocationName ? (o.locationName ?? "").trim() : "";
       const zone = assertNonEmpty(o.zone, "zone");
-      const block = (o.block ?? "").trim();
+      const aisle = hasAisle ? (o.aisle ?? "").trim() : "";
+      const block = hasBlock ? (o.block ?? "").trim() : "";
+      const tier = hasTier ? (o.tier ?? "").trim() : "";
+      const nextAisle = aisle || block;
       const locationType = assertNonEmpty(o.locationType, "locationType");
       if (!["RECEIVING", "STORAGE", "STAGING", "DOCK"].includes(locationType)) {
         throw new Error("locationType phải là RECEIVING/STORAGE/STAGING/DOCK");
@@ -194,8 +203,12 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
       if (existing) {
         const patched: Location = {
           ...existing,
+          locationCode,
+          locationName: hasLocationName ? (locationName || existing.locationName) : existing.locationName,
           zone,
-          block,
+          block: block || nextAisle || existing.block,
+          aisle: nextAisle || existing.aisle,
+          tier: hasTier ? (tier || existing.tier) : existing.tier,
           locationType: locationType as Location["locationType"],
           capacityPallet,
           status: status as Location["status"],
@@ -208,8 +221,11 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
         const l: Location = {
           id: uid(),
           locationCode,
+          locationName: locationName || undefined,
           zone,
-          block,
+          block: block || nextAisle || "-",
+          aisle: nextAisle || undefined,
+          tier: tier || undefined,
           locationType: locationType as Location["locationType"],
           capacityPallet,
           currentPalletCount: 0,
@@ -232,4 +248,3 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
   }
   return { created, updated, skipped, errors };
 }
-

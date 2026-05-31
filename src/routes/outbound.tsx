@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/outbound")({ component: OutboundPage });
@@ -95,6 +96,10 @@ function OutboundPage() {
   }, [availablePallets, search]);
   const locationZoneByCode = useMemo(
     () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
+    [locations],
+  );
+  const locationPathByCode = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)])),
     [locations],
   );
   const daysToExpiry = (expDate?: string) => {
@@ -232,13 +237,20 @@ function OutboundPage() {
   const groupedVisiblePallets = useMemo(() => {
     const map = new Map<string, { key: string; label: string; pallets: typeof filteredPallets }>();
     for (const pallet of filteredPallets) {
-      const key = groupMode === "location" ? (pallet.currentLocation ?? "Chưa có location") : (locationZoneByCode[pallet.currentLocation ?? ""] ?? "Chưa có zone");
+      const currentLocation = pallet.currentLocation ?? "";
+      const key = groupMode === "location"
+        ? (currentLocation || "Chưa có location")
+        : (locationZoneByCode[currentLocation] ?? "Chưa có zone");
       const row = map.get(key);
       if (row) row.pallets.push(pallet);
-      else map.set(key, { key, label: key, pallets: [pallet] });
+      else map.set(key, {
+        key,
+        label: groupMode === "location" ? (locationPathByCode[currentLocation] ?? key) : key,
+        pallets: [pallet],
+      });
     }
     return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [filteredPallets, groupMode, locationZoneByCode]);
+  }, [filteredPallets, groupMode, locationPathByCode, locationZoneByCode]);
 
   const doCreatePickTask = () => {
     try {
@@ -486,7 +498,8 @@ function OutboundPage() {
                       )}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {b.locations.slice(0, 2).join(", ")}{b.locations.length > 2 ? ` +${b.locations.length - 2}` : ""}
+                      {b.locations.slice(0, 2).map((code) => locationPathByCode[code] ?? code).join(", ")}
+                      {b.locations.length > 2 ? ` +${b.locations.length - 2}` : ""}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       Days to expiry: {dte ?? "—"}
@@ -584,7 +597,12 @@ function OutboundPage() {
                           <TableCell>{p.uom}</TableCell>
                           <TableCell className="text-xs">{p.expDate || "—"}</TableCell>
                           <TableCell className="text-xs">{daysToExpiry(p.expDate) ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{p.currentLocation}</TableCell>
+                          <TableCell className="text-xs">
+                            <div className="font-mono">{p.currentLocation ?? "—"}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-xs">{locationZoneByCode[p.currentLocation ?? ""] ?? "—"}</TableCell>
                           <TableCell className="text-xs font-mono">{fefoRankByPalletId[p.palletId] ?? "-"}</TableCell>
                           <TableCell>{p.status}</TableCell>

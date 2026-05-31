@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/move")({ component: MovePage });
@@ -86,6 +87,10 @@ function MovePage() {
     () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
     [locations],
   );
+  const locationPathByCode = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)])),
+    [locations],
+  );
   const daysToExpiry = (expDate?: string) => {
     if (!expDate) return null;
     const diff = new Date(expDate).getTime() - new Date().getTime();
@@ -143,8 +148,13 @@ function MovePage() {
   const groupedVisiblePallets = useMemo(() => {
     const map = new Map<string, { key: string; label: string; pallets: typeof filteredPallets }>();
     for (const pallet of filteredPallets) {
-      const key = groupMode === "location" ? (pallet.currentLocation ?? "Chưa có location") : (locationZoneByCode[pallet.currentLocation ?? ""] ?? "Chưa có zone");
-      const label = key;
+      const currentLocation = pallet.currentLocation ?? "";
+      const key = groupMode === "location"
+        ? (currentLocation || "Chưa có location")
+        : (locationZoneByCode[currentLocation] ?? "Chưa có zone");
+      const label = groupMode === "location"
+        ? (locationPathByCode[currentLocation] ?? key)
+        : key;
       const row = map.get(key);
       if (row) {
         row.pallets.push(pallet);
@@ -153,7 +163,7 @@ function MovePage() {
       }
     }
     return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [filteredPallets, groupMode, locationZoneByCode]);
+  }, [filteredPallets, groupMode, locationPathByCode, locationZoneByCode]);
 
   const canCreateTask =
     !!skuCode &&
@@ -454,7 +464,8 @@ function MovePage() {
                       <Badge variant="outline">{b.locationCount} locations</Badge>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {b.locations.slice(0, 2).join(", ")}{b.locations.length > 2 ? ` +${b.locations.length - 2}` : ""}
+                      {b.locations.slice(0, 2).map((code) => locationPathByCode[code] ?? code).join(", ")}
+                      {b.locations.length > 2 ? ` +${b.locations.length - 2}` : ""}
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       Created: {b.earliestCreatedAt ? new Date(b.earliestCreatedAt).toLocaleDateString() : "—"}
@@ -550,7 +561,12 @@ function MovePage() {
                           <TableCell>{p.uom}</TableCell>
                           <TableCell className="text-xs">{p.expDate || "—"}</TableCell>
                           <TableCell className="text-xs">{daysToExpiry(p.expDate) ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">{p.currentLocation}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            <div>{p.currentLocation ?? "—"}</div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-xs">{locationZoneByCode[p.currentLocation ?? ""] ?? "—"}</TableCell>
                           <TableCell>{p.status}</TableCell>
                         </TableRow>
@@ -612,6 +628,9 @@ function MovePage() {
                             <div className="rounded-lg bg-muted/40 p-2">
                               <div className="text-muted-foreground">Current Location</div>
                               <div className="font-mono">{p.currentLocation ?? "—"}</div>
+                              <div className="mt-1 text-[11px] text-muted-foreground">
+                                {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
+                              </div>
                             </div>
                             <div className="rounded-lg bg-muted/40 p-2">
                               <div className="text-muted-foreground">EXP Date</div>

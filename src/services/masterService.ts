@@ -28,10 +28,28 @@ export function addBatch(input: Omit<Batch, "id" | "createdAt" | "updatedAt">): 
 // Location
 export function listLocations() { return getState().locations; }
 export function addLocation(input: Omit<Location, "id" | "createdAt" | "updatedAt" | "currentPalletCount">): Location {
+  const locationCode = input.locationCode.trim();
+  const locationName = input.locationName?.trim();
+  const zone = input.zone.trim();
+  const aisle = input.aisle?.trim() || input.block.trim();
+  const block = input.block.trim() || aisle || "-";
+  const tier = input.tier?.trim();
   if (input.capacityPallet <= 0) throw new Error("Capacity phải > 0");
-  if (getState().locations.some((l) => l.locationCode === input.locationCode)) throw new Error("Location Code đã tồn tại");
+  if (getState().locations.some((l) => l.locationCode === locationCode)) throw new Error("Location Code đã tồn tại");
   const now = new Date().toISOString();
-  const l: Location = { ...input, currentPalletCount: 0, id: uid(), createdAt: now, updatedAt: now };
+  const l: Location = {
+    ...input,
+    locationCode,
+    locationName: locationName || undefined,
+    zone,
+    block,
+    aisle,
+    tier: tier || undefined,
+    currentPalletCount: 0,
+    id: uid(),
+    createdAt: now,
+    updatedAt: now,
+  };
   setState((s) => ({ ...s, locations: [l, ...s.locations] }));
   return l;
 }

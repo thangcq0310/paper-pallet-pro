@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { LocationStatusBadge } from "@/components/StatusBadges";
+import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 import { FileDown, FileUp, Plus } from "lucide-react";
 import { downloadTextFile, toCsv } from "@/utils/csv";
@@ -28,8 +29,10 @@ function LocationPage() {
   const [errorsOpen, setErrorsOpen] = useState(false);
   const [form, setForm] = useState({
     locationCode: "",
+    locationName: "",
     zone: "",
-    block: "",
+    aisle: "",
+    tier: "",
     locationType: "STORAGE" as "RECEIVING" | "STORAGE" | "STAGING" | "DOCK",
     capacityPallet: 2,
     status: "Active" as "Active" | "Blocked",
@@ -43,10 +46,16 @@ function LocationPage() {
 
   const submit = () => {
     try {
-      addLocation(form);
+      addLocation({
+        ...form,
+        locationName: form.locationName.trim() || undefined,
+        block: form.aisle.trim() || "-",
+        aisle: form.aisle.trim() || undefined,
+        tier: form.tier.trim() || undefined,
+      });
       toast.success("Đã thêm location");
       setOpen(false);
-      setForm({ locationCode: "", zone: "", block: "", locationType: "STORAGE", capacityPallet: 2, status: "Active" });
+      setForm({ locationCode: "", locationName: "", zone: "", aisle: "", tier: "", locationType: "STORAGE", capacityPallet: 2, status: "Active" });
     }
     catch (e: any) { toast.error(e.message); }
   };
@@ -56,12 +65,12 @@ function LocationPage() {
       <PageHeader title="Location Master" description="Bin / Slot trong kho"
         action={
           <>
-            <Button
+              <Button
               variant="outline"
               onClick={() => {
                 const csv = toCsv([
-                  ["locationCode", "zone", "block", "locationType", "capacityPallet", "status"],
-                  ["FZ-A-01-01", "FZ-A", "A", "STORAGE", 10, "Active"],
+                  ["locationCode", "locationName", "zone", "aisle", "tier", "block", "locationType", "capacityPallet", "status"],
+                  ["FZ-A-01-01", "Frozen Zone A - Aisle 01 - Tier 01", "FZ-A", "01", "01", "01", "STORAGE", 10, "Active"],
                 ]);
                 downloadTextFile("location_template.csv", csv, "text/csv;charset=utf-8");
               }}
@@ -103,9 +112,11 @@ function LocationPage() {
                 <DialogHeader><DialogTitle>Thêm Location</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Location Code</Label><Input value={form.locationCode} onChange={(e) => setForm({ ...form, locationCode: e.target.value })} /></div>
+                  <div><Label>Location Name (optional)</Label><Input value={form.locationName} onChange={(e) => setForm({ ...form, locationName: e.target.value })} /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Zone</Label><Input value={form.zone} onChange={(e) => setForm({ ...form, zone: e.target.value })} /></div>
-                    <div><Label>Block</Label><Input value={form.block} onChange={(e) => setForm({ ...form, block: e.target.value })} /></div>
+                    <div><Label>Dãy (Aisle)</Label><Input value={form.aisle} onChange={(e) => setForm({ ...form, aisle: e.target.value })} /></div>
+                    <div><Label>Tầng (optional)</Label><Input value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} /></div>
                   </div>
                   <div>
                     <Label>Location Type</Label>
@@ -186,7 +197,8 @@ function LocationPage() {
           </div>
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Location</TableHead><TableHead>Zone</TableHead><TableHead>Block</TableHead>
+              <TableHead>Location</TableHead><TableHead>Zone</TableHead>
+              <TableHead>Dãy</TableHead><TableHead>Tầng</TableHead>
               <TableHead className="text-right">Capacity</TableHead><TableHead className="text-right">Current</TableHead>
               <TableHead>Status</TableHead><TableHead></TableHead>
             </TableRow></TableHeader>
@@ -195,9 +207,13 @@ function LocationPage() {
                 const full = l.capacityPallet < 9999 && l.currentPalletCount >= l.capacityPallet;
                 return (
                   <TableRow key={l.id}>
-                    <TableCell className="font-mono">{l.locationCode}</TableCell>
+                    <TableCell className="font-mono">
+                      <div>{l.locationCode}</div>
+                      <div className="text-[11px] text-muted-foreground">{formatLocationPath(l)}</div>
+                    </TableCell>
                     <TableCell>{l.zone}</TableCell>
-                    <TableCell>{l.block}</TableCell>
+                    <TableCell>{l.aisle ?? l.block ?? "—"}</TableCell>
+                    <TableCell>{l.tier ?? "—"}</TableCell>
                     <TableCell className="text-right">{l.capacityPallet < 9999 ? l.capacityPallet : "∞"}</TableCell>
                     <TableCell className="text-right">{l.currentPalletCount}</TableCell>
                     <TableCell><LocationStatusBadge status={l.status} full={full} /></TableCell>

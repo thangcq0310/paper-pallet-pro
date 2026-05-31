@@ -17,14 +17,14 @@ export const mockBatches: Batch[] = [
 ];
 
 export const mockLocations: Location[] = [
-  { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", locationType: "RECEIVING", zone: "RECV", block: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", locationType: "STAGING", zone: "STG", block: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l2", locationCode: "DOCK-01", locationName: "Loading Dock 1", locationType: "DOCK", zone: "DOCK", block: "-", capacityPallet: 30, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l4", locationCode: "FZ-A-01-01", locationType: "STORAGE", zone: "FZ-A", block: "01", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l5", locationCode: "FZ-A-01-02", locationType: "STORAGE", zone: "FZ-A", block: "01", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l6", locationCode: "FZ-B-01-01", locationType: "STORAGE", zone: "FZ-B", block: "01", capacityPallet: 2, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l7", locationCode: "DRY-A-01-01", locationType: "STORAGE", zone: "DRY-A", block: "01", capacityPallet: 4, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l8", locationCode: "DRY-A-01-02", locationType: "STORAGE", zone: "DRY-A", block: "01", capacityPallet: 4, currentPalletCount: 0, status: "Blocked", createdAt: now, updatedAt: now },
+  { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", locationType: "RECEIVING", zone: "RECV", block: "-", aisle: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", locationType: "STAGING", zone: "STG", block: "-", aisle: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l2", locationCode: "DOCK-01", locationName: "Loading Dock 1", locationType: "DOCK", zone: "DOCK", block: "-", aisle: "-", capacityPallet: 30, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l4", locationCode: "FZ-A-01-01", locationName: "Frozen Zone A - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "FZ-A", block: "01", aisle: "01", tier: "01", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l5", locationCode: "FZ-A-01-02", locationName: "Frozen Zone A - Aisle 01 - Tier 02", locationType: "STORAGE", zone: "FZ-A", block: "01", aisle: "01", tier: "02", capacityPallet: 2, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l6", locationCode: "FZ-B-01-01", locationName: "Frozen Zone B - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "FZ-B", block: "01", aisle: "01", tier: "01", capacityPallet: 2, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l7", locationCode: "DRY-A-01-01", locationName: "Dry Zone A - Aisle 01 - Tier 01", locationType: "STORAGE", zone: "DRY-A", block: "01", aisle: "01", tier: "01", capacityPallet: 4, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l8", locationCode: "DRY-A-01-02", locationName: "Dry Zone A - Aisle 01 - Tier 02", locationType: "STORAGE", zone: "DRY-A", block: "01", aisle: "01", tier: "02", capacityPallet: 4, currentPalletCount: 0, status: "Blocked", createdAt: now, updatedAt: now },
 ];
 
 export const mockPallets: Pallet[] = [

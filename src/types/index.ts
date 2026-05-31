@@ -29,6 +29,8 @@ export interface Location {
   locationType: LocationType;
   zone: string;
   block: string;
+  aisle?: string;
+  tier?: string;
   capacityPallet: number;
   currentPalletCount: number;
   status: LocationStatus;
