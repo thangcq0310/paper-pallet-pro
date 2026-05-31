@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useStore } from "@/services/store";
 import { printTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ function TaskPrintPage() {
   const task = tasks.find((t) => t.taskNo === taskNo);
   const lines = taskLines.filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
   const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
+  const autoPrintedRef = useRef(false);
 
   if (!task) {
     return (
@@ -34,6 +36,20 @@ function TaskPrintPage() {
       toast.error(e.message);
     }
   };
+
+  useEffect(() => {
+    if (!task || autoPrintedRef.current) return;
+    autoPrintedRef.current = true;
+    const t = window.setTimeout(() => {
+      try {
+        printTask(task.id);
+        window.print();
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [task]);
 
   const instruction =
     task.instruction ||

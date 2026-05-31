@@ -2,6 +2,15 @@ import { getState } from "./store";
 import type { Pallet } from "@/types";
 
 export type TaskPurpose = "MOVE" | "PICK";
+export interface AvailableSkuSummary {
+  skuCode: string;
+  skuName: string;
+  batchCount: number;
+  palletCount: number;
+  totalQty: number;
+  uom: string;
+  nearestExpDate: string;
+}
 export interface AvailableBatchSummary {
   batchNo: string;
   palletCount: number;
@@ -51,6 +60,11 @@ function getEligiblePalletsByPurpose(input: {
   });
 }
 
+function getSkuNameByCode(skuCode: string): string {
+  const sku = getState().skus.find((s) => s.skuCode === skuCode);
+  return sku?.skuName ?? skuCode;
+}
+
 export function hasOpenTaskLineForPallet(palletId: string) {
   const s = getState();
   const openHeaderIds = new Set(
@@ -59,6 +73,66 @@ export function hasOpenTaskLineForPallet(palletId: string) {
       .map((t) => t.id),
   );
   return s.taskLines.some((l) => l.palletId === palletId && l.status === "Open" && openHeaderIds.has(l.taskId));
+}
+
+export function getAvailableSkuSummary(input: {
+  purpose: TaskPurpose;
+}): AvailableSkuSummary[] {
+  const s = getState();
+  const eligiblePallets = s.pallets.filter((p) => {
+    if (!p.currentLocation) return false;
+    if (p.status === "Cancelled" || p.status === "Shipped" || p.status === "Pending Putaway") return false;
+    if (p.status !== "In Stock" && p.status !== "Staged") return false;
+    if (hasOpenTaskLineForPallet(p.palletId)) return false;
+    const loc = s.locations.find((l) => l.locationCode === p.currentLocation);
+    if (!loc || loc.locationType !== "STORAGE") return false;
+    return true;
+  });
+
+  const map = new Map<string, AvailableSkuSummary>();
+  for (const p of eligiblePallets) {
+    const row = map.get(p.skuCode);
+    const expTs = toTs(p.expDate);
+    if (!row) {
+      map.set(p.skuCode, {
+        skuCode: p.skuCode,
+        skuName: p.skuName || getSkuNameByCode(p.skuCode),
+        batchCount: 1,
+        palletCount: 1,
+        totalQty: p.qty,
+        uom: p.uom,
+        nearestExpDate: p.expDate ?? "",
+      });
+      continue;
+    }
+
+    row.palletCount += 1;
+    row.totalQty += p.qty;
+    if (!row.uom && p.uom) row.uom = p.uom;
+    if (expTs < toTs(row.nearestExpDate)) row.nearestExpDate = p.expDate ?? "";
+  }
+
+  for (const skuCode of map.keys()) {
+    const batches = new Set(
+      eligiblePallets.filter((p) => p.skuCode === skuCode).map((p) => p.batchNo).filter(Boolean),
+    );
+    const row = map.get(skuCode);
+    if (row) row.batchCount = batches.size;
+  }
+
+  const rows = Array.from(map.values());
+  if (input.purpose === "PICK") {
+    return rows.sort((a, b) => {
+      const expDiff = toTs(a.nearestExpDate) - toTs(b.nearestExpDate);
+      if (expDiff !== 0) return expDiff;
+      return b.totalQty - a.totalQty;
+    });
+  }
+  return rows.sort((a, b) => {
+    const qtyDiff = b.totalQty - a.totalQty;
+    if (qtyDiff !== 0) return qtyDiff;
+    return a.skuCode.localeCompare(b.skuCode);
+  });
 }
 
 export function listAvailablePalletsBySkuBatch(input: {

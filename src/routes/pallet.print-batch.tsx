@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useStore } from "@/services/store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,20 @@ function PrintBatchPage() {
   const params = new URLSearchParams(location?.search ?? "");
   const idsParam = params.get("ids") ?? "";
   const ids = idsParam ? idsParam.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const autoPrintedRef = useRef(false);
 
   const pallets = ids
     .map((id) => allPallets.find((p) => p.palletId === id))
     .filter(Boolean) as (typeof allPallets)[number][];
+
+  useEffect(() => {
+    if (!pallets.length || autoPrintedRef.current) return;
+    autoPrintedRef.current = true;
+    const t = window.setTimeout(() => {
+      window.print();
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [pallets.length]);
 
   if (pallets.length === 0) {
     return (
