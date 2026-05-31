@@ -36,6 +36,8 @@ function OutboundPage() {
   const [destination, setDestination] = useState("");
   const [skuCode, setSkuCode] = useState("");
   const [batchNo, setBatchNo] = useState("");
+  const [skuQuery, setSkuQuery] = useState("");
+  const [batchQuery, setBatchQuery] = useState("");
   const [requiredQty, setRequiredQty] = useState(0);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -79,10 +81,28 @@ function OutboundPage() {
       });
   }, [availableSkuSummaries, skuSummaryByCode, showOnlyAvailableSku, skus]);
 
+  const filteredSkuOptions = useMemo(() => {
+    const q = skuQuery.trim().toLowerCase();
+    const base = skuOptions.filter(({ sku }) => {
+      if (!q) return true;
+      return sku.skuCode.toLowerCase().includes(q) || sku.skuName.toLowerCase().includes(q);
+    });
+    return q ? base : base.slice(0, 12);
+  }, [skuOptions, skuQuery]);
+
   const availableBatchSummaries = useMemo(() => {
     if (!skuCode) return [];
     return getAvailableBatchSummaryBySku({ skuCode, purpose: "PICK" });
   }, [skuCode, tasks, taskLines, locations]);
+
+  const filteredBatchSummaries = useMemo(() => {
+    const q = batchQuery.trim().toLowerCase();
+    const base = availableBatchSummaries.filter((b) => {
+      if (!q) return true;
+      return b.batchNo.toLowerCase().includes(q);
+    });
+    return q ? base : base.slice(0, 12);
+  }, [availableBatchSummaries, batchQuery]);
 
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
@@ -138,6 +158,14 @@ function OutboundPage() {
   const selectedBatchSummary = useMemo(
     () => availableBatchSummaries.find((b) => b.batchNo === batchNo) ?? null,
     [availableBatchSummaries, batchNo],
+  );
+  const selectedSku = useMemo(
+    () => skus.find((s) => s.skuCode === skuCode) ?? null,
+    [skus, skuCode],
+  );
+  const selectedSkuSummary = useMemo(
+    () => skuSummaryByCode.get(skuCode) ?? null,
+    [skuSummaryByCode, skuCode],
   );
 
   const pickTasks = useMemo(() => {
@@ -286,7 +314,7 @@ function OutboundPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Outbound / PICK" description="Chọn SKU/Batch → chọn pallet → tạo 1 PICK task nhiều lines" />
+      <PageHeader title="Outbound / PICK" description="Tìm SKU/Batch → chọn pallet → tạo 1 PICK task nhiều lines" />
 
       <Card className="rounded-2xl">
         <CardContent className="p-4">
@@ -355,86 +383,77 @@ function OutboundPage() {
             <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="External / Truck / Container" />
           </div>
           <div className="space-y-2">
-            <Label>SKU khả dụng</Label>
-            <div className="flex items-center gap-2">
-              <Switch checked={showOnlyAvailableSku} onCheckedChange={setShowOnlyAvailableSku} />
-              <span className="text-sm text-muted-foreground">Chỉ hiện SKU có pallet khả dụng</span>
+            <div className="flex items-center justify-between gap-3">
+              <Label>Tìm SKU</Label>
+              <div className="flex items-center gap-2">
+                <Switch checked={showOnlyAvailableSku} onCheckedChange={setShowOnlyAvailableSku} />
+                <span className="text-sm text-muted-foreground">Chỉ hiện SKU có pallet khả dụng</span>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {skuOptions.length === 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {showOnlyAvailableSku ? "Chưa có SKU khả dụng để PICK." : "Chưa có SKU nào."}
-                </span>
-              )}
-              {skuOptions.map(({ sku, summary }) => (
-                <button
-                  key={sku.skuCode}
-                  type="button"
-                  onClick={() => {
-                    setSkuCode(sku.skuCode);
-                    setBatchNo("");
-                    setSelected({});
-                    setAutoSelectResult(null);
-                  }}
-                  className={cn(
-                    "flex min-w-56 items-center justify-between rounded-xl border px-3 py-2 text-left transition",
-                    skuCode === sku.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
-                    !summary ? "opacity-75" : "",
-                  )}
-                >
-                  <div>
-                    <div className="font-mono text-sm">{sku.skuCode}</div>
-                    <div className="text-xs text-muted-foreground">{sku.skuName}</div>
+            <Input
+              placeholder="Nhập SKU code hoặc tên để tìm"
+              value={skuQuery}
+              onChange={(e) => setSkuQuery(e.target.value)}
+            />
+            <div className="rounded-xl border p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-sm font-medium">Kết quả SKU</div>
+                <div className="text-xs text-muted-foreground">{filteredSkuOptions.length} kết quả</div>
+              </div>
+              <div className="max-h-72 space-y-2 overflow-auto pr-1">
+                {filteredSkuOptions.length === 0 && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    {showOnlyAvailableSku ? "Không có SKU khả dụng khớp từ khóa." : "Không có SKU nào khớp từ khóa."}
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    {summary ? (
-                      <>
-                        <Badge variant="outline">{summary.palletCount} pal</Badge>
-                        <span className="text-xs text-muted-foreground">{summary.totalQty}</span>
-                      </>
-                    ) : (
-                      <Badge variant="destructive">No available pallet</Badge>
+                )}
+                {filteredSkuOptions.map(({ sku, summary }) => (
+                  <button
+                    key={sku.skuCode}
+                    type="button"
+                    onClick={() => {
+                      setSkuCode(sku.skuCode);
+                      setSkuQuery(sku.skuCode);
+                      setBatchNo("");
+                      setBatchQuery("");
+                      setSelected({});
+                      setAutoSelectResult(null);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition",
+                      skuCode === sku.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
+                      !summary ? "opacity-75" : "",
                     )}
-                  </div>
-                </button>
-              ))}
+                  >
+                    <div>
+                      <div className="font-mono text-sm">{sku.skuCode}</div>
+                      <div className="text-xs text-muted-foreground">{sku.skuName}</div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {summary ? (
+                        <>
+                          <Badge variant="outline">{summary.palletCount} pal</Badge>
+                          <span className="text-xs text-muted-foreground">{summary.totalQty}</span>
+                        </>
+                      ) : (
+                        <Badge variant="destructive">No available pallet</Badge>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
+            {selectedSku && (
+              <div className="text-xs text-muted-foreground">
+                Đang chọn: <span className="font-mono">{selectedSku.skuCode}</span> - {selectedSku.skuName}
+                {selectedSkuSummary ? (
+                  <> | Khả dụng: {selectedSkuSummary.palletCount} pallets, {selectedSkuSummary.totalQty} {selectedSkuSummary.uom}</>
+                ) : (
+                  <> | SKU này hiện không có pallet khả dụng.</>
+                )}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <Label>SKU master</Label>
-              <Select
-                value={skuCode}
-                onValueChange={(v) => {
-                  setSkuCode(v);
-                  setBatchNo("");
-                  setSelected({});
-                  setAutoSelectResult(null);
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder="Chọn SKU" /></SelectTrigger>
-                <SelectContent>
-                  {skuOptions.map(({ sku, summary }) => {
-                    return (
-                      <SelectItem key={sku.id} value={sku.skuCode}>
-                        <div className="flex w-full items-center justify-between gap-3">
-                          <span>{sku.skuCode} - {sku.skuName}</span>
-                          <Badge variant="outline" className="ml-3">{summary ? `${summary.palletCount} / ${summary.totalQty}` : "No available pallet"}</Badge>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              {skuCode && skuSummaryByCode.get(skuCode) && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Khả dụng: {skuSummaryByCode.get(skuCode)?.palletCount} pallets, {skuSummaryByCode.get(skuCode)?.totalQty} {skuSummaryByCode.get(skuCode)?.uom}
-                </div>
-              )}
-              {skuCode && !skuSummaryByCode.get(skuCode) && (
-                <div className="mt-2 text-xs text-muted-foreground">SKU này hiện không có pallet khả dụng.</div>
-              )}
-            </div>
             <div>
               <Label>Qty yêu cầu</Label>
               <div className="mt-2 flex flex-col gap-2">
@@ -453,15 +472,32 @@ function OutboundPage() {
             </div>
           </div>
           <div>
-            <Label>Batch đang có pallet khả dụng</Label>
-            <div className="mt-2 flex flex-wrap gap-2 rounded-xl border p-3 min-h-12">
-              {!skuCode && (
-                <span className="text-sm text-muted-foreground">Chọn SKU trước để hiện danh sách batch</span>
-              )}
-              {skuCode && availableBatchSummaries.length === 0 && (
-                <span className="text-sm text-muted-foreground">SKU này hiện không có pallet khả dụng để PICK.</span>
-              )}
-              {availableBatchSummaries.map((b) => {
+            <div className="flex items-center justify-between gap-3">
+              <Label>Search Batch theo SKU đã chọn</Label>
+              {selectedBatchSummary && <Badge variant="outline">Selected: {selectedBatchSummary.batchNo}</Badge>}
+            </div>
+            <Input
+              placeholder={skuCode ? "Nhập batchNo để tìm" : "Chọn SKU trước"}
+              value={batchQuery}
+              onChange={(e) => setBatchQuery(e.target.value)}
+              disabled={!skuCode}
+            />
+            <div className="rounded-xl border p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-sm font-medium">Batch khả dụng của SKU đã chọn</div>
+                <div className="text-xs text-muted-foreground">{filteredBatchSummaries.length} kết quả</div>
+              </div>
+              <div className="max-h-72 space-y-2 overflow-auto pr-1">
+                {!skuCode && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Chọn SKU trước để tìm batch</div>
+                )}
+                {skuCode && availableBatchSummaries.length === 0 && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">SKU này hiện không có pallet khả dụng để PICK.</div>
+                )}
+                {skuCode && filteredBatchSummaries.length === 0 && availableBatchSummaries.length > 0 && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">Không có batch nào khớp từ khóa.</div>
+                )}
+                {filteredBatchSummaries.map((b) => {
                 const dte = batchDaysToExpiry(b.nearestExpDate);
                 const enough = requiredQty > 0 ? b.totalQty >= requiredQty : null;
                 return (
@@ -507,6 +543,7 @@ function OutboundPage() {
                   </button>
                 );
               })}
+              </div>
             </div>
           </div>
         </CardContent>
