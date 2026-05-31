@@ -59,6 +59,8 @@ function InboundPalletizePutawayPage() {
   const [selectedPallet, setSelectedPallet] = useState<Record<string, boolean>>({});
   const [targetBins, setTargetBins] = useState<string[]>([]);
   const [binPicker, setBinPicker] = useState("");
+  const [warehouseFilter, setWarehouseFilter] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("");
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [createdTaskIds, setCreatedTaskIds] = useState<string[]>([]);
 
@@ -81,6 +83,29 @@ function InboundPalletizePutawayPage() {
     () => locations.filter((l) => l.locationType === "STORAGE" && l.status === "Active"),
     [locations],
   );
+
+  const zoneToWarehouse = (zone: string) => zone.split("-")[0] || zone;
+
+  const warehouses = useMemo(() => {
+    const items = storageBins.map((l) => zoneToWarehouse(l.zone)).filter(Boolean);
+    return Array.from(new Set(items)).sort();
+  }, [storageBins]);
+
+  const zonesForWarehouse = useMemo(() => {
+    if (!warehouseFilter) return [];
+    const items = storageBins
+      .filter((l) => zoneToWarehouse(l.zone) === warehouseFilter)
+      .map((l) => l.zone)
+      .filter(Boolean);
+    return Array.from(new Set(items)).sort();
+  }, [storageBins, warehouseFilter]);
+
+  const binsForPicker = useMemo(() => {
+    if (!warehouseFilter || !zoneFilter) return [];
+    return storageBins
+      .filter((l) => zoneToWarehouse(l.zone) === warehouseFilter && l.zone === zoneFilter)
+      .filter((l) => !targetBins.includes(l.locationCode));
+  }, [storageBins, targetBins, warehouseFilter, zoneFilter]);
 
   const derivedUom = sku?.uom ?? "";
   const effectiveUom = form.uom || derivedUom;
@@ -603,19 +628,67 @@ function InboundPalletizePutawayPage() {
         <CardContent className="p-5 pt-0 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div>
-              <Label>Add Target Bin</Label>
-              <Select value={binPicker} onValueChange={setBinPicker} disabled={generatedPalletIds.length === 0}>
-                <SelectTrigger><SelectValue placeholder="Chọn STORAGE bin" /></SelectTrigger>
-                <SelectContent>
-                  {storageBins
-                    .filter((l) => !targetBins.includes(l.locationCode))
-                    .map((l) => (
-                      <SelectItem key={l.id} value={l.locationCode}>
-                        {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <Label>Kho</Label>
+                  <Select
+                    value={warehouseFilter}
+                    onValueChange={(v) => {
+                      setWarehouseFilter(v);
+                      setZoneFilter("");
+                      setBinPicker("");
+                    }}
+                    disabled={generatedPalletIds.length === 0}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Chọn kho" /></SelectTrigger>
+                    <SelectContent>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w} value={w}>{w}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Zone</Label>
+                  <Select
+                    value={zoneFilter}
+                    onValueChange={(v) => {
+                      setZoneFilter(v);
+                      setBinPicker("");
+                    }}
+                    disabled={!warehouseFilter || generatedPalletIds.length === 0}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Chọn zone" /></SelectTrigger>
+                    <SelectContent>
+                      {zonesForWarehouse.map((z) => (
+                        <SelectItem key={z} value={z}>{z}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Target Bin</Label>
+                  <Select
+                    value={binPicker}
+                    onValueChange={setBinPicker}
+                    disabled={generatedPalletIds.length === 0 || !warehouseFilter || !zoneFilter}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Chọn bin" /></SelectTrigger>
+                    <SelectContent>
+                      {binsForPicker.map((l) => (
+                        <SelectItem key={l.id} value={l.locationCode}>
+                          {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
+                        </SelectItem>
+                      ))}
+                      {binsForPicker.length === 0 && (
+                        <SelectItem value="__empty" disabled>
+                          Không có bin phù hợp
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2 justify-end">
