@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask, createMoveTaskWithLines } from "@/services/taskService";
-import { listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
+import { getAvailableBatchSummaryBySku, listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
 import { autoAllocatePalletsToBins, getMultiTargetBinCapacityByTaskType } from "@/services/taskAllocationService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ export const Route = createFileRoute("/move")({ component: MovePage });
 
 function MovePage() {
   const skus = useStore((s) => s.skus);
-  const batches = useStore((s) => s.batches);
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const locations = useStore((s) => s.locations);
@@ -33,21 +32,31 @@ function MovePage() {
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [lastTaskNo, setLastTaskNo] = useState("");
 
-  const batchesBySku = useMemo(
-    () => batches.filter((b) => b.skuCode === skuCode),
-    [batches, skuCode],
-  );
+  const availableBatchSummaries = useMemo(() => {
+    if (!skuCode) return [];
+    return getAvailableBatchSummaryBySku({ skuCode, purpose: "MOVE" });
+  }, [skuCode, tasks, taskLines, locations]);
 
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
     return listAvailablePalletsBySkuBatch({ skuCode, batchNo, purpose: "MOVE" });
-  }, [skuCode, batchNo]);
+  }, [skuCode, batchNo, tasks, taskLines, locations]);
 
   const filteredPallets = useMemo(() => {
     if (!search.trim()) return availablePallets;
     const q = search.toLowerCase();
     return availablePallets.filter((p) => p.palletId.toLowerCase().includes(q) || (p.currentLocation ?? "").toLowerCase().includes(q));
   }, [availablePallets, search]);
+  const locationZoneByCode = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
+    [locations],
+  );
+  const daysToExpiry = (expDate?: string) => {
+    if (!expDate) return null;
+    const diff = new Date(expDate).getTime() - new Date().getTime();
+    if (!Number.isFinite(diff)) return null;
+    return Math.ceil(diff / (24 * 60 * 60 * 1000));
+  };
 
   const selectedIds = useMemo(
     () => availablePallets.filter((p) => selectedPallet[p.palletId]).map((p) => p.palletId),
@@ -167,28 +176,33 @@ function MovePage() {
             </Select>
           </div>
           <div>
-            <Label>Batch</Label>
+            <Label>Available Batches for Selected SKU</Label>
             <div className="mt-2 flex flex-wrap gap-2 rounded-xl border p-3 min-h-12">
               {!skuCode && (
                 <span className="text-sm text-muted-foreground">Chọn SKU trước để hiện danh sách batch</span>
               )}
-              {skuCode && batchesBySku.length === 0 && (
-                <span className="text-sm text-muted-foreground">SKU này chưa có batch</span>
+              {skuCode && availableBatchSummaries.length === 0 && (
+                <span className="text-sm text-muted-foreground">SKU này hiện không có pallet khả dụng để MOVE.</span>
               )}
-              {batchesBySku.map((b) => (
-                <Button
-                  key={b.id}
+              {availableBatchSummaries.map((b) => (
+                <button
+                  key={b.batchNo}
                   type="button"
-                  size="sm"
-                  variant={batchNo === b.batchNo ? "default" : "outline"}
+                  className={`text-left rounded-lg border p-3 min-w-56 ${batchNo === b.batchNo ? "border-primary bg-primary/5" : ""}`}
                   onClick={() => {
                     setBatchNo(b.batchNo);
                     setSelectedPallet({});
                     setAssignments({});
                   }}
                 >
-                  {b.batchNo}
-                </Button>
+                  <div className="font-mono text-xs">{b.batchNo}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {b.palletCount} pallets • {b.totalQty} {b.uom || ""}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    EXP: {b.nearestExpDate || "—"} • {b.locationCount} locations
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -196,7 +210,7 @@ function MovePage() {
       </Card>
 
       <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Section 2 - Available Pallets</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Section 2 - Available Pallets for Selected Batch</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Input
@@ -213,8 +227,9 @@ function MovePage() {
                 setSelectedPallet(Object.fromEntries(filteredPallets.map((p) => [p.palletId, true])));
               }}
             >
-              Select All Available
+              Select All Visible
             </Button>
+            <Button variant="outline" disabled={!Object.values(selectedPallet).some(Boolean)} onClick={() => setSelectedPallet({})}>Clear Selection</Button>
             <div className="text-sm text-muted-foreground">
               Total pallet: {selectedIds.length}/{availablePallets.length} | Selected qty: {totalSelectedQty}
             </div>
@@ -230,7 +245,10 @@ function MovePage() {
                   <TableHead>Batch</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead>UOM</TableHead>
+                  <TableHead>EXP Date</TableHead>
+                  <TableHead>Days to Expiry</TableHead>
                   <TableHead>Current Location</TableHead>
+                  <TableHead>Location Zone</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -251,12 +269,15 @@ function MovePage() {
                     <TableCell className="font-mono text-xs">{p.batchNo}</TableCell>
                     <TableCell className="text-right font-mono">{p.qty}</TableCell>
                     <TableCell>{p.uom}</TableCell>
+                    <TableCell className="text-xs">{p.expDate || "—"}</TableCell>
+                    <TableCell className="text-xs">{daysToExpiry(p.expDate) ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{p.currentLocation}</TableCell>
+                    <TableCell className="text-xs">{locationZoneByCode[p.currentLocation ?? ""] ?? "—"}</TableCell>
                     <TableCell>{p.status}</TableCell>
                   </TableRow>
                 ))}
                 {filteredPallets.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Chọn SKU/Batch để xem pallet phù hợp</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="py-6 text-center text-muted-foreground">Chọn SKU/Batch để xem pallet phù hợp</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

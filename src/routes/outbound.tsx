@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { createOutbound, syncOutboundStatusByNo } from "@/services/outboundService";
 import { cancelTask, createPickTaskWithLines } from "@/services/taskService";
-import { listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
+import { autoSelectPalletsByQty, getAvailableBatchSummaryBySku, listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,9 @@ export const Route = createFileRoute("/outbound")({ component: OutboundPage });
 
 function OutboundPage() {
   const skus = useStore((s) => s.skus);
-  const batches = useStore((s) => s.batches);
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
+  const locations = useStore((s) => s.locations);
 
   const [outboundNo, setOutboundNo] = useState("");
   const [destination, setDestination] = useState("");
@@ -30,22 +30,41 @@ function OutboundPage() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastOutboundNo, setLastOutboundNo] = useState("");
+  const [autoSelectResult, setAutoSelectResult] = useState<{
+    selectedQty: number;
+    overQty: number;
+    underQty: number;
+  } | null>(null);
 
-  const batchesBySku = useMemo(
-    () => batches.filter((b) => b.skuCode === skuCode),
-    [batches, skuCode],
-  );
+  const availableBatchSummaries = useMemo(() => {
+    if (!skuCode) return [];
+    return getAvailableBatchSummaryBySku({ skuCode, purpose: "PICK" });
+  }, [skuCode, tasks, taskLines, locations]);
 
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
     return listAvailablePalletsBySkuBatch({ skuCode, batchNo, purpose: "PICK" });
-  }, [skuCode, batchNo]);
+  }, [skuCode, batchNo, tasks, taskLines, locations]);
 
   const filteredPallets = useMemo(() => {
     if (!search.trim()) return availablePallets;
     const q = search.toLowerCase();
     return availablePallets.filter((p) => p.palletId.toLowerCase().includes(q) || (p.currentLocation ?? "").toLowerCase().includes(q));
   }, [availablePallets, search]);
+  const fefoRankByPalletId = useMemo(
+    () => Object.fromEntries(availablePallets.map((p, idx) => [p.palletId, idx + 1])),
+    [availablePallets],
+  );
+  const locationZoneByCode = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
+    [locations],
+  );
+  const daysToExpiry = (expDate?: string) => {
+    if (!expDate) return null;
+    const diff = new Date(expDate).getTime() - new Date().getTime();
+    if (!Number.isFinite(diff)) return null;
+    return Math.ceil(diff / (24 * 60 * 60 * 1000));
+  };
 
   const selectedPallets = useMemo(
     () => availablePallets.filter((p) => selected[p.palletId]),
@@ -130,6 +149,7 @@ function OutboundPage() {
                 setSkuCode(v);
                 setBatchNo("");
                 setSelected({});
+                setAutoSelectResult(null);
               }}
             >
               <SelectTrigger><SelectValue placeholder="Chọn SKU" /></SelectTrigger>
@@ -139,27 +159,36 @@ function OutboundPage() {
             </Select>
           </div>
           <div className="md:col-span-2">
-            <Label>Batch</Label>
+            <Label>Available Batches for Selected SKU</Label>
             <div className="mt-2 flex flex-wrap gap-2 rounded-xl border p-3 min-h-12">
               {!skuCode && (
                 <span className="text-sm text-muted-foreground">Chọn SKU trước để hiện danh sách batch</span>
               )}
-              {skuCode && batchesBySku.length === 0 && (
-                <span className="text-sm text-muted-foreground">SKU này chưa có batch</span>
+              {skuCode && availableBatchSummaries.length === 0 && (
+                <span className="text-sm text-muted-foreground">SKU này hiện không có pallet khả dụng để PICK.</span>
               )}
-              {batchesBySku.map((b) => (
-                <Button
-                  key={b.id}
+              {availableBatchSummaries.map((b) => (
+                <button
+                  key={b.batchNo}
                   type="button"
-                  size="sm"
-                  variant={batchNo === b.batchNo ? "default" : "outline"}
+                  className={`text-left rounded-lg border p-3 min-w-56 ${batchNo === b.batchNo ? "border-primary bg-primary/5" : ""}`}
                   onClick={() => {
                     setBatchNo(b.batchNo);
                     setSelected({});
+                    setAutoSelectResult(null);
                   }}
                 >
-                  {b.batchNo}
-                </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs">{b.batchNo}</span>
+                    {b.isFefoFirst && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">FEFO</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {b.palletCount} pallets • {b.totalQty} {b.uom || ""}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    EXP: {b.nearestExpDate || "—"} • {b.locationCount} locations
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -171,7 +200,7 @@ function OutboundPage() {
       </Card>
 
       <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Section 2 - Available Pallets (FEFO/FIFO)</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-base">Section 2 - Available Pallets for Selected Batch</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2 items-center">
             <Input
@@ -186,7 +215,23 @@ function OutboundPage() {
               disabled={!filteredPallets.length}
               onClick={() => setSelected(Object.fromEntries(filteredPallets.map((p) => [p.palletId, true])))}
             >
-              Select All Available
+              Select All Visible
+            </Button>
+            <Button variant="outline" disabled={!Object.values(selected).some(Boolean)} onClick={() => setSelected({})}>Clear Selection</Button>
+            <Button
+              variant="outline"
+              disabled={!skuCode || !batchNo || requiredQty <= 0}
+              onClick={() => {
+                try {
+                  const result = autoSelectPalletsByQty({ skuCode, batchNo, requiredQty, purpose: "PICK" });
+                  setSelected(Object.fromEntries(result.palletIds.map((id) => [id, true])));
+                  setAutoSelectResult({ selectedQty: result.selectedQty, overQty: result.overQty, underQty: result.underQty });
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+            >
+              Auto Select by Required Qty
             </Button>
             <div className="text-sm text-muted-foreground">Selected pallet: {selectedPallets.length}/{availablePallets.length}</div>
           </div>
@@ -201,8 +246,11 @@ function OutboundPage() {
                   <TableHead>Batch</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead>UOM</TableHead>
-                  <TableHead>EXP</TableHead>
+                  <TableHead>EXP Date</TableHead>
+                  <TableHead>Days to Expiry</TableHead>
                   <TableHead>Current Location</TableHead>
+                  <TableHead>Location Zone</TableHead>
+                  <TableHead>FEFO Rank</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -222,12 +270,15 @@ function OutboundPage() {
                     <TableCell className="text-right font-mono">{p.qty}</TableCell>
                     <TableCell>{p.uom}</TableCell>
                     <TableCell className="text-xs">{p.expDate}</TableCell>
+                    <TableCell className="text-xs">{daysToExpiry(p.expDate) ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{p.currentLocation}</TableCell>
+                    <TableCell className="text-xs">{locationZoneByCode[p.currentLocation ?? ""] ?? "—"}</TableCell>
+                    <TableCell className="text-xs font-mono">{fefoRankByPalletId[p.palletId] ?? "-"}</TableCell>
                     <TableCell>{p.status}</TableCell>
                   </TableRow>
                 ))}
                 {filteredPallets.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Chọn SKU/Batch để hiển thị pallet phù hợp</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="py-6 text-center text-muted-foreground">Chọn SKU/Batch để hiển thị pallet phù hợp</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -243,6 +294,12 @@ function OutboundPage() {
           <div>Remaining Qty: <span className="font-mono">{remainingQty}</span></div>
           {isUnder && <div className="text-warning">Cảnh báo: Chọn thiếu so với Required Qty.</div>}
           {isOver && <div className="text-destructive">Cảnh báo: Chọn vượt Required Qty (được phép nếu xuất nguyên pallet).</div>}
+          {autoSelectResult && autoSelectResult.underQty > 0 && (
+            <div className="text-warning">Auto Select: không đủ tồn khả dụng, thiếu {autoSelectResult.underQty}.</div>
+          )}
+          {autoSelectResult && autoSelectResult.overQty > 0 && (
+            <div className="text-destructive">Auto Select: vượt {autoSelectResult.overQty} do chọn theo nguyên pallet.</div>
+          )}
         </CardContent>
       </Card>
 
