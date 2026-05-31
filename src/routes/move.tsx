@@ -13,8 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
+import { SkuBatchSearchPanel } from "@/components/SkuBatchSearchPanel";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 
@@ -28,10 +28,7 @@ function MovePage() {
 
   const [skuCode, setSkuCode] = useState("");
   const [batchNo, setBatchNo] = useState("");
-  const [skuQuery, setSkuQuery] = useState("");
-  const [batchQuery, setBatchQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [showOnlyAvailableSku, setShowOnlyAvailableSku] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [groupMode, setGroupMode] = useState<"location" | "zone">("location");
 
@@ -47,44 +44,6 @@ function MovePage() {
   }, [skuCode, tasks, taskLines, locations]);
 
   const availableSkuSummaries = useMemo(() => getAvailableSkuSummary({ purpose: "MOVE" }), [tasks, taskLines, locations]);
-  const skuSummaryByCode = useMemo(
-    () => new Map(availableSkuSummaries.map((s) => [s.skuCode, s])),
-    [availableSkuSummaries],
-  );
-  const skuOptions = useMemo(() => {
-    const availableOrder = new Map(availableSkuSummaries.map((s, idx) => [s.skuCode, idx]));
-    return [...skus]
-      .map((sku) => ({ sku, summary: skuSummaryByCode.get(sku.skuCode) }))
-      .filter(({ summary }) => !showOnlyAvailableSku || !!summary)
-      .sort((a, b) => {
-        const ai = availableOrder.get(a.sku.skuCode);
-        const bi = availableOrder.get(b.sku.skuCode);
-        if (showOnlyAvailableSku) {
-          if (ai != null && bi != null && ai !== bi) return ai - bi;
-          if (ai != null) return -1;
-          if (bi != null) return 1;
-          return a.sku.skuCode.localeCompare(b.sku.skuCode);
-        }
-        if (ai != null && bi != null && ai !== bi) return ai - bi;
-        if (ai != null) return -1;
-        if (bi != null) return 1;
-        const aAvailable = !!a.summary;
-        const bAvailable = !!b.summary;
-        if (aAvailable !== bAvailable) return aAvailable ? -1 : 1;
-        return a.sku.skuCode.localeCompare(b.sku.skuCode);
-      });
-  }, [availableSkuSummaries, skuSummaryByCode, showOnlyAvailableSku, skus]);
-
-  const filteredSkuOptions = useMemo(() => {
-    const q = skuQuery.trim().toLowerCase();
-    const base = skuOptions.filter(({ sku }) => {
-      if (!q) return true;
-      return sku.skuCode.toLowerCase().includes(q)
-        || sku.skuName.toLowerCase().includes(q);
-    });
-    return q ? base : base.slice(0, 12);
-  }, [skuOptions, skuQuery]);
-
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
     return listAvailablePalletsBySkuBatch({ skuCode, batchNo, purpose: "MOVE" });
@@ -109,29 +68,6 @@ function MovePage() {
     if (!Number.isFinite(diff)) return null;
     return Math.ceil(diff / (24 * 60 * 60 * 1000));
   };
-  const batchDaysToExpiry = (expDate?: string) => daysToExpiry(expDate);
-
-  const selectedSku = useMemo(
-    () => skus.find((s) => s.skuCode === skuCode) ?? null,
-    [skus, skuCode],
-  );
-  const selectedSkuSummary = useMemo(
-    () => skuSummaryByCode.get(skuCode) ?? null,
-    [skuSummaryByCode, skuCode],
-  );
-  const selectedBatchSummary = useMemo(
-    () => availableBatchSummaries.find((b) => b.batchNo === batchNo) ?? null,
-    [availableBatchSummaries, batchNo],
-  );
-  const filteredBatchSummaries = useMemo(() => {
-    const q = batchQuery.trim().toLowerCase();
-    const rows = availableBatchSummaries.filter((b) => {
-      if (!q) return true;
-      return b.batchNo.toLowerCase().includes(q);
-    });
-    return q ? rows : rows.slice(0, 12);
-  }, [availableBatchSummaries, batchQuery]);
-
   const selectedIds = useMemo(
     () => availablePallets.filter((p) => selectedPallet[p.palletId]).map((p) => p.palletId),
     [availablePallets, selectedPallet],
@@ -369,152 +305,26 @@ function MovePage() {
           <CardTitle className="text-base">Section 1 - Chọn SKU/Batch</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <Label>Tìm SKU</Label>
-                <div className="flex items-center gap-2">
-                  <Switch checked={showOnlyAvailableSku} onCheckedChange={setShowOnlyAvailableSku} />
-                  <span className="text-sm text-muted-foreground">Chỉ hiện SKU có pallet khả dụng</span>
-                </div>
-              </div>
-              <Input
-                placeholder="Nhập SKU code hoặc tên để tìm"
-                value={skuQuery}
-                onChange={(e) => setSkuQuery(e.target.value)}
-              />
-              <div className="rounded-xl border p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm font-medium">Kết quả SKU</div>
-                  <div className="text-xs text-muted-foreground">{filteredSkuOptions.length} kết quả</div>
-                </div>
-                <div className="max-h-72 space-y-2 overflow-auto pr-1">
-                  {filteredSkuOptions.length === 0 && (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      {showOnlyAvailableSku ? "Không có SKU khả dụng khớp từ khóa." : "Không có SKU nào khớp từ khóa."}
-                    </div>
-                  )}
-                  {filteredSkuOptions.map(({ sku, summary }) => (
-                    <button
-                      key={sku.skuCode}
-                      type="button"
-                      onClick={() => {
-                        setSkuCode(sku.skuCode);
-                        setSkuQuery(sku.skuCode);
-                        setBatchNo("");
-                        setBatchQuery("");
-                        setSelectedPallet({});
-                        setAssignments({});
-                      }}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition",
-                        skuCode === sku.skuCode ? "border-primary bg-primary/5" : "hover:border-primary/60",
-                        !summary ? "opacity-75" : "",
-                      )}
-                    >
-                      <div>
-                        <div className="font-mono text-sm">{sku.skuCode}</div>
-                        <div className="text-xs text-muted-foreground">{sku.skuName}</div>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {summary ? (
-                          <>
-                            <Badge variant="outline">{summary.palletCount} pal</Badge>
-                            <span className="text-xs text-muted-foreground">{summary.totalQty}</span>
-                          </>
-                        ) : (
-                          <Badge variant="destructive">No available pallet</Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {selectedSku && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Đang chọn: <span className="font-mono">{selectedSku.skuCode}</span> - {selectedSku.skuName}
-                  {selectedSkuSummary ? (
-                    <> | Khả dụng: {selectedSkuSummary.palletCount} pallets, {selectedSkuSummary.totalQty} {selectedSkuSummary.uom}</>
-                  ) : (
-                    <> | SKU này hiện không có pallet khả dụng.</>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <Label>Search Batch theo SKU đã chọn</Label>
-                {selectedBatchSummary && (
-                  <Badge variant="outline">
-                    Selected: {selectedBatchSummary.batchNo}
-                  </Badge>
-                )}
-              </div>
-              <Input
-                placeholder={skuCode ? "Nhập batchNo để tìm" : "Chọn SKU trước"}
-                value={batchQuery}
-                onChange={(e) => setBatchQuery(e.target.value)}
-                disabled={!skuCode}
-              />
-              <div className="rounded-xl border p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm font-medium">Batch khả dụng của SKU đã chọn</div>
-                  <div className="text-xs text-muted-foreground">{filteredBatchSummaries.length} kết quả</div>
-                </div>
-                <div className="max-h-72 space-y-2 overflow-auto pr-1">
-                  {!skuCode && (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Chọn SKU trước để tìm batch</div>
-                  )}
-                  {skuCode && availableBatchSummaries.length === 0 && (
-                    <div className="py-6 text-center text-sm text-muted-foreground">SKU này hiện không có pallet khả dụng để MOVE.</div>
-                  )}
-                  {skuCode && filteredBatchSummaries.length === 0 && availableBatchSummaries.length > 0 && (
-                    <div className="py-6 text-center text-sm text-muted-foreground">Không có batch nào khớp từ khóa.</div>
-                  )}
-                  {filteredBatchSummaries.map((b) => (
-                    <button
-                      key={b.batchNo}
-                      type="button"
-                      className={cn(
-                        "w-full rounded-xl border p-3 text-left transition",
-                        batchNo === b.batchNo ? "border-primary bg-primary/5" : "hover:border-primary/60",
-                      )}
-                      onClick={() => {
-                        setBatchNo(b.batchNo);
-                        setBatchQuery(b.batchNo);
-                        setSelectedPallet({});
-                        setAssignments({});
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="font-mono text-xs">{b.batchNo}</div>
-                        <div className="flex gap-1">
-                          {b.isFefoFirst && <Badge className="bg-amber-500 text-white hover:bg-amber-500">FEFO</Badge>}
-                          {batchDaysToExpiry(b.nearestExpDate) != null && batchDaysToExpiry(b.nearestExpDate)! <= 60 && (
-                            <Badge variant="destructive">Near Expiry</Badge>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        <Badge variant="outline">{b.palletCount} pallets</Badge>
-                        <Badge variant="outline">{b.totalQty} {b.uom || ""}</Badge>
-                        <Badge variant="outline">EXP {b.nearestExpDate || "—"}</Badge>
-                        <Badge variant="outline">{b.locationCount} locations</Badge>
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {b.locations.slice(0, 2).map((code) => locationPathByCode[code] ?? code).join(", ")}
-                        {b.locations.length > 2 ? ` +${b.locations.length - 2}` : ""}
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        Created: {b.earliestCreatedAt ? new Date(b.earliestCreatedAt).toLocaleDateString() : "—"}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <SkuBatchSearchPanel
+            purposeLabel="MOVE"
+            skus={skus}
+            availableSkuSummaries={availableSkuSummaries}
+            availableBatchSummaries={availableBatchSummaries}
+            selectedSkuCode={skuCode}
+            selectedBatchNo={batchNo}
+            onSkuSelect={(nextSkuCode) => {
+              setSkuCode(nextSkuCode);
+              setBatchNo("");
+              setSelectedPallet({});
+              setAssignments({});
+            }}
+            onBatchSelect={(nextBatchNo) => {
+              setBatchNo(nextBatchNo);
+              setSelectedPallet({});
+              setAssignments({});
+            }}
+            formatLocationLabel={(locationCode) => locationPathByCode[locationCode] ?? locationCode}
+          />
         </CardContent>
       </Card>
 
