@@ -14,12 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
-import { TaskStatusBadge } from "@/components/StatusBadges";
 import { CreatedTaskBanner } from "@/components/CreatedTaskBanner";
 import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
 import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
+import { TaskListCard } from "@/components/TaskListCard";
 import { WorkflowStepperCard } from "@/components/WorkflowStepperCard";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
@@ -292,60 +291,25 @@ function OutboundPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Tạo PICK Task</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <Button onClick={doCreatePickTask} disabled={!canCreate}>Tạo PICK Task ({selectedPallets.length})</Button>
-
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task No</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Lines</TableHead>
-                  <TableHead className="text-right">Print</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pickTasks.map((t) => {
-                  const lines = lineMap.get(t.id) ?? [];
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                      <TableCell><TaskStatusBadge status={t.status} /></TableCell>
-                      <TableCell className="text-right font-mono">{lines.length}</TableCell>
-                      <TableCell className="text-right font-mono">{t.printCount}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer")}>Print</Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            try {
-                              cancelTask(t.id);
-                              toast.success("Cancelled");
-                            } catch (e: any) {
-                              toast.error(e.message);
-                            }
-                          }}
-                          disabled={t.status === "Cancelled" || t.status === "Confirmed"}
-                        >
-                          Cancel
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {pickTasks.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Chưa có PICK task theo outbound hiện tại</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <Button onClick={doCreatePickTask} disabled={!canCreate}>Tạo PICK Task ({selectedPallets.length})</Button>
+        <TaskListCard
+          title="Tạo PICK Task"
+          tasks={pickTasks}
+          lineMap={lineMap}
+          currentTaskNo={lastTaskNo}
+          emptyMessage="Chưa có PICK task theo outbound hiện tại"
+          onPrintTask={(taskNo) => window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer")}
+          onCancelTask={(task) => {
+            try {
+              cancelTask(task.id);
+              toast.success("Cancelled");
+            } catch (e: any) {
+              toast.error(e.message);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }

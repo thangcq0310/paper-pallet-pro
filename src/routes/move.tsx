@@ -11,10 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
-import { TaskStatusBadge } from "@/components/StatusBadges";
 import { CreatedTaskBanner } from "@/components/CreatedTaskBanner";
 import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
 import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
+import { TaskListCard } from "@/components/TaskListCard";
 import { WorkflowStepperCard } from "@/components/WorkflowStepperCard";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
@@ -377,65 +377,30 @@ function MovePage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Tạo MOVE Task</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={doCreateMoveTask} disabled={!canCreateTask}>Tạo MOVE Task ({selectedIds.length})</Button>
-            {allocationStatus.totalAssigned !== selectedIds.length && selectedIds.length > 0 && (
-              <span className="text-sm text-destructive">Chưa allocate đủ target bin cho tất cả pallet.</span>
-            )}
-          </div>
-
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task No</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Lines</TableHead>
-                  <TableHead className="text-right">Print</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {openMoveTasks.map((t) => {
-                  const lines = openTaskMap.get(t.id) ?? [];
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell className="font-mono text-xs">{t.taskNo}{t.taskNo === lastTaskNo ? " (new)" : ""}</TableCell>
-                      <TableCell><TaskStatusBadge status={t.status} /></TableCell>
-                      <TableCell className="text-right font-mono">{lines.length}</TableCell>
-                      <TableCell className="text-right font-mono">{t.printCount}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer")}>Print</Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            try {
-                              cancelTask(t.id);
-                              toast.success("Cancelled");
-                            } catch (e: any) {
-                              toast.error(e.message);
-                            }
-                          }}
-                          disabled={t.status === "Cancelled" || t.status === "Confirmed"}
-                        >
-                          Cancel
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {openMoveTasks.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Không có MOVE task mở</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={doCreateMoveTask} disabled={!canCreateTask}>Tạo MOVE Task ({selectedIds.length})</Button>
+          {allocationStatus.totalAssigned !== selectedIds.length && selectedIds.length > 0 && (
+            <span className="text-sm text-destructive">Chưa allocate đủ target bin cho tất cả pallet.</span>
+          )}
+        </div>
+        <TaskListCard
+          title="Tạo MOVE Task"
+          tasks={openMoveTasks}
+          lineMap={openTaskMap}
+          currentTaskNo={lastTaskNo}
+          emptyMessage="Không có MOVE task mở"
+          onPrintTask={(taskNo) => window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer")}
+          onCancelTask={(task) => {
+            try {
+              cancelTask(task.id);
+              toast.success("Cancelled");
+            } catch (e: any) {
+              toast.error(e.message);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }
