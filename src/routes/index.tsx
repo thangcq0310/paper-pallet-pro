@@ -52,7 +52,7 @@ function Dashboard() {
   const shippedToday = movements.filter((m) => m.movementType === "OUT" && m.timestamp.startsWith(today)).length;
   const inboundToday = movements.filter((m) => m.movementType === "IN" && m.timestamp.startsWith(today)).length;
   const outboundToday = movements.filter((m) => m.movementType === "OUT" && m.timestamp.startsWith(today)).length;
-  const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "In Progress").length;
+  const openTasks = tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed").length;
 
   const recentMovements = movements.slice(0, 6);
   const waitingPutaway = pallets.filter((p) => p.status === "Pending Putaway" && locations.find(l => l.locationCode === p.currentLocation)?.locationType === "RECEIVING");
@@ -115,7 +115,7 @@ function Dashboard() {
               {waitingPutaway.length === 0 && <p className="text-xs text-muted-foreground">Không có pallet chờ putaway</p>}
               {waitingPutaway.slice(0, 5).map((p) => (
                 <div key={p.id} className="flex items-center justify-between text-sm">
-                  <Link to="/putaway" className="font-mono text-xs hover:underline">{p.palletId}</Link>
+                  <Link to="/pallet/create" className="font-mono text-xs hover:underline">{p.palletId}</Link>
                   <PalletStatusBadge status={p.status} />
                 </div>
               ))}

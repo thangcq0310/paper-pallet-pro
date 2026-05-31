@@ -95,7 +95,7 @@ export interface Movement {
 }
 
 export type TaskType = "PUTAWAY" | "MOVE" | "PICK" | "ADJUST" | "COUNT";
-export type TaskStatus = "Open" | "Printed" | "In Progress" | "Confirmed" | "Cancelled";
+export type TaskStatus = "Open" | "Printed" | "Partially Confirmed" | "Confirmed" | "Cancelled";
 export type TaskPriority = "Low" | "Normal" | "High" | "Urgent";
 
 export interface WarehouseTask {
@@ -104,16 +104,6 @@ export interface WarehouseTask {
   taskType: TaskType;
   inboundNo?: string;
   outboundNo?: string;
-  palletId: string;
-  skuCode: string;
-  skuName: string;
-  batchNo: string;
-  qty: number;
-  uom: string;
-  weight: number;
-  fromLocation: string;
-  toLocation: string;
-  actualLocation?: string;
   status: TaskStatus;
   printCount: number;
   printedAt?: string;
@@ -125,6 +115,29 @@ export interface WarehouseTask {
   confirmedAt?: string;
   confirmedBy?: string;
   instruction?: string;
+  note?: string;
+}
+
+export type TaskLineStatus = "Open" | "Confirmed" | "Cancelled";
+
+export interface WarehouseTaskLine {
+  id: string;
+  taskId: string;
+  taskNo: string;
+  lineNo: number;
+  palletId: string;
+  skuCode: string;
+  skuName: string;
+  batchNo: string;
+  qty: number;
+  uom: string;
+  weight: number;
+  fromLocation: string | null;
+  toLocation: string | null;
+  actualLocation?: string | null;
+  status: TaskLineStatus;
+  confirmedAt?: string;
+  confirmedBy?: string;
   note?: string;
 }
 

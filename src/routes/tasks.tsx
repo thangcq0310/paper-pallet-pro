@@ -1,12 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
-import { cancelTask, confirmTask } from "@/services/taskService";
+import { cancelTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
@@ -16,59 +14,33 @@ export const Route = createFileRoute("/tasks")({ component: TasksPage });
 
 function TasksPage() {
   const tasks = useStore((s) => s.tasks);
-  const locations = useStore((s) => s.locations);
+  const taskLines = useStore((s) => s.taskLines);
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTaskId, setConfirmTaskId] = useState<string>("");
-  const [actualLocation, setActualLocation] = useState<string>("");
-  const confirmTaskObj = tasks.find((t) => t.id === confirmTaskId);
+
+  const lineStats = useMemo(() => {
+    const map = new Map<string, { lineCount: number; confirmedLineCount: number }>();
+    for (const l of taskLines) {
+      const st = map.get(l.taskId) ?? { lineCount: 0, confirmedLineCount: 0 };
+      st.lineCount += 1;
+      if (l.status === "Confirmed") st.confirmedLineCount += 1;
+      map.set(l.taskId, st);
+    }
+    return map;
+  }, [taskLines]);
 
   const filtered = tasks.filter((t) =>
     (typeFilter === "all" || t.taskType === typeFilter) &&
     (statusFilter === "all" || t.status === statusFilter),
   );
 
-  const doPrint = (taskId: string) => {
-    const t = tasks.find((x) => x.id === taskId);
-    if (!t) { toast.error("Task không tồn tại"); return; }
-    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
+  const doPrint = (taskNo: string) => {
+    window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
-
-  const doConfirm = (taskId: string, loc?: string) => {
-    try {
-      confirmTask(taskId, loc);
-      toast.success("Confirmed");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-  };
-
-  const actualLocationOptions = (() => {
-    if (!confirmTaskObj) return [];
-    if (confirmTaskObj.taskType === "PUTAWAY") {
-      return locations.filter(
-        (l) =>
-          l.status === "Active" &&
-          l.locationType === "STORAGE" &&
-          l.currentPalletCount < l.capacityPallet,
-      );
-    }
-    if (confirmTaskObj.taskType === "MOVE") {
-      return locations.filter(
-        (l) =>
-          l.status === "Active" &&
-          l.locationType === "STORAGE" &&
-          l.locationCode !== confirmTaskObj.fromLocation &&
-          l.currentPalletCount < l.capacityPallet,
-      );
-    }
-    return [];
-  })();
 
   return (
     <div>
-      <PageHeader title="Tasks" description="TASK-FIRST: tạo lệnh → in lệnh → làm thực tế → xác nhận lệnh" />
+      <PageHeader title="Tasks" description="Task header + lines (confirm theo line)" />
       <Card className="rounded-2xl">
         <CardContent className="p-4">
           <div className="flex gap-2 mb-4">
@@ -80,117 +52,73 @@ function TasksPage() {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {["Open", "Printed", "Confirmed", "Cancelled"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {["Open", "Printed", "Partially Confirmed", "Confirmed", "Cancelled"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
+
           <Table>
-            <TableHeader><TableRow>
-              <TableHead>Task No</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Pallet</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Batch</TableHead>
-              <TableHead className="text-right">Qty</TableHead>
-              <TableHead>From</TableHead>
-              <TableHead>To</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Print</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead></TableHead>
-            </TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Task No</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Lines</TableHead>
+                <TableHead className="text-right">Confirmed</TableHead>
+                <TableHead className="text-right">Print</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
-              {filtered.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                  <TableCell>{t.taskType}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                  <TableCell className="text-xs">{t.skuCode}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.batchNo}</TableCell>
-                  <TableCell className="text-right">{t.qty}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.fromLocation}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
-                  <TableCell><TaskStatusBadge status={t.status} /></TableCell>
-                  <TableCell className="text-right">{t.printCount}</TableCell>
-                  <TableCell className="text-xs">{new Date(t.createdAt).toLocaleString()}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => doPrint(t.id)} disabled={t.status === "Confirmed" || t.status === "Cancelled"}>
-                      Print
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (t.taskType === "PUTAWAY" || t.taskType === "MOVE") {
-                          setConfirmTaskId(t.id);
-                          setActualLocation(t.toLocation);
-                          setConfirmOpen(true);
-                          return;
-                        }
-                        doConfirm(t.id);
-                      }}
-                      disabled={t.status !== "Printed"}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => { try { cancelTask(t.id); toast.success("Cancelled"); } catch (e: any) { toast.error(e.message); } }}
-                      disabled={t.status === "Confirmed" || t.status === "Cancelled"}
-                    >
-                      Cancel
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={12} className="text-center py-6 text-muted-foreground">Không có task</TableCell></TableRow>}
+              {filtered.map((t) => {
+                const st = lineStats.get(t.id) ?? { lineCount: 0, confirmedLineCount: 0 };
+                return (
+                  <TableRow key={t.id}>
+                    <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
+                    <TableCell>{t.taskType}</TableCell>
+                    <TableCell><TaskStatusBadge status={t.status} /></TableCell>
+                    <TableCell className="text-right font-mono">{st.lineCount}</TableCell>
+                    <TableCell className="text-right font-mono">{st.confirmedLineCount}</TableCell>
+                    <TableCell className="text-right font-mono">{t.printCount}</TableCell>
+                    <TableCell className="text-xs">{new Date(t.createdAt).toLocaleString()}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/tasks/${t.taskNo}`}>View</Link>
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => doPrint(t.taskNo)} disabled={t.status === "Confirmed" || t.status === "Cancelled"}>
+                        Print
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          try {
+                            cancelTask(t.id);
+                            toast.success("Cancelled");
+                          } catch (e: any) {
+                            toast.error(e.message);
+                          }
+                        }}
+                        disabled={t.status === "Confirmed" || t.status === "Cancelled"}
+                      >
+                        Cancel
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Không có task</TableCell></TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Task</DialogTitle>
-            <DialogDescription>
-              Chọn <span className="font-medium">Actual Location</span> (nếu khác Target Location).
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <Label>Actual Location</Label>
-            <Select value={actualLocation} onValueChange={setActualLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn location thực tế" />
-              </SelectTrigger>
-              <SelectContent>
-                {actualLocationOptions.map((l) => (
-                  <SelectItem key={l.id} value={l.locationCode}>
-                    {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Huỷ</Button>
-            <Button
-              onClick={() => {
-                doConfirm(confirmTaskId, actualLocation);
-                setConfirmOpen(false);
-              }}
-              disabled={!confirmTaskId || !actualLocation}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
+

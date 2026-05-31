@@ -1,49 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useStore } from "@/services/store";
-import { createTask, confirmTask, cancelTask } from "@/services/taskService";
+import { cancelTask, confirmAllTaskLines } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/putaway")({ component: PutawayPage });
 
 function PutawayPage() {
-  const pallets=useStore((s)=>s.pallets);
-  const locations=useStore((s)=>s.locations);
   const tasks=useStore((s)=>s.tasks);
-  const [palletId, setPalletId] = useState("");
-  const [toLocation, setToLocation] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTaskId, setConfirmTaskId] = useState<string>("");
-  const [actualLocation, setActualLocation] = useState<string>("");
+  const taskLines=useStore((s)=>s.taskLines);
 
-  const labeled = pallets.filter((p) => p.status === "Pending Putaway");
-  const targets = locations.filter((l) => l.status === "Active" && l.locationType === "STORAGE" && l.currentPalletCount < l.capacityPallet);
   const openTasks = tasks.filter((t) =>
-    t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed"),
+    t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed"),
   );
 
-  const create = () => {
-    try {
-      const p = pallets.find((x) => x.palletId === palletId);
-      if (!p) throw new Error("Chọn pallet");
-      createTask({ taskType: "PUTAWAY", palletId, toLocation });
-      toast.success("Đã tạo Putaway Task");
-      setPalletId(""); setToLocation("");
-    } catch (e: any) { toast.error(e.message); }
-  };
-
-  const confirm = (taskId: string, actualLocation: string) => {
-    try { confirmTask(taskId, actualLocation); toast.success("Đã putaway"); }
-    catch (e: any) { toast.error(e.message); }
-  };
+  const taskLinesByTaskId = useMemo(() => {
+    const map = new Map<string, typeof taskLines>();
+    for (const l of taskLines) {
+      const arr = map.get(l.taskId) ?? [];
+      arr.push(l);
+      map.set(l.taskId, arr);
+    }
+    for (const [k, arr] of map.entries()) {
+      map.set(k, [...arr].sort((a, b) => a.lineNo - b.lineNo));
+    }
+    return map;
+  }, [taskLines]);
 
   const openPrint = (taskId: string) => {
     const t = tasks.find((x) => x.id === taskId);
@@ -53,105 +41,77 @@ function PutawayPage() {
 
   return (
     <div>
-      <PageHeader title="Putaway" description="Tạo task putaway & xác nhận vị trí thực tế" />
+      <PageHeader
+        title="Putaway"
+        description="TASK-FIRST: tạo PUTAWAY task ở màn hình Inbound Palletize & Putaway → in → làm thực tế → confirm theo line"
+        action={
+          <Button variant="outline" onClick={() => (window.location.href = "/pallet/create")}>
+            Inbound Palletize & Putaway
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-2xl">
-          <CardContent className="p-6 space-y-4">
-            <h3 className="font-semibold">Tạo Putaway Task</h3>
-            <div>
-              <Label>Pallet (đã in nhãn)</Label>
-              <Select value={palletId} onValueChange={setPalletId}>
-                <SelectTrigger><SelectValue placeholder="Chọn pallet" /></SelectTrigger>
-                <SelectContent>{labeled.map((p) => <SelectItem key={p.id} value={p.palletId}>{p.palletId} — {p.skuCode}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Location đích</Label>
-              <Select value={toLocation} onValueChange={setToLocation}>
-                <SelectTrigger><SelectValue placeholder="Chọn location" /></SelectTrigger>
-                <SelectContent>{targets.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <Button onClick={create} disabled={!palletId || !toLocation}>Tạo Task</Button>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-4">Open Putaway Tasks</h3>
-            <Table>
-              <TableHeader><TableRow><TableHead>Task</TableHead><TableHead>Pallet</TableHead><TableHead>Đến</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
-              <TableBody>
-                {openTasks.map((t) => (
+      <Card className="rounded-2xl">
+        <CardContent className="p-6">
+          <h3 className="font-semibold mb-4">Open PUTAWAY Tasks</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Task</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Lines</TableHead>
+                <TableHead className="text-right">Confirmed</TableHead>
+                <TableHead className="text-right">Print</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {openTasks.map((t) => {
+                const lines = taskLinesByTaskId.get(t.id) ?? [];
+                const confirmed = lines.filter((l) => l.status === "Confirmed").length;
+                return (
                   <TableRow key={t.id}>
                     <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
                     <TableCell><TaskStatusBadge status={t.status} /></TableCell>
+                    <TableCell className="text-right font-mono">{lines.length}</TableCell>
+                    <TableCell className="text-right font-mono">{confirmed}</TableCell>
+                    <TableCell className="text-right font-mono">{t.printCount}</TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/tasks/${t.taskNo}`}>View</Link>
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => openPrint(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Print</Button>
                       <Button
                         size="sm"
+                        variant="outline"
                         onClick={() => {
-                          setConfirmTaskId(t.id);
-                          setActualLocation(t.toLocation);
-                          setConfirmOpen(true);
+                          try {
+                            confirmAllTaskLines(t.taskNo);
+                            toast.success("Confirmed all lines");
+                          } catch (e: any) {
+                            toast.error(e.message);
+                          }
                         }}
-                        disabled={t.status !== "Printed"}
+                        disabled={t.status !== "Printed" && t.status !== "Partially Confirmed"}
                       >
-                        Confirm
+                        Confirm All
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => cancelTask(t.id)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Cancel</Button>
+                      <Button size="sm" variant="outline" onClick={() => { try { cancelTask(t.id); toast.success("Cancelled"); } catch (e: any) { toast.error(e.message); } }} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>Cancel</Button>
                     </TableCell>
                   </TableRow>
-                ))}
-                {openTasks.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Không có task</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Putaway</DialogTitle>
-            <DialogDescription>
-              Chọn <span className="font-medium">Actual Location</span> (có thể khác location đề xuất trong task).
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <Label>Actual Location</Label>
-            <Select value={actualLocation} onValueChange={setActualLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn location thực tế" />
-              </SelectTrigger>
-              <SelectContent>
-                {targets.map((l) => (
-                  <SelectItem key={l.id} value={l.locationCode}>
-                    {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Huỷ</Button>
-            <Button
-              onClick={() => {
-                confirm(confirmTaskId, actualLocation);
-                setConfirmOpen(false);
-              }}
-              disabled={!confirmTaskId || !actualLocation}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                );
+              })}
+              {openTasks.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                    Không có task
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
-import { createTask, cancelTask, confirmTask } from "@/services/taskService";
+import { cancelTask, confirmTaskLine, createSingleLineTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,13 +19,14 @@ function MovePage() {
   const pallets = useStore((s) => s.pallets);
   const locations = useStore((s) => s.locations);
   const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
 
   const [palletId, setPalletId] = useState("");
   const [toLocation, setToLocation] = useState("");
   const [note, setNote] = useState("");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTaskId, setConfirmTaskId] = useState<string>("");
+  const [confirmLineId, setConfirmLineId] = useState<string>("");
   const [actualLocation, setActualLocation] = useState<string>("");
 
   const movable = pallets.filter((p) => p.status === "In Stock" || p.status === "Staged");
@@ -43,13 +44,13 @@ function MovePage() {
   }, [locations, pallet]);
 
   const openMoveTasks = tasks.filter(
-    (t) => t.taskType === "MOVE" && (t.status === "Open" || t.status === "Printed"),
+    (t) => t.taskType === "MOVE" && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed"),
   );
 
   const submit = () => {
     try {
       if (!pallet) throw new Error("Chọn pallet");
-      createTask({ taskType: "MOVE", palletId, toLocation, note });
+      createSingleLineTask({ taskType: "MOVE", palletId, toLocation, note });
       toast.success("Đã tạo MOVE task");
       setPalletId("");
       setToLocation("");
@@ -65,9 +66,9 @@ function MovePage() {
     window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
-  const doConfirm = (taskId: string, loc?: string) => {
+  const doConfirm = (lineId: string, loc?: string) => {
     try {
-      confirmTask(taskId, loc);
+      confirmTaskLine(lineId, loc);
       toast.success("Đã confirm MOVE");
     } catch (e: any) {
       toast.error(e.message);
@@ -141,11 +142,15 @@ function MovePage() {
               </TableHeader>
               <TableBody>
                 {openMoveTasks.map((t) => (
+                  (() => {
+                    const line = taskLines.find((l) => l.taskId === t.id);
+                    if (!line) return null;
+                    return (
                   <TableRow key={t.id}>
                     <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.fromLocation}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
+                    <TableCell className="font-mono text-xs">{line.palletId}</TableCell>
+                    <TableCell className="font-mono text-xs">{line.fromLocation ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{line.toLocation ?? "—"}</TableCell>
                     <TableCell>
                       <TaskStatusBadge status={t.status} />
                     </TableCell>
@@ -156,8 +161,8 @@ function MovePage() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          setConfirmTaskId(t.id);
-                          setActualLocation(t.toLocation);
+                          setConfirmLineId(line.id);
+                          setActualLocation(line.toLocation ?? "");
                           setConfirmOpen(true);
                         }}
                         disabled={t.status !== "Printed"}
@@ -169,6 +174,8 @@ function MovePage() {
                       </Button>
                     </TableCell>
                   </TableRow>
+                    );
+                  })()
                 ))}
                 {openMoveTasks.length === 0 && (
                   <TableRow>
@@ -214,10 +221,10 @@ function MovePage() {
             </Button>
             <Button
               onClick={() => {
-                doConfirm(confirmTaskId, actualLocation);
+                doConfirm(confirmLineId, actualLocation);
                 setConfirmOpen(false);
               }}
-              disabled={!confirmTaskId || !actualLocation}
+              disabled={!confirmLineId || !actualLocation}
             >
               Confirm
             </Button>

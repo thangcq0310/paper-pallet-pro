@@ -1,4 +1,4 @@
-import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, OutboundDocument } from "@/types";
+import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument } from "@/types";
 
 const now = new Date().toISOString();
 
@@ -46,6 +46,21 @@ export const mockTasks: WarehouseTask[] = [
     id: "t1",
     taskNo: "TASK-0001",
     taskType: "PUTAWAY",
+    status: "Open",
+    printCount: 0,
+    priority: "Normal",
+    createdBy: "demo",
+    createdAt: now,
+    instruction: "Đưa pallet từ RCV-01 vào location chỉ định.",
+  },
+];
+
+export const mockTaskLines: WarehouseTaskLine[] = [
+  {
+    id: "t1-l1",
+    taskId: "t1",
+    taskNo: "TASK-0001",
+    lineNo: 1,
     palletId: "PLT-20260525-0004",
     skuCode: "PASS-10KG",
     skuName: "Puree chanh dây 10kg",
@@ -55,12 +70,8 @@ export const mockTasks: WarehouseTask[] = [
     weight: 600,
     fromLocation: "RCV-01",
     toLocation: "FZ-B-01-01",
+    actualLocation: null,
     status: "Open",
-    printCount: 0,
-    priority: "Normal",
-    createdBy: "demo",
-    createdAt: now,
-    instruction: "Đưa pallet từ RCV-01 vào location chỉ định.",
   },
 ];
 

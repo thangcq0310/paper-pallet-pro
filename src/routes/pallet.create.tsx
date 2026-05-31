@@ -18,7 +18,7 @@ import {
   calculatePalletPreview,
   cancelUnusedPallet,
   autoAllocatePalletsToBins,
-  createPutawayTasksFromAssignments,
+  createPutawayTaskWithLines,
   generatePalletIdsFromPreview,
   getMultiTargetBinCapacity,
   type PalletPreviewRow,
@@ -33,6 +33,7 @@ function InboundPalletizePutawayPage() {
   const locations = useStore((s) => s.locations);
   const pallets = useStore((s) => s.pallets);
   const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
 
   const [form, setForm] = useState({
     inboundNo: "",
@@ -62,7 +63,7 @@ function InboundPalletizePutawayPage() {
   const [warehouseFilter, setWarehouseFilter] = useState("");
   const [zoneFilter, setZoneFilter] = useState("");
   const [assignments, setAssignments] = useState<Record<string, string>>({});
-  const [createdTaskIds, setCreatedTaskIds] = useState<string[]>([]);
+  const [createdTaskNo, setCreatedTaskNo] = useState<string>("");
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelPalletId, setCancelPalletId] = useState("");
@@ -125,13 +126,18 @@ function InboundPalletizePutawayPage() {
 
   const openTaskCountByPallet = useMemo(() => {
     const map = new Map<string, number>();
-    for (const t of tasks) {
-      if (t.status === "Open" || t.status === "Printed" || t.status === "In Progress") {
-        map.set(t.palletId, (map.get(t.palletId) ?? 0) + 1);
-      }
+    const openHeaderIds = new Set(
+      tasks
+        .filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed")
+        .map((t) => t.id),
+    );
+    for (const l of taskLines) {
+      if (l.status !== "Open") continue;
+      if (!openHeaderIds.has(l.taskId)) continue;
+      map.set(l.palletId, (map.get(l.palletId) ?? 0) + 1);
     }
     return map;
-  }, [tasks]);
+  }, [taskLines, tasks]);
 
   const selectedPalletIds = useMemo(
     () => Object.entries(selectedPallet).filter(([, v]) => v).map(([k]) => k),
@@ -295,18 +301,23 @@ function InboundPalletizePutawayPage() {
         palletId,
         targetLocation: assignments[palletId],
       }));
-      const created = createPutawayTasksFromAssignments({ inboundNo: form.inboundNo, assignments: asg });
-      setCreatedTaskIds((prev) => Array.from(new Set([...prev, ...created.map((t) => t.id)])));
-      toast.success(`Đã tạo ${created.length} PUTAWAY task`);
+      const created = createPutawayTaskWithLines({ inboundNo: form.inboundNo, assignments: asg });
+      setCreatedTaskNo(created.task.taskNo);
+      toast.success(`Đã tạo PUTAWAY task ${created.task.taskNo} (${created.lines.length} lines)`);
     } catch (e: any) {
       toast.error(e.message);
     }
   };
 
-  const createdTasks = useMemo(() => {
-    const set = new Set(createdTaskIds);
-    return tasks.filter((t) => set.has(t.id));
-  }, [createdTaskIds, tasks]);
+  const createdTask = useMemo(() => {
+    if (!createdTaskNo) return null;
+    return tasks.find((t) => t.taskNo === createdTaskNo) ?? null;
+  }, [createdTaskNo, tasks]);
+
+  const createdTaskLines = useMemo(() => {
+    if (!createdTaskNo) return [];
+    return taskLines.filter((l) => l.taskNo === createdTaskNo).sort((a, b) => a.lineNo - b.lineNo);
+  }, [createdTaskNo, taskLines]);
 
   const openCancelDialog = (palletId: string) => {
     setCancelPalletId(palletId);
@@ -851,12 +862,27 @@ function InboundPalletizePutawayPage() {
             <Button
               variant="outline"
               onClick={() => {
-                for (const t of createdTasks) openPrintTask(t.taskNo);
+                if (createdTask) openPrintTask(createdTask.taskNo);
               }}
-              disabled={createdTasks.length === 0}
+              disabled={!createdTask}
             >
               <Printer className="h-4 w-4 mr-1" />
-              Print All Putaway Tasks ({createdTasks.length})
+              Print Task
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!createdTask) return;
+                try {
+                  cancelTask(createdTask.id);
+                  toast.success("Cancelled task");
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+              disabled={!createdTask || createdTask.status === "Cancelled" || createdTask.status === "Confirmed"}
+            >
+              Cancel Task
             </Button>
           </div>
 
@@ -865,55 +891,69 @@ function InboundPalletizePutawayPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>taskNo</TableHead>
-                  <TableHead>palletId</TableHead>
-                  <TableHead>skuCode</TableHead>
-                  <TableHead>batchNo</TableHead>
-                  <TableHead>fromLocation</TableHead>
-                  <TableHead>toLocation</TableHead>
                   <TableHead>status</TableHead>
+                  <TableHead className="text-right">totalLines</TableHead>
                   <TableHead className="text-right">actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {createdTasks.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                    <TableCell className="text-xs">{t.skuCode}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.batchNo}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.fromLocation}</TableCell>
-                    <TableCell className="font-mono text-xs">{t.toLocation}</TableCell>
-                    <TableCell>{t.status}</TableCell>
+                {createdTask ? (
+                  <TableRow key={createdTask.id}>
+                    <TableCell className="font-mono text-xs">{createdTask.taskNo}</TableCell>
+                    <TableCell>{createdTask.status}</TableCell>
+                    <TableCell className="text-right font-mono">{createdTaskLines.length}</TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => openPrintTask(t.taskNo)} disabled={t.status === "Cancelled" || t.status === "Confirmed"}>
-                        Print Task
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          try {
-                            cancelTask(t.id);
-                            toast.success("Cancelled task");
-                          } catch (e: any) {
-                            toast.error(e.message);
-                          }
-                        }}
-                        disabled={t.status === "Cancelled" || t.status === "Confirmed"}
-                      >
-                        Cancel Task
+                      <Button size="sm" variant="outline" onClick={() => openPrintTask(createdTask.taskNo)} disabled={createdTask.status === "Cancelled" || createdTask.status === "Confirmed"}>
+                        Print
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
-                {createdTasks.length === 0 && (
+                ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Chưa có PUTAWAY task</TableCell>
+                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Chưa có PUTAWAY task</TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
+
+          {createdTask && (
+            <div className="overflow-x-auto border rounded-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pallet ID</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead>Line Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {createdTaskLines.map((l) => (
+                    <TableRow key={l.id}>
+                      <TableCell className="font-mono text-xs">{l.palletId}</TableCell>
+                      <TableCell className="text-xs">{l.skuCode}</TableCell>
+                      <TableCell className="font-mono text-xs">{l.batchNo}</TableCell>
+                      <TableCell className="text-right font-mono">{l.qty}</TableCell>
+                      <TableCell className="font-mono text-xs">{l.fromLocation ?? "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{l.toLocation ?? "—"}</TableCell>
+                      <TableCell>{l.status}</TableCell>
+                    </TableRow>
+                  ))}
+                  {createdTaskLines.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                        Không có line
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

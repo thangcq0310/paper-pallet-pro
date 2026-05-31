@@ -89,10 +89,8 @@ export function cancelPallet(palletId: string, cancelReason: string) {
   if (p.status !== "Pending Putaway") throw new Error("Chỉ có thể hủy pallet đang ở trạng thái Pending Putaway");
 
   const s = getState();
-  const tasks = s.tasks.filter(t => t.palletId === palletId && (t.status === "Open" || t.status === "Printed" || t.status === "In Progress" || t.status === "Confirmed"));
-  if (tasks.length > 0) {
-    throw new Error("Không thể hủy pallet đang có Task hoạt động. Vui lòng hủy Task trước.");
-  }
+  const taskLines = s.taskLines.filter((l) => l.palletId === palletId && (l.status === "Open" || l.status === "Confirmed"));
+  if (taskLines.length > 0) throw new Error("Không thể hủy pallet đang có Task line hoạt động. Vui lòng hủy Task/Line trước.");
 
   const movements = s.movements.filter(m => m.palletId === palletId && ["PUT", "MOVE", "PICK", "OUT"].includes(m.movementType));
   if (movements.length > 0) {
@@ -191,14 +189,21 @@ export function pickAndShipPallet(palletId: string, note?: string) {
     throw new Error("Chỉ được pick pallet đang In Stock hoặc Staged");
   }
   const from = p.currentLocation;
-  const updated: Pallet = { ...p, currentLocation: null, lastLocation: from || undefined, status: "Shipped", updatedAt: new Date().toISOString() };
+  const toLocation = "SHIPPED";
+  const updated: Pallet = {
+    ...p,
+    currentLocation: toLocation,
+    lastLocation: from || undefined,
+    status: "Shipped",
+    updatedAt: new Date().toISOString(),
+  };
   setState((s) => ({
     ...s,
     pallets: s.pallets.map((x) => x.id === p.id ? updated : x),
     locations: s.locations.map((l) => l.locationCode === from ? { ...l, currentPalletCount: Math.max(0, l.currentPalletCount - 1) } : l),
   }));
-  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation: null, note });
-  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation: null, note });
+  recordMovement({ type: "PICK", pallet: updated, fromLocation: from, toLocation, note });
+  recordMovement({ type: "OUT", pallet: updated, fromLocation: from, toLocation, note });
   return updated;
 }
 

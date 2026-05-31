@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { suggestPalletsForOutbound } from "@/services/palletService";
 import { createOutbound, syncOutboundStatusByNo } from "@/services/outboundService";
-import { cancelTask, confirmTask, createTask } from "@/services/taskService";
+import { cancelTask, confirmTaskLine, createSingleLineTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/outbound")({ component: OutboundPage });
 function OutboundPage() {
   const skus = useStore((s) => s.skus);
   const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
 
   const [skuCode, setSkuCode] = useState("");
   const [destination, setDestination] = useState("");
@@ -46,7 +47,7 @@ function OutboundPage() {
       const doc = createOutbound({ destination: destination.trim(), skuCode, requiredQty, selectedPalletIds });
 
       for (const palletId of selectedPalletIds) {
-        createTask({
+        createSingleLineTask({
           taskType: "PICK",
           palletId,
           outboundNo: doc.outboundNo,
@@ -71,7 +72,9 @@ function OutboundPage() {
 
   const doConfirm = (taskId: string) => {
     try {
-      confirmTask(taskId);
+      const line = taskLines.find((l) => l.taskId === taskId);
+      if (!line) throw new Error("Task line không tồn tại");
+      confirmTaskLine(line.id);
       toast.success("Đã confirm PICK → Shipped");
     } catch (e: any) {
       toast.error(e.message);
@@ -185,13 +188,16 @@ function OutboundPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pickTasks.map((t) => (
+              {pickTasks.map((t) => {
+                const line = taskLines.find((l) => l.taskId === t.id);
+                if (!line) return null;
+                return (
                 <TableRow key={t.id}>
                   <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.palletId}</TableCell>
-                  <TableCell className="text-xs">{t.skuCode}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.batchNo}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.fromLocation}</TableCell>
+                  <TableCell className="font-mono text-xs">{line.palletId}</TableCell>
+                  <TableCell className="text-xs">{line.skuCode}</TableCell>
+                  <TableCell className="font-mono text-xs">{line.batchNo}</TableCell>
+                  <TableCell className="font-mono text-xs">{line.fromLocation ?? "—"}</TableCell>
                   <TableCell><TaskStatusBadge status={t.status} /></TableCell>
                   <TableCell className="text-right">{t.printCount}</TableCell>
                   <TableCell className="text-right space-x-2">
@@ -218,7 +224,8 @@ function OutboundPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {pickTasks.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">

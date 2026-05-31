@@ -1,7 +1,7 @@
 import { getState } from "./store";
-import type { Location, Pallet, SKU, WarehouseTask } from "@/types";
+import type { Location, Pallet, SKU, WarehouseTask, WarehouseTaskLine } from "@/types";
 import { cancelPallet, createPallets } from "./palletService";
-import { createTask } from "./taskService";
+import { addTaskLines, createTaskHeader } from "./taskService";
 
 export interface PutawayAssignment {
   palletId: string;
@@ -123,11 +123,13 @@ export function getTargetBinCapacity(locationCode: string): {
   if (location.locationType !== "STORAGE") throw new Error("Target Bin phải thuộc STORAGE");
   if (location.status !== "Active") throw new Error("Target Bin đang Blocked");
 
-  const openPutawayTaskCount = s.tasks.filter(
-    (t) =>
-      t.taskType === "PUTAWAY" &&
-      t.toLocation === code &&
-      (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+  const openHeaderIds = new Set(
+    s.tasks
+      .filter((t) => t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed"))
+      .map((t) => t.id),
+  );
+  const openPutawayTaskCount = s.taskLines.filter(
+    (l) => l.status === "Open" && l.toLocation === code && openHeaderIds.has(l.taskId),
   ).length;
 
   const availableCapacity =
@@ -203,12 +205,14 @@ function validatePutawayAssignments(input: { inboundNo?: string; assignments: Pu
     if (!fromLoc) throw new Error(`Location ${p.currentLocation} không tồn tại`);
     if (fromLoc.locationType !== "RECEIVING") throw new Error(`Pallet ${palletId} không nằm ở RECEIVING`);
 
-    const openTask = s.tasks.some(
-      (t) =>
-        t.palletId === palletId &&
-        (t.status === "Open" || t.status === "Printed" || t.status === "In Progress"),
+    // check open task lines (Open headers + Open lines)
+    const openHeaderIds = new Set(
+      s.tasks
+        .filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed")
+        .map((t) => t.id),
     );
-    if (openTask) throw new Error(`Pallet ${palletId} đang có task mở`);
+    const hasOpenLine = s.taskLines.some((l) => l.palletId === palletId && l.status === "Open" && openHeaderIds.has(l.taskId));
+    if (hasOpenLine) throw new Error(`Pallet ${palletId} đang có task line mở`);
 
     if (inboundNo && (p.referenceDocumentNo ?? "").trim() !== inboundNo) {
       throw new Error(`Pallet ${palletId} không thuộc inboundNo ${inboundNo}`);
@@ -237,66 +241,42 @@ function validatePutawayAssignments(input: { inboundNo?: string; assignments: Pu
   };
 }
 
-export function createPutawayTasksFromAssignments(input: {
+export function createPutawayTaskWithLines(input: {
   inboundNo?: string;
   assignments: PutawayAssignment[];
-}): WarehouseTask[] {
+}): { task: WarehouseTask; lines: WarehouseTaskLine[] } {
   const { inboundNo } = validatePutawayAssignments(input);
 
-  // create tasks only after all validation passes
-  const tasks: WarehouseTask[] = [];
-  for (const a of input.assignments) {
-    const t = createTask({
-      taskType: "PUTAWAY",
+  const task = createTaskHeader({
+    taskType: "PUTAWAY",
+    inboundNo: inboundNo || undefined,
+    instruction: "Đưa pallet từ RECEIVING vào location chỉ định.",
+    note: inboundNo ? `Inbound ${inboundNo}` : undefined,
+  });
+
+  const lines = addTaskLines(
+    task.id,
+    input.assignments.map((a) => ({
       palletId: a.palletId,
       toLocation: a.targetLocation,
-      inboundNo: inboundNo || undefined,
-      instruction: "Đưa pallet từ RECEIVING vào location chỉ định.",
       note: inboundNo ? `Inbound ${inboundNo}` : undefined,
-    });
-    tasks.push(t);
-  }
-  return tasks;
+    })),
+  );
+
+  return { task, lines };
 }
 
+// Backward-compatible helper: create 1 PUTAWAY header with many lines to same location.
 export function createBulkPutawayTasks(input: {
   inboundNo: string;
   palletIds: string[];
   targetLocation: string;
-}): WarehouseTask[] {
-  const inboundNo = input.inboundNo.trim();
-  if (!inboundNo) throw new Error("Nhập inboundNo");
-  const targetLocation = input.targetLocation.trim();
-  if (!targetLocation) throw new Error("Chọn Target Bin");
-  const palletIds = Array.from(new Set(input.palletIds.map((p) => p.trim()).filter(Boolean)));
-  if (palletIds.length === 0) throw new Error("Chọn pallet để tạo PUTAWAY task");
-
-  const { availableCapacity } = getTargetBinCapacity(targetLocation);
-  if (palletIds.length > availableCapacity) {
-    throw new Error("Bin không đủ capacity để tạo PUTAWAY task");
-  }
-
-  const s = getState();
-  for (const palletId of palletIds) {
-    const p = s.pallets.find((x) => x.palletId === palletId);
-    if (!p) throw new Error(`Pallet ${palletId} không tồn tại`);
-    if (p.status === "Cancelled") throw new Error(`Pallet ${palletId} đã Cancelled`);
-    if (p.status !== "Pending Putaway") throw new Error(`Pallet ${palletId} không ở trạng thái Pending Putaway`);
-  }
-
-  const tasks: WarehouseTask[] = [];
-  for (const palletId of palletIds) {
-    const t = createTask({
-      taskType: "PUTAWAY",
-      palletId,
-      toLocation: targetLocation,
-      inboundNo,
-      instruction: "Đưa pallet từ RECEIVING vào location chỉ định.",
-      note: `Inbound ${inboundNo}`,
-    });
-    tasks.push(t);
-  }
-  return tasks;
+}): { task: WarehouseTask; lines: WarehouseTaskLine[] } {
+  const assignments = Array.from(new Set(input.palletIds.map((p) => p.trim()).filter(Boolean))).map((palletId) => ({
+    palletId,
+    targetLocation: input.targetLocation,
+  }));
+  return createPutawayTaskWithLines({ inboundNo: input.inboundNo, assignments });
 }
 
 // Printing helpers (UI should open these URLs; task printCount is only recorded in print preview pages)

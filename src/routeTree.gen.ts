@@ -17,6 +17,7 @@ import { Route as MoveRouteImport } from './routes/move'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TasksTaskNoRouteImport } from './routes/tasks.$taskNo'
 import { Route as PalletPrintBatchRouteImport } from './routes/pallet.print-batch'
 import { Route as PalletCreateRouteImport } from './routes/pallet.create'
 import { Route as PalletPalletIdRouteImport } from './routes/pallet.$palletId'
@@ -65,6 +66,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TasksTaskNoRoute = TasksTaskNoRouteImport.update({
+  id: '/$taskNo',
+  path: '/$taskNo',
+  getParentRoute: () => TasksRoute,
+} as any)
 const PalletPrintBatchRoute = PalletPrintBatchRouteImport.update({
   id: '/pallet/print-batch',
   path: '/pallet/print-batch',
@@ -96,9 +102,9 @@ const MasterBatchRoute = MasterBatchRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TasksTaskNoPrintRoute = TasksTaskNoPrintRouteImport.update({
-  id: '/$taskNo/print',
-  path: '/$taskNo/print',
-  getParentRoute: () => TasksRoute,
+  id: '/print',
+  path: '/print',
+  getParentRoute: () => TasksTaskNoRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
+  '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesByTo {
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
+  '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRoutesById {
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
+  '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
 }
 export interface FileRouteTypes {
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
+    | '/tasks/$taskNo'
     | '/tasks/$taskNo/print'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
+    | '/tasks/$taskNo'
     | '/tasks/$taskNo/print'
   id:
     | '__root__'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
+    | '/tasks/$taskNo'
     | '/tasks/$taskNo/print'
   fileRoutesById: FileRoutesById
 }
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tasks/$taskNo': {
+      id: '/tasks/$taskNo'
+      path: '/$taskNo'
+      fullPath: '/tasks/$taskNo'
+      preLoaderRoute: typeof TasksTaskNoRouteImport
+      parentRoute: typeof TasksRoute
+    }
     '/pallet/print-batch': {
       id: '/pallet/print-batch'
       path: '/pallet/print-batch'
@@ -326,20 +345,32 @@ declare module '@tanstack/react-router' {
     }
     '/tasks/$taskNo/print': {
       id: '/tasks/$taskNo/print'
-      path: '/$taskNo/print'
+      path: '/print'
       fullPath: '/tasks/$taskNo/print'
       preLoaderRoute: typeof TasksTaskNoPrintRouteImport
-      parentRoute: typeof TasksRoute
+      parentRoute: typeof TasksTaskNoRoute
     }
   }
 }
 
-interface TasksRouteChildren {
+interface TasksTaskNoRouteChildren {
   TasksTaskNoPrintRoute: typeof TasksTaskNoPrintRoute
 }
 
-const TasksRouteChildren: TasksRouteChildren = {
+const TasksTaskNoRouteChildren: TasksTaskNoRouteChildren = {
   TasksTaskNoPrintRoute: TasksTaskNoPrintRoute,
+}
+
+const TasksTaskNoRouteWithChildren = TasksTaskNoRoute._addFileChildren(
+  TasksTaskNoRouteChildren,
+)
+
+interface TasksRouteChildren {
+  TasksTaskNoRoute: typeof TasksTaskNoRouteWithChildren
+}
+
+const TasksRouteChildren: TasksRouteChildren = {
+  TasksTaskNoRoute: TasksTaskNoRouteWithChildren,
 }
 
 const TasksRouteWithChildren = TasksRoute._addFileChildren(TasksRouteChildren)

@@ -10,7 +10,9 @@ export const Route = createFileRoute("/tasks/$taskNo/print")({ component: TaskPr
 function TaskPrintPage() {
   const { taskNo } = Route.useParams();
   const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
   const task = tasks.find((t) => t.taskNo === taskNo);
+  const lines = taskLines.filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
 
   if (!task) {
     return (
@@ -73,43 +75,50 @@ function TaskPrintPage() {
               <div className="text-xs text-muted-foreground uppercase">Ref Document</div>
               <div className="font-mono">{task.inboundNo || task.outboundNo || "-"}</div>
             </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Pallet ID</div>
-              <div className="font-mono">{task.palletId}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">SKU</div>
-              <div className="font-medium">{task.skuCode}</div>
-              <div className="text-xs text-muted-foreground">{task.skuName}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Batch</div>
-              <div className="font-mono">{task.batchNo}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Qty</div>
-              <div>
-                {task.qty} {task.uom} · {task.weight} kg
-              </div>
-            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Source Bin</div>
-              <div className="font-mono">{task.fromLocation}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Destination</div>
-              <div className="font-mono">{task.taskType === "PICK" ? "External / Truck / Container" : task.toLocation}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Actual Bin (ghi tay)</div>
-              <div className="font-mono border-b border-foreground/40 h-6" />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground uppercase">Actual Time (ghi tay)</div>
-              <div className="font-mono border-b border-foreground/40 h-6" />
+          <div className="text-sm">
+            <div className="text-xs text-muted-foreground uppercase mb-2">Lines</div>
+            <div className="border rounded-xl overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40">
+                  <tr className="text-left">
+                    <th className="p-2 w-10">No</th>
+                    <th className="p-2">Pallet ID</th>
+                    <th className="p-2">SKU</th>
+                    <th className="p-2">Batch</th>
+                    <th className="p-2 text-right">Qty/UOM</th>
+                    <th className="p-2">From</th>
+                    <th className="p-2">To</th>
+                    <th className="p-2">Actual Bin</th>
+                    <th className="p-2">Remark</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.map((l) => (
+                    <tr key={l.id} className="border-t">
+                      <td className="p-2">{l.lineNo}</td>
+                      <td className="p-2 font-mono">{l.palletId}</td>
+                      <td className="p-2">{l.skuCode}</td>
+                      <td className="p-2 font-mono">{l.batchNo}</td>
+                      <td className="p-2 text-right font-mono">{l.qty} {l.uom}</td>
+                      <td className="p-2 font-mono">{l.fromLocation ?? "-"}</td>
+                      <td className="p-2 font-mono">{task.taskType === "PICK" ? "SHIPPED" : (l.toLocation ?? "-")}</td>
+                      <td className="p-2">
+                        <div className="border-b border-foreground/40 h-4" />
+                      </td>
+                      <td className="p-2">
+                        <div className="border-b border-foreground/40 h-4" />
+                      </td>
+                    </tr>
+                  ))}
+                  {lines.length === 0 && (
+                    <tr className="border-t">
+                      <td className="p-3 text-muted-foreground" colSpan={9}>Không có line</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -148,4 +157,3 @@ function TaskPrintPage() {
     </div>
   );
 }
-
