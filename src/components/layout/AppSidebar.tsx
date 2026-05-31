@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Package, Tags, MapPin, Tag, Printer, ArrowDownToLine,
+  LayoutDashboard, Package, Tags, MapPin, Tag,
   Boxes, Move, ArrowUpFromLine, ListChecks, History, Bell,
 } from "lucide-react";
 import {
@@ -25,7 +25,6 @@ const groups = [
     label: "Inbound",
     items: [
       { title: "Create Pallet Label", url: "/pallet/create", icon: Tag },
-      { title: "Putaway", url: "/putaway", icon: ArrowDownToLine },
     ],
   },
   {
