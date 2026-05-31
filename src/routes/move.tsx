@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask, createMoveTaskWithLines } from "@/services/taskService";
 import { getAvailableBatchSummaryBySku, getAvailableSkuSummary, listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { TaskStatusBadge } from "@/components/StatusBadges";
 import { SkuBatchSearchPanel } from "@/components/SkuBatchSearchPanel";
+import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
 import { cn } from "@/lib/utils";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
@@ -28,9 +29,6 @@ function MovePage() {
 
   const [skuCode, setSkuCode] = useState("");
   const [batchNo, setBatchNo] = useState("");
-  const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
-  const [groupMode, setGroupMode] = useState<"location" | "zone">("location");
 
   const [selectedPallet, setSelectedPallet] = useState<Record<string, boolean>>({});
   const [targetBins, setTargetBins] = useState<string[]>([]);
@@ -48,12 +46,6 @@ function MovePage() {
     if (!skuCode || !batchNo) return [];
     return listAvailablePalletsBySkuBatch({ skuCode, batchNo, purpose: "MOVE" });
   }, [skuCode, batchNo, tasks, taskLines, locations]);
-
-  const filteredPallets = useMemo(() => {
-    if (!search.trim()) return availablePallets;
-    const q = search.toLowerCase();
-    return availablePallets.filter((p) => p.palletId.toLowerCase().includes(q) || (p.currentLocation ?? "").toLowerCase().includes(q));
-  }, [availablePallets, search]);
   const locationZoneByCode = useMemo(
     () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
     [locations],
@@ -114,26 +106,6 @@ function MovePage() {
     return { totalAvailable, totalAssigned, perBinOver };
   }, [assignedCountByBin, assignments, binCaps, selectedIds]);
 
-  const groupedVisiblePallets = useMemo(() => {
-    const map = new Map<string, { key: string; label: string; pallets: typeof filteredPallets }>();
-    for (const pallet of filteredPallets) {
-      const currentLocation = pallet.currentLocation ?? "";
-      const key = groupMode === "location"
-        ? (currentLocation || "Chưa có bin")
-        : (locationZoneByCode[currentLocation] ?? "Chưa có zone");
-      const label = groupMode === "location"
-        ? (locationPathByCode[currentLocation] ?? key)
-        : key;
-      const row = map.get(key);
-      if (row) {
-        row.pallets.push(pallet);
-      } else {
-        map.set(key, { key, label, pallets: [pallet] });
-      }
-    }
-    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [filteredPallets, groupMode, locationPathByCode, locationZoneByCode]);
-
   const canCreateTask =
     !!skuCode &&
     !!batchNo &&
@@ -163,10 +135,6 @@ function MovePage() {
     [lastTaskNo, tasks],
   );
 
-  const toggleSelection = (palletId: string, checked: boolean) => {
-    setSelectedPallet((prev) => ({ ...prev, [palletId]: checked }));
-  };
-
   const selectPalletIds = (palletIds: string[]) => {
     setSelectedPallet((prev) => {
       const next = { ...prev };
@@ -175,32 +143,11 @@ function MovePage() {
     });
   };
 
-  const clearVisibleSelection = () => {
+  const clearPalletIds = (palletIds: string[]) => {
     setSelectedPallet((prev) => {
       const next = { ...prev };
-      for (const pallet of filteredPallets) {
-        delete next[pallet.palletId];
-      }
-      return next;
-    });
-  };
-
-  const selectGroup = (groupKey: string) => {
-    const ids = filteredPallets.filter((p) => {
-      if (groupMode === "location") return (p.currentLocation ?? "Chưa có bin") === groupKey;
-      return (locationZoneByCode[p.currentLocation ?? ""] ?? "Chưa có zone") === groupKey;
-    }).map((p) => p.palletId);
-    selectPalletIds(ids);
-  };
-
-  const clearGroup = (groupKey: string) => {
-    setSelectedPallet((prev) => {
-      const next = { ...prev };
-      for (const pallet of filteredPallets) {
-        const matches = groupMode === "location"
-          ? (pallet.currentLocation ?? "Chưa có bin") === groupKey
-          : (locationZoneByCode[pallet.currentLocation ?? ""] ?? "Chưa có zone") === groupKey;
-        if (matches) delete next[pallet.palletId];
+      for (const palletId of palletIds) {
+        delete next[palletId];
       }
       return next;
     });
@@ -329,181 +276,24 @@ function MovePage() {
       </Card>
 
       <Card className="rounded-2xl">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Pallet khả dụng của batch đã chọn</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              placeholder="Tìm Pallet ID / Current Bin"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
-              disabled={!skuCode || !batchNo}
-            />
-            <Button variant="outline" disabled={!filteredPallets.length} onClick={() => selectPalletIds(filteredPallets.map((p) => p.palletId))}>
-              Chọn tất cả đang hiển thị
-            </Button>
-            <Button variant="outline" disabled={!Object.values(selectedPallet).some(Boolean)} onClick={clearVisibleSelection}>
-              Xóa chọn
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant={viewMode === "table" ? "default" : "outline"} onClick={() => setViewMode("table")}>Dạng bảng</Button>
-              <Button variant={viewMode === "card" ? "default" : "outline"} onClick={() => setViewMode("card")}>Dạng thẻ</Button>
-              <Select value={groupMode} onValueChange={(v) => setGroupMode(v as "location" | "zone")}>
-                <SelectTrigger className="w-48"><SelectValue placeholder="Nhóm theo" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="location">Nhóm theo Bin</SelectItem>
-                  <SelectItem value="zone">Nhóm theo Zone</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+        <CardContent className="space-y-3 pt-6">
           <div className="text-sm text-muted-foreground">
             Pallet đã chọn: {selectedIds.length}/{availablePallets.length} | Qty đã chọn: {totalSelectedQty}
           </div>
-
-          {viewMode === "table" ? (
-            <div className="overflow-x-auto border rounded-xl">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10" />
-                    <TableHead>Pallet ID</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead>Batch</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead>UOM</TableHead>
-                    <TableHead>EXP Date</TableHead>
-                    <TableHead>Days to Expiry</TableHead>
-                    <TableHead>Current Bin</TableHead>
-                    <TableHead>Bin Zone</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupedVisiblePallets.map((group) => (
-                    <Fragment key={group.key}>
-                      <TableRow className="bg-muted/40">
-                        <TableCell colSpan={11}>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">{groupMode === "location" ? "Bin" : "Zone"}: {group.label}</span>
-                            <Badge variant="outline">{group.pallets.length} pallets</Badge>
-                            <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Chọn hết trong nhóm này</Button>
-                            <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Bỏ chọn nhóm này</Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {group.pallets.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              checked={!!selectedPallet[p.palletId]}
-                              onChange={(e) => toggleSelection(p.palletId, e.target.checked)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">{p.palletId}</TableCell>
-                          <TableCell>{p.skuCode}</TableCell>
-                          <TableCell className="font-mono text-xs">{p.batchNo}</TableCell>
-                          <TableCell className="text-right font-mono">{p.qty}</TableCell>
-                          <TableCell>{p.uom}</TableCell>
-                          <TableCell className="text-xs">{p.expDate || "—"}</TableCell>
-                          <TableCell className="text-xs">{daysToExpiry(p.expDate) ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs">
-                            <div>{p.currentLocation ?? "—"}</div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-xs">{locationZoneByCode[p.currentLocation ?? ""] ?? "—"}</TableCell>
-                          <TableCell>{p.status}</TableCell>
-                        </TableRow>
-                      ))}
-                    </Fragment>
-                  ))}
-                  {filteredPallets.length === 0 && (
-                    <TableRow><TableCell colSpan={11} className="py-6 text-center text-muted-foreground">Chọn SKU/Batch để xem pallet phù hợp</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {groupedVisiblePallets.map((group) => (
-                <div key={group.key} className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2">
-                            <span className="font-medium">{groupMode === "location" ? "Bin" : "Zone"}: {group.label}</span>
-                    <Badge variant="outline">{group.pallets.length} pallets</Badge>
-                    <Button size="sm" variant="outline" onClick={() => selectGroup(group.key)}>Chọn hết trong nhóm này</Button>
-                    <Button size="sm" variant="outline" onClick={() => clearGroup(group.key)}>Bỏ chọn nhóm này</Button>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {group.pallets.map((p) => {
-                      const checked = !!selectedPallet[p.palletId];
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => toggleSelection(p.palletId, !checked)}
-                          className={cn(
-                            "rounded-2xl border p-4 text-left transition",
-                            checked ? "border-primary bg-primary/5 shadow-sm" : "hover:border-primary/50",
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  toggleSelection(p.palletId, e.target.checked);
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <div>
-                                <div className="font-mono text-sm">{p.palletId}</div>
-                                <div className="text-xs text-muted-foreground">{p.skuCode} / {p.batchNo}</div>
-                              </div>
-                            </div>
-                            <Badge variant="outline">{p.status}</Badge>
-                          </div>
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                            <div className="rounded-lg bg-muted/40 p-2">
-                              <div className="text-muted-foreground">Qty/UOM</div>
-                              <div className="font-medium">{p.qty} {p.uom}</div>
-                            </div>
-                            <div className="rounded-lg bg-muted/40 p-2">
-                              <div className="text-muted-foreground">Current Bin</div>
-                              <div className="font-mono">{p.currentLocation ?? "—"}</div>
-                              <div className="mt-1 text-[11px] text-muted-foreground">
-                                {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
-                              </div>
-                            </div>
-                            <div className="rounded-lg bg-muted/40 p-2">
-                              <div className="text-muted-foreground">EXP Date</div>
-                              <div className="font-medium">{p.expDate || "—"}</div>
-                            </div>
-                            <div className="rounded-lg bg-muted/40 p-2">
-                              <div className="text-muted-foreground">Days to Expiry</div>
-                              <div className={cn("font-medium", (daysToExpiry(p.expDate) ?? 9999) <= 60 ? "text-amber-600" : "")}>
-                                {daysToExpiry(p.expDate) ?? "—"}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {filteredPallets.length === 0 && (
-                <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">Chọn SKU/Batch để xem pallet phù hợp</div>
-              )}
-            </div>
-          )}
+          <PalletSelectionPanel
+            title="Pallet khả dụng của batch đã chọn"
+            pallets={availablePallets}
+            selectedPalletIds={selectedPallet}
+            onSelectPalletIds={selectPalletIds}
+            onClearPalletIds={clearPalletIds}
+            locationPathByCode={locationPathByCode}
+            locationZoneByCode={locationZoneByCode}
+            daysToExpiry={daysToExpiry}
+            searchPlaceholder="Tìm Pallet ID / Current Bin"
+            emptyMessage="Chọn SKU/Batch để xem pallet phù hợp"
+            locationLabel="Bin"
+            zoneLabel="Zone"
+          />
         </CardContent>
       </Card>
 
