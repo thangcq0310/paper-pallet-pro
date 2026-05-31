@@ -107,7 +107,9 @@ function TaskPrintPage() {
                       <td className="p-2 font-mono">{l.fromLocation ?? "-"}</td>
                       <td className="p-2">{task.taskType === "PICK" ? (outboundDoc?.destination ?? "External") : (l.toLocation ?? "-")}</td>
                       <td className="p-2">
-                        <div className="border-b border-foreground/40 h-4" />
+                        {l.actualLocation
+                          ? <span className="font-mono">{l.actualLocation}</span>
+                          : <div className="border-b border-foreground/40 h-4" />}
                       </td>
                       <td className="p-2">
                         <div className="border-b border-foreground/40 h-4" />
