@@ -3,6 +3,7 @@ import { useStore } from "@/services/store";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { AlertTriangle, Clock, MapPin, Ban } from "lucide-react";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/alerts")({ component: AlertsPage });
 
@@ -26,8 +27,8 @@ function AlertsPage() {
   const sections: Array<{ title: string; icon: typeof Clock; color: string; items: string[] }> = [
     { title: "Pallet Pending Putaway > 1 ngày", icon: Clock, color: "text-warning", items: pendingPutawayOver1Day.map((p) => `${p.palletId} — ${p.skuCode}`) },
     { title: "Pallet Pending Putaway", icon: AlertTriangle, color: "text-info", items: waitingPutaway.map((p) => `${p.palletId} — ${p.skuCode}`) },
-    { title: "Location đầy", icon: MapPin, color: "text-destructive", items: fullLocs.map((l) => `${l.locationCode} (${l.currentPalletCount}/${l.capacityPallet})`) },
-    { title: "Location bị block", icon: Ban, color: "text-destructive", items: blockedLocs.map((l) => l.locationCode) },
+    { title: "Location đầy", icon: MapPin, color: "text-destructive", items: fullLocs.map((l) => `${formatLocationPath(l)} (${l.currentPalletCount}/${l.capacityPallet})`) },
+    { title: "Location bị block", icon: Ban, color: "text-destructive", items: blockedLocs.map((l) => formatLocationPath(l)) },
     { title: "Pallet gần hết hạn (< 60 ngày)", icon: Clock, color: "text-warning", items: nearExpiry.map((p) => `${p.palletId} — EXP ${p.expDate}`) },
     { title: "Task overdue > 1 ngày", icon: AlertTriangle, color: "text-destructive", items: overdueTasks.map((t) => `${t.taskNo} — ${t.taskType}`) },
   ];

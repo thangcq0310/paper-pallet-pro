@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/tasks/$taskNo")({ component: TaskDetailPage });
 
@@ -215,7 +216,7 @@ function TaskDetailPage() {
               <SelectContent>
                 {actualLocationOptions.map((l) => (
                   <SelectItem key={l.id} value={l.locationCode}>
-                    {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
+                    {l.locationCode} · {formatLocationPath(l)} ({l.currentPalletCount}/{l.capacityPallet})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -245,4 +246,3 @@ function TaskDetailPage() {
     </div>
   );
 }
-

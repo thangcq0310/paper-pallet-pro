@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Printer } from "lucide-react";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/pallet/print-batch")({
   component: PrintBatchPage,
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/pallet/print-batch")({
 
 function PrintBatchPage() {
   const allPallets = useStore((s) => s.pallets);
+  const locations = useStore((s) => s.locations);
   const location = typeof window !== "undefined" ? window.location : null;
   const params = new URLSearchParams(location?.search ?? "");
   const idsParam = params.get("ids") ?? "";
@@ -67,6 +69,7 @@ function PrintBatchPage() {
           <div>
             <div className="text-xs text-muted-foreground uppercase">Location</div>
             <div className="font-semibold">{pallet.currentLocation ?? "—"}</div>
+            <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground uppercase">Quantity</div>

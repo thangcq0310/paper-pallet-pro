@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PalletStatusBadge } from '@/components/StatusBadges';
 import { toast } from 'sonner';
 import { Printer, XCircle } from 'lucide-react';
+import { formatLocationPath } from '@/utils/location';
 
 export const Route = createFileRoute('/pallet/$palletId')({ component: PalletLabelPreview });
 
@@ -15,6 +16,7 @@ function PalletLabelPreview() {
   const location = useLocation();
   const copies = parseInt(new URLSearchParams(location.search).get("copies") ?? "1", 10) || 1;
   const pallets = useStore((s) => s.pallets);
+  const locations = useStore((s) => s.locations);
   const pallet = pallets.find((p) => p.palletId === palletId);
 
   if (!pallet) return (
@@ -57,7 +59,11 @@ function PalletLabelPreview() {
           <div><div className='text-xs text-muted-foreground uppercase'>Gross Weight</div><div className='text-2xl font-bold'>{pallet.weight} kg</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>MFG Date</div><div className='font-semibold'>{pallet.mfgDate}</div></div>
           <div><div className='text-xs text-muted-foreground uppercase'>EXP Date</div><div className='font-semibold'>{pallet.expDate}</div></div>
-          <div><div className='text-xs text-muted-foreground uppercase'>Current Location</div><div className='font-semibold'>{pallet.currentLocation || "N/A"}</div></div>
+          <div>
+            <div className='text-xs text-muted-foreground uppercase'>Current Location</div>
+            <div className='font-semibold'>{pallet.currentLocation || "N/A"}</div>
+            <div className='text-xs text-muted-foreground'>{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
+          </div>
           <div><div className='text-xs text-muted-foreground uppercase'>Created At / By</div><div className='font-semibold'>{pallet.createdAt.slice(0, 10)} / demo</div></div>
         </div>
       </CardContent>
@@ -93,6 +99,7 @@ function PalletLabelPreview() {
             <div className='text-sm'>
               <div className='text-xs text-muted-foreground'>Current Location</div>
               <div className='font-mono'>{pallet.currentLocation || "N/A"}</div>
+              <div className='text-xs text-muted-foreground'>{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
             </div>
             {pallet.status === "Pending Putaway" && (
               <div className='pt-3 border-t text-xs text-muted-foreground'>

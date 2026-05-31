@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Boxes, Package, Scale, MapPin, ArrowDownToLine, ArrowUpFromLine, ListChecks, AlertTriangle } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/")({ component: Dashboard });
 
@@ -98,7 +99,9 @@ function Dashboard() {
                   <TableRow key={m.id}>
                     <TableCell><span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary">{m.movementType}</span></TableCell>
                     <TableCell className="font-mono text-xs">{m.palletId}</TableCell>
-                    <TableCell className="text-xs">{m.fromLocation ?? "-"} → {m.toLocation ?? "-"}</TableCell>
+                    <TableCell className="text-xs">
+                      {formatLocationPath(locations.find((l) => l.locationCode === m.fromLocation) ?? null)} → {formatLocationPath(locations.find((l) => l.locationCode === m.toLocation) ?? null)}
+                    </TableCell>
                     <TableCell className="text-right">{m.qty}</TableCell>
                   </TableRow>
                 ))}
@@ -116,7 +119,10 @@ function Dashboard() {
               {waitingPutaway.slice(0, 5).map((p) => (
                 <div key={p.id} className="flex items-center justify-between text-sm">
                   <Link to="/pallet/create" className="font-mono text-xs hover:underline">{p.palletId}</Link>
-                  <PalletStatusBadge status={p.status} />
+                  <div className="text-right">
+                    <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === p.currentLocation) ?? null)}</div>
+                    <PalletStatusBadge status={p.status} />
+                  </div>
                 </div>
               ))}
             </CardContent>

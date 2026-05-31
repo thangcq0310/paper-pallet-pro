@@ -753,7 +753,12 @@ function MovePage() {
                   return (
                     <TableRow key={palletId}>
                       <TableCell className="font-mono text-xs">{palletId}</TableCell>
-                      <TableCell className="font-mono text-xs">{pallet.currentLocation}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        <div>{pallet.currentLocation ?? "—"}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {locationPathByCode[pallet.currentLocation ?? ""] ?? "—"}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Select
                           value={assignments[palletId] || ""}

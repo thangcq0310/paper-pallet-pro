@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { AlertCircle, Layers, Pencil, Plus, Printer, Trash2, Zap } from "lucide-react";
+import { formatLocationPath } from "@/utils/location";
 import {
   calculatePalletPreview,
   cancelUnusedPallet,
@@ -568,7 +569,7 @@ function InboundPalletizePutawayPage() {
                       <TableHead className="text-right">qty</TableHead>
                       <TableHead className="text-right">weight</TableHead>
                       <TableHead>status</TableHead>
-                      <TableHead>currentLocation</TableHead>
+                      <TableHead>Current Location</TableHead>
                       <TableHead className="text-right">action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -590,7 +591,10 @@ function InboundPalletizePutawayPage() {
                           <TableCell className="text-right font-mono">{p.qty}</TableCell>
                           <TableCell className="text-right font-mono">{p.weight}</TableCell>
                           <TableCell>{p.status}</TableCell>
-                          <TableCell className="font-mono text-xs">{p.currentLocation ?? "—"}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            <div>{p.currentLocation ?? "—"}</div>
+                            <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === p.currentLocation) ?? null)}</div>
+                          </TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button size="sm" variant="outline" onClick={() => openPrintLabels([p.palletId])}>
                               Print Label

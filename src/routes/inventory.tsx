@@ -10,6 +10,7 @@ import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { formatLocationPath } from "@/utils/location";
 
 export const Route = createFileRoute("/inventory")({ component: InventoryPage });
 
@@ -23,6 +24,7 @@ function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [includeShipped, setIncludeShipped] = useState(false);
   const [includeCancelled, setIncludeCancelled] = useState(false);
+  const locationPathByCode = Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)]));
 
   const filteredPallets = pallets.filter((p) =>
     (includeShipped || p.status !== "Shipped") &&
@@ -100,7 +102,14 @@ function InventoryPage() {
             </Select>
             <Select value={locFilter} onValueChange={setLocFilter}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All Locations</SelectItem>{locations.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {locations.map((l) => (
+                  <SelectItem key={l.id} value={l.locationCode}>
+                    {l.locationCode} · {locationPathByCode[l.locationCode]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -151,7 +160,7 @@ function InventoryPage() {
                       <TableCell className="text-xs">
                         <div className="flex flex-wrap gap-1">
                           {uniqueLocations.slice(0, 3).map((loc) => (
-                            <span key={loc} className="font-mono px-2 py-1 rounded-md bg-secondary">{loc}</span>
+                            <span key={loc} className="font-mono px-2 py-1 rounded-md bg-secondary">{locationPathByCode[loc] ?? loc}</span>
                           ))}
                           {uniqueLocations.length > 3 && <span className="text-muted-foreground">+{uniqueLocations.length - 3}</span>}
                         </div>
