@@ -37,6 +37,10 @@ export function getTaskLinesByNo(taskNo: string) {
     .sort((a, b) => a.lineNo - b.lineNo);
 }
 
+export function getTaskLineByTaskNoAndPalletId(taskNo: string, palletId: string) {
+  return getState().taskLines.find((l) => l.taskNo === taskNo && l.palletId === palletId);
+}
+
 export function getTaskWithLinesByNo(taskNo: string) {
   const task = getTaskByNo(taskNo);
   if (!task) return null;
@@ -393,25 +397,85 @@ function recomputeTaskHeaderStatus(taskId: string) {
   }));
 }
 
-export function confirmTaskLine(taskLineId: string, actualLocation?: string) {
+export interface ConfirmTaskLineOptions {
+  actualLocation?: string | null;
+  allowOpenTask?: boolean;
+  allowActualLocationOverride?: boolean;
+}
+
+export function confirmTaskLine(taskLineId: string, actualLocation?: string): {
+  taskNo: string;
+  palletId: string;
+  result: "SUCCESS" | "WARNING";
+  message: string;
+} | void;
+export function confirmTaskLine(taskLineId: string, options?: ConfirmTaskLineOptions): {
+  taskNo: string;
+  palletId: string;
+  result: "SUCCESS" | "WARNING";
+  message: string;
+} | void;
+export function confirmTaskLine(taskLineId: string, actualLocationOrOptions?: string | ConfirmTaskLineOptions) {
   const s = getState();
   const line = s.taskLines.find((l) => l.id === taskLineId);
   if (!line) throw new Error("Task line không tồn tại");
   const task = s.tasks.find((t) => t.id === line.taskId);
   if (!task) throw new Error("Task không tồn tại");
 
-  if (line.status !== "Open") throw new Error("Line không ở trạng thái Open");
-  if (!(task.status === "Printed" || task.status === "Partially Confirmed")) throw new Error("Task chưa Printed");
+  const actualLocation = typeof actualLocationOrOptions === "string"
+    ? actualLocationOrOptions
+    : actualLocationOrOptions?.actualLocation ?? "";
+  const allowOpenTask = typeof actualLocationOrOptions === "object" && actualLocationOrOptions !== null
+    ? Boolean(actualLocationOrOptions.allowOpenTask)
+    : false;
+  const allowActualLocationOverride = typeof actualLocationOrOptions === "object" && actualLocationOrOptions !== null
+    ? Boolean(actualLocationOrOptions.allowActualLocationOverride)
+    : false;
 
-  const dest = (actualLocation ?? line.toLocation ?? "").trim();
+  if (line.status !== "Open") throw new Error("Line không ở trạng thái Open");
+  if (!allowOpenTask && !(task.status === "Printed" || task.status === "Partially Confirmed")) throw new Error("Task chưa Printed");
+  if (allowOpenTask && task.status === "Cancelled") throw new Error("Task đã Cancelled");
+
+  const plannedLocation = (line.toLocation ?? "").trim();
+  const fromLocation = (line.fromLocation ?? "").trim();
+  let resolvedActualLocation: string | null = null;
+  let result: "SUCCESS" | "WARNING" = "SUCCESS";
+  let message = "Confirmed";
 
   if (task.taskType === "PUTAWAY") {
-    const validated = validatePutawayDestination(dest);
+    const resolved = (actualLocation || plannedLocation).trim();
+    if (!resolved) throw new Error("Thiếu Actual Bin");
+    if (plannedLocation && resolved !== plannedLocation && !allowActualLocationOverride) {
+      throw new Error("Actual Bin khác To Bin. Chỉ admin mới được override");
+    }
+    const validated = validatePutawayDestination(resolved);
     putawayPallet(line.palletId, validated, line.note);
+    resolvedActualLocation = validated;
+    if (plannedLocation && validated !== plannedLocation) {
+      result = "WARNING";
+      message = `Override Actual Bin ${validated} thay cho To Bin ${plannedLocation}`;
+    }
   } else if (task.taskType === "MOVE") {
-    const validated = validateMoveDestination(String(line.fromLocation ?? ""), dest);
+    const resolved = (actualLocation || plannedLocation).trim();
+    if (!resolved) throw new Error("Thiếu Actual Bin");
+    if (plannedLocation && resolved !== plannedLocation && !allowActualLocationOverride) {
+      throw new Error("Actual Bin khác To Bin. Chỉ admin mới được override");
+    }
+    const validated = validateMoveDestination(fromLocation, resolved);
     movePallet(line.palletId, validated, line.note);
+    resolvedActualLocation = validated;
+    if (plannedLocation && validated !== plannedLocation) {
+      result = "WARNING";
+      message = `Override Actual Bin ${validated} thay cho To Bin ${plannedLocation}`;
+    }
   } else if (task.taskType === "PICK") {
+    if (actualLocation?.trim()) {
+      const pallet = getPalletOrThrow(line.palletId);
+      const currentLocation = (pallet.currentLocation ?? "").trim();
+      if (currentLocation && actualLocation.trim() !== currentLocation) {
+        throw new Error(`Current location ${actualLocation.trim()} không khớp với pallet ${pallet.palletId}`);
+      }
+    }
     pickAndShipPallet(line.palletId, line.note);
   } else {
     throw new Error(`TaskType ${task.taskType} chưa hỗ trợ confirm`);
@@ -425,8 +489,8 @@ export function confirmTaskLine(taskLineId: string, actualLocation?: string) {
         ? {
           ...l,
           status: "Confirmed",
-          actualLocation: task.taskType === "PICK" ? null : dest || null,
-          toLocation: task.taskType === "PICK" ? null : (dest || null),
+          actualLocation: task.taskType === "PICK" ? null : ((resolvedActualLocation ?? plannedLocation) || null),
+          toLocation: task.taskType === "PICK" ? null : (l.toLocation ?? null),
           confirmedAt: now,
           confirmedBy: CURRENT_USER,
         }
@@ -436,6 +500,13 @@ export function confirmTaskLine(taskLineId: string, actualLocation?: string) {
 
   recomputeTaskHeaderStatus(task.id);
   if (task.outboundNo) syncOutboundStatusByNo(task.outboundNo);
+
+  return {
+    taskNo: task.taskNo,
+    palletId: line.palletId,
+    result,
+    message,
+  };
 }
 
 export function confirmAllTaskLines(taskNo: string) {

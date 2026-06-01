@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatLocationPath } from "@/utils/location";
+import { QrCode } from "@/components/qr/QrCode";
 
 export const Route = createFileRoute("/tasks/$taskNo/print")({ component: TaskPrintPage });
 
@@ -20,18 +21,9 @@ function TaskPrintPage() {
   const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
   const autoPrintedRef = useRef(false);
 
-  if (!task) {
-    return (
-      <div className="p-6">
-        <Card className="rounded-2xl">
-          <CardContent className="p-6 text-muted-foreground">Task không tồn tại.</CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const doPrint = () => {
     try {
+      if (!task) throw new Error("Task không tồn tại");
       printTask(task.id);
       window.print();
     } catch (e: any) {
@@ -53,6 +45,16 @@ function TaskPrintPage() {
     return () => window.clearTimeout(t);
   }, [task]);
 
+  if (!task) {
+    return (
+      <div className="p-6">
+        <Card className="rounded-2xl">
+          <CardContent className="p-6 text-muted-foreground">Task không tồn tại.</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const instruction =
     task.instruction ||
     (task.taskType === "PUTAWAY"
@@ -71,11 +73,15 @@ function TaskPrintPage() {
 
       <Card className="rounded-2xl border-2 border-foreground">
         <CardContent className="p-8 space-y-6">
-          <div className="text-center">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">WAREHOUSE TASK</div>
-            <div className="text-2xl font-bold mt-1">{task.taskType}</div>
-            <div className="font-mono text-sm mt-1">{task.taskNo}</div>
-            <div className="text-xs text-muted-foreground mt-1">Priority: {task.priority}</div>
+          <div className="flex items-start justify-between gap-4 border-b-2 border-foreground pb-4">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-muted-foreground">WAREHOUSE TASK</div>
+              <div className="text-2xl font-bold mt-1">{task.taskType}</div>
+              <div className="font-mono text-sm mt-1">{task.taskNo}</div>
+              <div className="text-xs text-muted-foreground mt-1">Priority: {task.priority}</div>
+              <div className="mt-1 text-xs font-mono text-muted-foreground">{`TASK:${task.taskNo}`}</div>
+            </div>
+            <QrCode value={`TASK:${task.taskNo}`} className="h-28 w-28 shrink-0" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

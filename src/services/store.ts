@@ -1,6 +1,6 @@
 ﻿// Central reactive store. Swap with Firestore later by replacing read/write functions.
 import { useSyncExternalStore, useRef } from "react";
-import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument } from "@/types";
+import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument, ScanEvent } from "@/types";
 import {
   mockSKUs, mockBatches, mockLocations, mockPallets, mockMovements, mockTasks, mockTaskLines, mockOutbounds,
 } from "@/data/mockData";
@@ -14,6 +14,7 @@ interface State {
   tasks: WarehouseTask[];
   taskLines: WarehouseTaskLine[];
   outbounds: OutboundDocument[];
+  scanEvents: ScanEvent[];
 }
 
 const STORAGE_KEY = "mini-wms-state-v2";
@@ -128,7 +129,7 @@ function normalizeTasksAndLines(input: {
 
 function load(): State {
   if (typeof window === "undefined") {
-    return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds };
+    return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -149,10 +150,11 @@ function load(): State {
         tasks,
         taskLines,
         outbounds: Array.isArray(parsed.outbounds) ? (parsed.outbounds as OutboundDocument[]) : mockOutbounds,
+        scanEvents: Array.isArray((parsed as any).scanEvents) ? (parsed as ScanEvent[]) : [],
       };
     }
   } catch {}
-  return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds };
+  return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
 }
 
 let state: State = load();

@@ -155,3 +155,21 @@ export interface OutboundDocument {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ParsedScanType = "PALLET" | "LOCATION" | "TASK" | "UNKNOWN";
+export type ScanResult = "SUCCESS" | "WARNING" | "ERROR";
+
+export interface ScanEvent {
+  id: string;
+  scanType: string;
+  scannedValue: string;
+  parsedType: ParsedScanType;
+  parsedCode: string | null;
+  taskNo: string | null;
+  palletId: string | null;
+  locationCode: string | null;
+  result: ScanResult;
+  message: string;
+  scannedBy: string;
+  scannedAt: string;
+}

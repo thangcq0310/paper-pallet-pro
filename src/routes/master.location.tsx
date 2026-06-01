@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { LocationStatusBadge } from "@/components/StatusBadges";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
-import { FileDown, FileUp, Plus, RotateCcw } from "lucide-react";
+import { FileDown, FileUp, Plus, Printer, RotateCcw } from "lucide-react";
 import { downloadTextFile, toCsv } from "@/utils/csv";
 
 export const Route = createFileRoute("/master/location")({ component: LocationPage });
@@ -231,7 +231,17 @@ function LocationPage() {
                     <TableCell className="text-right">{l.currentPalletCount}</TableCell>
                     <TableCell><LocationStatusBadge status={l.status} full={full} /></TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline" onClick={() => toggleLocationBlock(l.id)}>{l.status === "Active" ? "Block" : "Unblock"}</Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`/master/location/print?code=${encodeURIComponent(l.locationCode)}`, "_blank", "noopener,noreferrer")}
+                        >
+                          <Printer className="mr-1 h-3.5 w-3.5" />
+                          Print
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => toggleLocationBlock(l.id)}>{l.status === "Active" ? "Block" : "Unblock"}</Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

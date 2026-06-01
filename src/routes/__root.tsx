@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, useRouter, useRouterState, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -46,34 +47,58 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (<>
+function RootShell({ children }: { children: ReactNode }) {
+  return (
+    <>
     <HeadContent />
     <Scripts />
     {children}
-  </>);
+    </>
+  );
 }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isMobileRoute = pathname.startsWith("/mobile");
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AppSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 border-b bg-card/80 backdrop-blur sticky top-0 z-10 flex items-center px-4 gap-2 no-print">
-              <SidebarTrigger />
-              <span className="font-semibold text-sm">Mini WMS</span>
-              <span className="text-xs text-muted-foreground ml-2">Manual warehouse operations</span>
-            </header>
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-              <Outlet />
-            </main>
-          </div>
+      {isMobileRoute ? (
+        <div className="min-h-screen bg-background">
+          <header className="sticky top-0 z-20 border-b bg-background/90 px-4 py-3 backdrop-blur no-print">
+            <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Mini WMS</div>
+                <div className="text-sm font-semibold">Mobile Scan</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link to="/" className="rounded-full border px-3 py-2 text-xs font-medium">Desktop</Link>
+                <Link to="/mobile" className="rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">Home</Link>
+              </div>
+            </div>
+          </header>
+          <main className="mx-auto w-full max-w-xl p-4">
+            <Outlet />
+          </main>
         </div>
+      ) : (
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-background">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col min-w-0">
+              <header className="h-14 border-b bg-card/80 backdrop-blur sticky top-0 z-10 flex items-center px-4 gap-2 no-print">
+                <SidebarTrigger />
+                <span className="font-semibold text-sm">Mini WMS</span>
+                <span className="text-xs text-muted-foreground ml-2">Manual warehouse operations</span>
+              </header>
+              <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+                <Outlet />
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
+      )}
         <Toaster richColors position="top-right" />
-      </SidebarProvider>
     </QueryClientProvider>
   );
 }

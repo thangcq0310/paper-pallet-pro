@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Printer } from "lucide-react";
 import { formatLocationPath } from "@/utils/location";
+import { QrCode } from "@/components/qr/QrCode";
 
 export const Route = createFileRoute("/pallet/print-batch")({
   component: PrintBatchPage,
@@ -53,9 +54,13 @@ function PrintBatchPage() {
   const LabelCard = ({ pallet }: { pallet: (typeof pallets)[number] }) => (
     <Card className="rounded-2xl border-2 border-foreground print-label break-inside-avoid">
       <CardContent className="p-6">
-        <div className="text-center pb-3 border-b-2 border-foreground">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Pallet Label</p>
-          <h2 className="text-3xl font-bold mt-1 font-mono">{pallet.palletId}</h2>
+        <div className="flex items-start justify-between gap-4 pb-3 border-b-2 border-foreground">
+          <div className="flex-1">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Pallet Label</p>
+            <h2 className="text-3xl font-bold mt-1 font-mono">{pallet.palletId}</h2>
+            <div className="mt-1 text-xs font-mono text-muted-foreground">{`PLT:${pallet.palletId}`}</div>
+          </div>
+          <QrCode value={`PLT:${pallet.palletId}`} className="h-28 w-28 shrink-0" />
         </div>
         <div className="grid grid-cols-2 gap-y-3 gap-x-6 mt-4 text-sm">
           <div className="col-span-2">
