@@ -12,11 +12,11 @@ export function MobileLayout({ children }: { children: ReactNode }) {
             <div className="text-sm font-semibold">Mobile Scan</div>
           </div>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs font-medium" onClick={() => window.location.assign("/")}>
-              Desktop
+            <Button asChild variant="outline" className="h-8 rounded-full px-3 text-xs font-medium">
+              <a href="/">Desktop</a>
             </Button>
-            <Button type="button" className="h-8 rounded-full px-3 text-xs font-medium" onClick={() => window.location.assign("/mobile")}>
-              Home
+            <Button asChild className="h-8 rounded-full px-3 text-xs font-medium">
+              <a href="/mobile">Home</a>
             </Button>
           </div>
         </div>

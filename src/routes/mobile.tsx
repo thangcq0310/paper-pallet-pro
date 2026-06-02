@@ -42,32 +42,44 @@ function MobileHomePage() {
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button type="button" className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90" onClick={() => window.location.assign("/mobile/scan-putaway")}>
-            <ArrowDownToLine className="mr-2 h-4 w-4" />
-            Putaway
+          <Button asChild className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90">
+            <a href="/mobile/scan-putaway">
+              <ArrowDownToLine className="mr-2 h-4 w-4" />
+              Putaway
+            </a>
           </Button>
-          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-move")}>
-            <ArrowUpFromLine className="mr-2 h-4 w-4" />
-            Move
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <a href="/mobile/scan-move">
+              <ArrowUpFromLine className="mr-2 h-4 w-4" />
+              Move
+            </a>
           </Button>
-          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-pick")}>
-            <Package className="mr-2 h-4 w-4" />
-            Pick
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <a href="/mobile/scan-pick">
+              <Package className="mr-2 h-4 w-4" />
+              Pick
+            </a>
           </Button>
-          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
-            <Search className="mr-2 h-4 w-4" />
-            Lookup
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <a href="/mobile/lookup-pallet">
+              <Search className="mr-2 h-4 w-4" />
+              Lookup
+            </a>
           </Button>
         </div>
 
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/tasks")}>
-            <ListChecks className="mr-2 h-4 w-4" />
-            Task list
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <a href="/mobile/tasks">
+              <ListChecks className="mr-2 h-4 w-4" />
+              Task list
+            </a>
           </Button>
-          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-log")}>
-            <History className="mr-2 h-4 w-4" />
-            Scan log
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <a href="/mobile/scan-log">
+              <History className="mr-2 h-4 w-4" />
+              Scan log
+            </a>
           </Button>
         </div>
       </div>
@@ -190,11 +202,11 @@ function MobileHomePage() {
       </Card>
 
       <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" className="h-12 rounded-2xl" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
-          Lookup Pallet
+        <Button asChild variant="outline" className="h-12 rounded-2xl">
+          <a href="/mobile/lookup-pallet">Lookup Pallet</a>
         </Button>
-        <Button type="button" variant="outline" className="h-12 rounded-2xl" onClick={() => window.location.assign("/mobile/lookup-location")}>
-          Lookup Location
+        <Button asChild variant="outline" className="h-12 rounded-2xl">
+          <a href="/mobile/lookup-location">Lookup Location</a>
         </Button>
       </div>
     </div>
