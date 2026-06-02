@@ -62,7 +62,7 @@ export function ScanInput({
   };
 
   useEffect(() => {
-    setCameraSupported(Boolean((window as unknown as { BarcodeDetector?: unknown }).BarcodeDetector) && Boolean(navigator.mediaDevices?.getUserMedia));
+    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
   }, []);
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export function ScanInput({
           <Button
             variant={cameraOn ? "default" : "outline"}
             className="h-12 flex-1"
-            onClick={() => {
+          onClick={() => {
               setCameraError("");
               if (cameraOn) stopCamera();
               else setCameraOn(true);
