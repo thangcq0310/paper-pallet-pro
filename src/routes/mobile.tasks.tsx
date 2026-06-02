@@ -8,9 +8,9 @@ import { TaskStatusBadge } from "@/components/StatusBadges";
 import { useStore } from "@/services/store";
 import { formatLocationPath } from "@/utils/location";
 import type { TaskType, WarehouseTask } from "@/types";
-import type { ParsedScannedCode } from "@/utils/scan";
 import { ArrowLeft, Printer, ScanLine, ListChecks, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { expectParsedScanType, parseScannedCode } from "@/utils/scan";
 
 const ACTIVE_STATUSES: WarehouseTask["status"][] = ["Open", "Printed", "Partially Confirmed"];
 
@@ -91,14 +91,13 @@ function MobileTasksPage() {
     window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer");
   };
 
-  const handleTaskScan = (rawValue: string, parsed: ParsedScannedCode) => {
+  const handleTaskScan = (rawValue: string) => {
     try {
-      if (parsed.parsedType !== "TASK" || !parsed.parsedCode) {
-        throw new Error("Hãy scan Task No hợp lệ");
-      }
-      const next = tasks.find((task) => task.taskNo === parsed.parsedCode);
+      const parsed = parseScannedCode(rawValue);
+      const taskCode = expectParsedScanType(parsed, "TASK", "Hãy scan Task No hợp lệ");
+      const next = tasks.find((task) => task.taskNo === taskCode);
       if (!next) {
-        throw new Error(`Task ${parsed.parsedCode} không tồn tại`);
+        throw new Error(`Task ${taskCode} không tồn tại`);
       }
       setTaskFilter(next.taskNo);
       setMessage(`Đã lọc task ${next.taskNo}`);
@@ -131,7 +130,7 @@ function MobileTasksPage() {
             label="Task No"
             placeholder="TASK:..."
             hint="Quét QR task hoặc nhập tay để lọc đúng task đang cầm."
-            onScan={handleTaskScan}
+            onScan={(_, rawValue) => handleTaskScan(rawValue)}
           />
           <div className="flex flex-wrap gap-2">
             <Button variant={taskFilter ? "outline" : "default"} className="h-10 rounded-full" onClick={() => setTaskFilter("")}>
@@ -249,7 +248,7 @@ function MobileTasksPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <Button className="h-11 rounded-2xl" onClick={() => openTask(task)}>
                       <ScanLine className="mr-2 h-4 w-4" />
-                      Scan
+                      {task.taskType === "PUTAWAY" ? "Scan Putaway" : task.taskType === "MOVE" ? "Scan Move" : "Scan Pick"}
                     </Button>
                     <Button
                       variant="outline"

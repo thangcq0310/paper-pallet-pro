@@ -158,6 +158,7 @@ export interface OutboundDocument {
 
 export type ParsedScanType = "PALLET" | "LOCATION" | "TASK" | "UNKNOWN";
 export type ScanResult = "SUCCESS" | "WARNING" | "ERROR";
+export type UserRole = "Operator" | "Supervisor" | "Admin";
 
 export interface ScanEvent {
   id: string;

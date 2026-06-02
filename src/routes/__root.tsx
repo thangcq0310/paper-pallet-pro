@@ -4,6 +4,7 @@ import { Outlet, Link, createRootRouteWithContext, useRouter, useRouterState, He
 import appCss from "../styles.css?url";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { MobileLayout } from "@/components/mobile/MobileLayout";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -36,10 +37,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#020617" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { title: "Mini WMS — Manual Warehouse" },
       { name: "description", content: "Mini WMS nội bộ — quản lý SKU, Batch, Pallet, Location, Movement thủ công." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/pwa/icon-192.svg" },
+      { rel: "icon", href: "/pwa/icon-192.svg", type: "image/svg+xml" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -50,9 +59,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <>
-    <HeadContent />
-    <Scripts />
-    {children}
+      <HeadContent />
+      <Scripts />
+      {children}
     </>
   );
 }
@@ -64,23 +73,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {isMobileRoute ? (
-        <div className="min-h-screen bg-background">
-          <header className="sticky top-0 z-20 border-b bg-background/90 px-4 py-3 backdrop-blur no-print">
-            <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
-              <div>
-                <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Mini WMS</div>
-                <div className="text-sm font-semibold">Mobile Scan</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link to="/" className="rounded-full border px-3 py-2 text-xs font-medium">Desktop</Link>
-                <Link to="/mobile" className="rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">Home</Link>
-              </div>
-            </div>
-          </header>
-          <main className="mx-auto w-full max-w-xl p-4">
-            <Outlet />
-          </main>
-        </div>
+        <MobileLayout>
+          <Outlet />
+        </MobileLayout>
       ) : (
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">

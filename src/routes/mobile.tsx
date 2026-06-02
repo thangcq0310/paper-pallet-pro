@@ -29,9 +29,12 @@ function MobileHomePage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-700 p-5 text-white shadow-xl">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/60">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-white/60">
           <Smartphone className="h-4 w-4" />
           Mobile WMS
+        </div>
+        <div className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80">
+          Demo setting
         </div>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Scan nhanh</h1>
         <p className="mt-2 max-w-sm text-sm text-white/70">
@@ -65,12 +68,20 @@ function MobileHomePage() {
           </Button>
         </div>
 
-        <Button asChild className="mt-2 h-12 w-full rounded-2xl bg-white/10 text-white hover:bg-white/15">
-          <Link to="/mobile/tasks">
-            <ListChecks className="mr-2 h-4 w-4" />
-            Task list
-          </Link>
-        </Button>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <Link to="/mobile/tasks">
+              <ListChecks className="mr-2 h-4 w-4" />
+              Task list
+            </Link>
+          </Button>
+          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
+            <Link to="/mobile/scan-log">
+              <History className="mr-2 h-4 w-4" />
+              Scan log
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="rounded-[1.75rem]">
@@ -91,13 +102,37 @@ function MobileHomePage() {
               />
             </div>
 
+            <div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Role demo</div>
+              <select
+                value={settings.role}
+                onChange={(e) => {
+                  const role = e.target.value as MobileScanSettings["role"];
+                  setSettings((prev) => ({
+                    ...prev,
+                    role,
+                    allowOpenTaskConfirm: role === "Operator" ? false : prev.allowOpenTaskConfirm,
+                    allowActualLocationOverride: role === "Operator" ? false : prev.allowActualLocationOverride,
+                  }));
+                }}
+                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm"
+              >
+                <option value="Operator">Operator</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+
             <label className="flex items-center justify-between gap-4 rounded-2xl border p-4">
               <div>
                 <div className="text-sm font-medium">Cho phép confirm task Open</div>
-                <div className="text-xs text-muted-foreground">Bật khi muốn scan mà task chưa in.</div>
+                <div className="text-xs text-muted-foreground">
+                  Demo setting. Operator không được tự bật.
+                </div>
               </div>
               <Switch
                 checked={settings.allowOpenTaskConfirm}
+                disabled={settings.role === "Operator"}
                 onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, allowOpenTaskConfirm: checked }))}
               />
             </label>
@@ -105,10 +140,13 @@ function MobileHomePage() {
             <label className="flex items-center justify-between gap-4 rounded-2xl border p-4">
               <div>
                 <div className="text-sm font-medium">Admin override actual bin</div>
-                <div className="text-xs text-muted-foreground">Dùng khi actual location khác target bin.</div>
+                <div className="text-xs text-muted-foreground">
+                  Demo setting. Chỉ Supervisor/Admin được bật.
+                </div>
               </div>
               <Switch
                 checked={settings.allowActualLocationOverride}
+                disabled={settings.role === "Operator"}
                 onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, allowActualLocationOverride: checked }))}
               />
             </label>

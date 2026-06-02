@@ -30,6 +30,17 @@ export function makeScanCode(prefix: "PLT" | "LOC" | "TASK", code: string) {
   return `${prefix}:${code.trim()}`;
 }
 
+export function expectParsedScanType(
+  parsed: ParsedScannedCode,
+  expectedType: Exclude<ParsedScanType, "UNKNOWN">,
+  label: string,
+) {
+  if (parsed.parsedType !== expectedType || !parsed.parsedCode) {
+    throw new Error(label);
+  }
+  return parsed.parsedCode;
+}
+
 export function parseScannedCode(value: string): ParsedScannedCode {
   const rawValue = normalize(value);
   if (!rawValue) {

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { parseScannedCode } from "@/utils/scan";
+import { parseScannedCode, type ParsedScannedCode } from "@/utils/scan";
 import { Camera, CameraOff, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,18 +10,26 @@ type BarcodeDetectorLike = {
   detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>;
 };
 
+type ZxingControlsLike = {
+  stop: () => Promise<void> | void;
+};
+
 export function ScanInput({
   label,
   placeholder = "Nhập hoặc scan code",
   hint,
   className,
+  inputRef,
+  autoFocus,
   onScan,
 }: {
   label: string;
   placeholder?: string;
   hint?: string;
   className?: string;
-  onScan: (rawValue: string, parsed: ReturnType<typeof parseScannedCode>) => void;
+  inputRef?: RefObject<HTMLInputElement | null>;
+  autoFocus?: boolean;
+  onScan: (parsed: ParsedScannedCode, rawValue: string) => void;
 }) {
   const [value, setValue] = useState("");
   const [cameraOn, setCameraOn] = useState(false);
@@ -31,7 +39,14 @@ export function ScanInput({
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const detectorRef = useRef<BarcodeDetectorLike | null>(null);
+  const zxingControlsRef = useRef<ZxingControlsLike | null>(null);
   const busyRef = useRef(false);
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef?.current?.focus();
+    }
+  }, [autoFocus, inputRef]);
 
   const stopCamera = () => {
     setCameraOn(false);
@@ -41,6 +56,9 @@ export function ScanInput({
     }
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    detectorRef.current = null;
+    void zxingControlsRef.current?.stop();
+    zxingControlsRef.current = null;
   };
 
   useEffect(() => {
@@ -56,46 +74,76 @@ export function ScanInput({
       try {
         setCameraError("");
         const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector?: new (options: { formats: string[] }) => BarcodeDetectorLike }).BarcodeDetector;
-        if (!BarcodeDetectorCtor) throw new Error("Thiết bị không hỗ trợ BarcodeDetector");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+        if (BarcodeDetectorCtor && videoRef.current) {
+          const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+          });
+          if (cancelled) {
+            mediaStream.getTracks().forEach((track) => track.stop());
+            return;
+          }
+
+          streamRef.current = mediaStream;
+          detectorRef.current = new BarcodeDetectorCtor({
+            formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8"],
+          });
+          videoRef.current.srcObject = mediaStream;
+          await videoRef.current.play();
+          const loop = async () => {
+            if (cancelled || !cameraOn || busyRef.current || !videoRef.current || !detectorRef.current) return;
+            busyRef.current = true;
+            try {
+              const detected = await detectorRef.current.detect(videoRef.current);
+              const rawValue = detected[0]?.rawValue?.trim();
+              if (rawValue) {
+                handleRawValue(rawValue);
+                stopCamera();
+                return;
+              }
+            } catch (error: any) {
+              setCameraError(error?.message ?? "Camera scan thất bại");
+              stopCamera();
+              return;
+            } finally {
+              busyRef.current = false;
+            }
+            rafRef.current = window.requestAnimationFrame(loop);
+          };
+          rafRef.current = window.requestAnimationFrame(loop);
           return;
         }
 
-        streamRef.current = stream;
-        detectorRef.current = new BarcodeDetectorCtor({
-          formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8"],
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-        const loop = async () => {
-          if (cancelled || !cameraOn || busyRef.current || !videoRef.current || !detectorRef.current) return;
-          busyRef.current = true;
-          try {
-            const detected = await detectorRef.current.detect(videoRef.current);
-            const rawValue = detected[0]?.rawValue?.trim();
-            if (rawValue) {
-              handleRawValue(rawValue);
-              stopCamera();
-              return;
-            }
-          } catch (error: any) {
-            setCameraError(error?.message ?? "Camera scan thất bại");
-            stopCamera();
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader();
+        const controls = await reader.decodeFromVideoDevice(undefined, videoRef.current ?? undefined, (result, error, scannerControls) => {
+          if (cancelled) {
+            void scannerControls.stop();
             return;
-          } finally {
-            busyRef.current = false;
           }
-          rafRef.current = window.requestAnimationFrame(loop);
-        };
-        rafRef.current = window.requestAnimationFrame(loop);
+          if (error) {
+            return;
+          }
+          const rawValue = result?.getText()?.trim();
+          if (rawValue) {
+            handleRawValue(rawValue);
+            void scannerControls.stop();
+            stopCamera();
+          }
+        });
+        if (cancelled) {
+          void controls.stop();
+          return;
+        }
+        zxingControlsRef.current = controls;
       } catch (error: any) {
-        setCameraError(error?.message ?? "Không mở được camera");
+        const errorMsg = error?.name === 'NotAllowedError' 
+          ? 'Quyền camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.'
+          : error?.name === 'NotFoundError'
+          ? 'Không tìm thấy camera. Kiểm tra kết nối camera.'
+          : error?.name === 'NotReadableError'
+          ? 'Camera đang bị chiếm dụng bởi ứng dụng khác.'
+          : error?.message ?? 'Không mở được camera. Thử lại hoặc nhập tay.';
+        setCameraError(errorMsg);
         stopCamera();
       }
     };
@@ -111,7 +159,7 @@ export function ScanInput({
 
   const handleRawValue = (rawValue: string) => {
     const parsed = parseScannedCode(rawValue);
-    onScan(rawValue, parsed);
+    onScan(parsed, rawValue);
     setValue("");
   };
 
@@ -125,6 +173,7 @@ export function ScanInput({
 
         <div className="flex gap-2">
           <Input
+            ref={inputRef}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}

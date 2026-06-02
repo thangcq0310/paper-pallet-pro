@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { ScanInput } from "@/components/mobile/ScanInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,10 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/services/store";
 import { loadMobileScanSettings } from "@/services/mobileScanSettings";
 import { appendScanEvent } from "@/services/scanService";
-import { confirmTaskLineByScan, getOpenTasksByType, getTaskByScan } from "@/services/mobileWorkflowService";
+import { confirmTaskLineByScan, getOpenTasksByType, getTaskByParsed } from "@/services/mobileWorkflowService";
 import { formatLocationPath } from "@/utils/location";
 import { TaskStatusBadge } from "@/components/StatusBadges";
-import { ArrowUpFromLine, ArrowLeft, ScanLine, Package, MapPin } from "lucide-react";
+import { ArrowUpFromLine, ArrowLeft, ScanLine, Package, MapPin, CheckCircle, XCircle } from "lucide-react";
+import { expectParsedScanType, parseScannedCode } from "@/utils/scan";
+import { toast } from "sonner";
+
+// Visual + haptic feedback on scan
+function playFeedback(result: "SUCCESS" | "WARNING" | "ERROR") {
+  try {
+    if (navigator.vibrate) {
+      navigator.vibrate(result === "SUCCESS" ? 100 : result === "WARNING" ? 200 : 300);
+    }
+  } catch { /* ignore */ }
+}
 
 export const Route = createFileRoute("/mobile/scan-pick")({ component: MobileScanPickPage });
 
@@ -19,11 +30,21 @@ function MobileScanPickPage() {
   const taskLines = useStore((s) => s.taskLines);
   const locations = useStore((s) => s.locations);
   const settings = loadMobileScanSettings();
+  const palletInputRef = useRef<HTMLInputElement | null>(null);
 
   const [taskNo, setTaskNo] = useState("");
   const [palletId, setPalletId] = useState("");
   const [currentLocationCode, setCurrentLocationCode] = useState("");
   const [message, setMessage] = useState("");
+  const [lastConfirmation, setLastConfirmation] = useState<{
+    palletId: string;
+    lineNo: number;
+    confirmedCount: number;
+    totalCount: number;
+    remainingCount: number;
+    nextPalletId: string | null;
+    nextCurrentLocation: string | null;
+  } | null>(null);
 
   const task = useMemo(() => tasks.find((t) => t.taskNo === taskNo) ?? null, [tasks, taskNo]);
   const lines = useMemo(
@@ -32,6 +53,9 @@ function MobileScanPickPage() {
   );
   const line = useMemo(() => lines.find((l) => l.palletId === palletId) ?? null, [lines, palletId]);
   const openTasks = useMemo(() => getOpenTasksByType("PICK"), [tasks, taskLines]);
+  const confirmedCount = lines.filter((item) => item.status === "Confirmed").length;
+  const openLines = lines.filter((item) => item.status === "Open");
+  const nextLine = openLines.find((item) => item.palletId !== palletId) ?? openLines[0] ?? null;
 
   useEffect(() => {
     if (taskNo || typeof window === "undefined") return;
@@ -43,6 +67,11 @@ function MobileScanPickPage() {
       setMessage(`Đã mở task ${next.taskNo}`);
     }
   }, [taskNo, tasks]);
+
+  useEffect(() => {
+    if (!palletId) return;
+    setLastConfirmation(null);
+  }, [palletId]);
 
   const log = (payload: {
     rawValue: string;
@@ -71,18 +100,22 @@ function MobileScanPickPage() {
 
   const handleTaskScan = (rawValue: string) => {
     try {
-      const next = getTaskByScan(rawValue);
+      const parsed = parseScannedCode(rawValue);
+      const taskCode = expectParsedScanType(parsed, "TASK", "Hãy scan Task No hợp lệ");
+      const next = getTaskByParsed(parsed);
       if (next.task.taskType !== "PICK") {
         throw new Error(`Task ${next.task.taskNo} không phải PICK`);
       }
       setTaskNo(next.task.taskNo);
       setPalletId("");
       setCurrentLocationCode("");
+      setLastConfirmation(null);
       setMessage(`Chọn task ${next.task.taskNo}`);
+      toast.success(`Chọn task ${next.task.taskNo}`);
       log({
         rawValue,
         parsedType: next.parsed.parsedType,
-        parsedCode: next.parsed.parsedCode,
+        parsedCode: taskCode,
         result: "SUCCESS",
         message: `Chọn task ${next.task.taskNo}`,
         taskNo: next.task.taskNo,
@@ -91,6 +124,7 @@ function MobileScanPickPage() {
     } catch (error: any) {
       const errorMessage = error?.message ?? String(error);
       setMessage(errorMessage);
+      toast.error(errorMessage);
       log({
         rawValue,
         parsedType: "UNKNOWN",
@@ -105,16 +139,19 @@ function MobileScanPickPage() {
   const handlePalletScan = (rawValue: string) => {
     try {
       if (!task) throw new Error("Hãy scan Task No trước");
-      const parsed = rawValue.trim().replace(/^PLT:/i, "").toUpperCase();
-      const line = lines.find((item) => item.palletId.toUpperCase() === parsed);
+      const parsed = parseScannedCode(rawValue);
+      const palletCode = expectParsedScanType(parsed, "PALLET", "Hãy scan Pallet ID hợp lệ");
+      const line = lines.find((item) => item.palletId.toUpperCase() === palletCode.toUpperCase());
       if (!line) throw new Error(`Pallet ${rawValue} không thuộc task ${task.taskNo}`);
       setPalletId(line.palletId);
       setCurrentLocationCode("");
+      setLastConfirmation(null);
       setMessage(`Pallet ${line.palletId} sẵn sàng xuất`);
+      toast.success(`Pallet ${line.palletId} sẵn sàng xuất`);
       log({
         rawValue,
-        parsedType: "PALLET",
-        parsedCode: line.palletId,
+        parsedType: parsed.parsedType,
+        parsedCode: palletCode,
         result: "SUCCESS",
         message: `Chọn pallet ${line.palletId}`,
         palletId: line.palletId,
@@ -124,6 +161,7 @@ function MobileScanPickPage() {
     } catch (error: any) {
       const errorMessage = error?.message ?? String(error);
       setMessage(errorMessage);
+      toast.error(errorMessage);
       log({
         rawValue,
         parsedType: "UNKNOWN",
@@ -138,23 +176,38 @@ function MobileScanPickPage() {
   const handleLocationScan = (rawValue: string) => {
     try {
       if (!task || !line) throw new Error("Hãy scan task và pallet trước");
-      const trimmed = rawValue.trim().replace(/^LOC:/i, "");
-      setCurrentLocationCode(trimmed);
-      setMessage(`Đã scan location ${trimmed}`);
+      const parsed = parseScannedCode(rawValue);
+      const locationCode = expectParsedScanType(parsed, "LOCATION", "Hãy scan Current Location hợp lệ");
+
+      // Verify location matches fromLocation
+      const pallet = getState().pallets.find((p) => p.palletId === line.palletId);
+      if (pallet && pallet.currentLocation) {
+        if (locationCode.toUpperCase() !== pallet.currentLocation.toUpperCase()) {
+          const errorMessage = `Location ${locationCode} không khớp với vị trí hiện tại của pallet (${pallet.currentLocation})`;
+          throw new Error(errorMessage);
+        }
+      }
+
+      setCurrentLocationCode(locationCode);
+      setMessage(`Đã scan location ${locationCode}`);
+      playFeedback("SUCCESS");
+      toast.success(`Đã scan location ${locationCode}`);
       log({
         rawValue,
-        parsedType: "LOCATION",
-        parsedCode: trimmed,
+        parsedType: parsed.parsedType,
+        parsedCode: locationCode,
         result: "SUCCESS",
-        message: `Scan current location ${trimmed}`,
+        message: `Scan current location ${locationCode}`,
         palletId: line.palletId,
-        locationCode: trimmed,
+        locationCode,
         taskNo: task.taskNo,
         scanType: "PICK_LOCATION",
       });
     } catch (error: any) {
       const errorMessage = error?.message ?? String(error);
       setMessage(errorMessage);
+      playFeedback("ERROR");
+      toast.error(errorMessage);
       log({
         rawValue,
         parsedType: "UNKNOWN",
@@ -169,17 +222,37 @@ function MobileScanPickPage() {
   const confirmPick = () => {
     try {
       if (!task || !line) throw new Error("Hãy scan task và pallet trước");
+      if (!currentLocationCode.trim()) throw new Error("Hãy scan Current Location trước khi xác nhận");
+      
+      const currentLocationParsed = currentLocationCode.trim() ? parseScannedCode(currentLocationCode) : null;
+      if (currentLocationParsed) {
+        expectParsedScanType(currentLocationParsed, "LOCATION", "Hãy scan Current Location hợp lệ");
+      }
       const next = confirmTaskLineByScan({
         taskNo: task.taskNo,
         palletId: line.palletId,
         actualLocationCode: currentLocationCode.trim() || null,
         allowOpenTaskConfirm: settings.allowOpenTaskConfirm,
         allowActualLocationOverride: false,
+        role: settings.role,
       });
       setMessage(next.message);
+      playFeedback(next.result);
+      toast.success(next.message);
       setTaskNo(next.task.taskNo);
       setPalletId("");
       setCurrentLocationCode("");
+      const remainingCount = Math.max(0, openLines.length - 1);
+      setLastConfirmation({
+        palletId: line.palletId,
+        lineNo: line.lineNo,
+        confirmedCount: confirmedCount + 1,
+        totalCount: lines.length,
+        remainingCount,
+        nextPalletId: nextLine?.palletId ?? null,
+        nextCurrentLocation: nextLine?.fromLocation ?? null,
+      });
+      window.requestAnimationFrame(() => palletInputRef.current?.focus());
       log({
         rawValue: currentLocationCode.trim() || line.palletId,
         parsedType: currentLocationCode.trim() ? "LOCATION" : "PALLET",
@@ -194,6 +267,8 @@ function MobileScanPickPage() {
     } catch (error: any) {
       const errorMessage = error?.message ?? String(error);
       setMessage(errorMessage);
+      playFeedback("ERROR");
+      toast.error(errorMessage);
       log({
         rawValue: currentLocationCode.trim() || line?.palletId || "",
         parsedType: currentLocationCode.trim() ? "LOCATION" : "PALLET",
@@ -228,7 +303,7 @@ function MobileScanPickPage() {
             <ScanLine className="h-4 w-4 text-primary" />
             <div className="text-sm font-semibold">1. Scan Task No</div>
           </div>
-          <ScanInput label="Task No" placeholder="TASK:..." onScan={handleTaskScan} />
+            <ScanInput label="Task No" placeholder="TASK:..." onScan={(_, rawValue) => handleTaskScan(rawValue)} />
           <div className="flex flex-wrap gap-2">
             {openTasks.slice(0, 5).map((t) => (
               <Button key={t.id} variant="outline" className="h-10 rounded-full" onClick={() => setTaskNo(t.taskNo)}>
@@ -275,7 +350,12 @@ function MobileScanPickPage() {
               <Package className="h-4 w-4 text-primary" />
               <div className="text-sm font-semibold">2. Scan Pallet</div>
             </div>
-            <ScanInput label="Pallet ID" placeholder="PLT:..." onScan={handlePalletScan} />
+            <ScanInput
+              label="Pallet ID"
+              placeholder="PLT:..."
+              inputRef={palletInputRef}
+              onScan={(_, rawValue) => handlePalletScan(rawValue)}
+            />
             {line && (
               <div className="rounded-2xl border p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
@@ -296,9 +376,9 @@ function MobileScanPickPage() {
           <CardContent className="space-y-3 p-4">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-primary" />
-              <div className="text-sm font-semibold">3. Optional Current Location</div>
+              <div className="text-sm font-semibold">3. Scan Current Location *</div>
             </div>
-            <ScanInput label="Current Location" placeholder="LOC:..." onScan={handleLocationScan} />
+            <ScanInput label="Current Location" placeholder="LOC:..." onScan={(_, rawValue) => handleLocationScan(rawValue)} />
             <div className="rounded-2xl border p-3 text-sm">
               <div className="text-[11px] uppercase text-muted-foreground">Scanned current location</div>
               <div className="font-mono">{currentLocationCode || "—"}</div>
@@ -309,8 +389,54 @@ function MobileScanPickPage() {
               Xác nhận xuất
             </Button>
             <div className="text-xs text-muted-foreground">
-              Open task confirm: {settings.allowOpenTaskConfirm ? "On" : "Off"}
+              Demo setting · Role: {settings.role} · Open task confirm: {settings.allowOpenTaskConfirm ? "On" : "Off"}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {lastConfirmation && (
+        <Card className="rounded-[1.75rem] border-primary/40 bg-primary/5">
+          <CardContent className="space-y-4 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Confirmed</div>
+                <div className="mt-1 text-lg font-semibold">Pallet {lastConfirmation.palletId}</div>
+                <div className="text-xs text-muted-foreground">Line {lastConfirmation.lineNo}</div>
+              </div>
+              <Badge variant="default">{lastConfirmation.remainingCount === 0 ? "Done" : "In progress"}</Badge>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="rounded-2xl bg-background p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Confirmed</div>
+                <div className="mt-1 font-semibold">{lastConfirmation.confirmedCount}/{lastConfirmation.totalCount}</div>
+              </div>
+              <div className="rounded-2xl bg-background p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Remaining</div>
+                <div className="mt-1 font-semibold">{lastConfirmation.remainingCount}</div>
+              </div>
+              <div className="rounded-2xl bg-background p-3">
+                <div className="text-[11px] uppercase text-muted-foreground">Next</div>
+                <div className="mt-1 font-mono font-semibold">{lastConfirmation.nextPalletId ?? "—"}</div>
+              </div>
+            </div>
+
+            {lastConfirmation.nextPalletId ? (
+              <div className="rounded-2xl border border-dashed p-3 text-sm">
+                <div className="text-[11px] uppercase text-muted-foreground">Gợi ý line tiếp theo</div>
+                <div className="mt-1 font-mono font-semibold">{lastConfirmation.nextPalletId}</div>
+                <div className="text-xs text-muted-foreground">{lastConfirmation.nextCurrentLocation ?? "—"}</div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed p-3 text-sm text-muted-foreground">
+                Không còn line Open.
+              </div>
+            )}
+
+            <Button className="h-12 w-full rounded-2xl" onClick={() => palletInputRef.current?.focus()}>
+              Scan pallet tiếp theo
+            </Button>
           </CardContent>
         </Card>
       )}

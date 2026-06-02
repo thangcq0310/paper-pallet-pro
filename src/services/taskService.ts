@@ -1,6 +1,6 @@
 import { getState, setState } from "./store";
 import { generateTaskNo, uid } from "@/utils/idGenerator";
-import type { Pallet, TaskPriority, TaskType, WarehouseTask, WarehouseTaskLine } from "@/types";
+import type { Pallet, TaskPriority, TaskType, UserRole, WarehouseTask, WarehouseTaskLine } from "@/types";
 import { movePallet, pickAndShipPallet, putawayPallet } from "./palletService";
 import { syncOutboundStatusByNo } from "./outboundService";
 import { hasOpenTaskLineForPallet } from "./taskQueryService";
@@ -401,6 +401,7 @@ export interface ConfirmTaskLineOptions {
   actualLocation?: string | null;
   allowOpenTask?: boolean;
   allowActualLocationOverride?: boolean;
+  role?: UserRole;
 }
 
 export function confirmTaskLine(taskLineId: string, actualLocation?: string): {
@@ -431,6 +432,10 @@ export function confirmTaskLine(taskLineId: string, actualLocationOrOptions?: st
   const allowActualLocationOverride = typeof actualLocationOrOptions === "object" && actualLocationOrOptions !== null
     ? Boolean(actualLocationOrOptions.allowActualLocationOverride)
     : false;
+  const role = typeof actualLocationOrOptions === "object" && actualLocationOrOptions !== null
+    ? actualLocationOrOptions.role ?? "Operator"
+    : "Operator";
+  const canOverrideActualLocation = role !== "Operator" && allowActualLocationOverride;
 
   if (line.status !== "Open") throw new Error("Line không ở trạng thái Open");
   if (!allowOpenTask && !(task.status === "Printed" || task.status === "Partially Confirmed")) throw new Error("Task chưa Printed");
@@ -445,8 +450,8 @@ export function confirmTaskLine(taskLineId: string, actualLocationOrOptions?: st
   if (task.taskType === "PUTAWAY") {
     const resolved = (actualLocation || plannedLocation).trim();
     if (!resolved) throw new Error("Thiếu Actual Bin");
-    if (plannedLocation && resolved !== plannedLocation && !allowActualLocationOverride) {
-      throw new Error("Actual Bin khác To Bin. Chỉ admin mới được override");
+    if (plannedLocation && resolved !== plannedLocation && !canOverrideActualLocation) {
+      throw new Error("Actual Bin khác To Bin. Chỉ Supervisor/Admin mới được override");
     }
     const validated = validatePutawayDestination(resolved);
     putawayPallet(line.palletId, validated, line.note);
@@ -458,8 +463,8 @@ export function confirmTaskLine(taskLineId: string, actualLocationOrOptions?: st
   } else if (task.taskType === "MOVE") {
     const resolved = (actualLocation || plannedLocation).trim();
     if (!resolved) throw new Error("Thiếu Actual Bin");
-    if (plannedLocation && resolved !== plannedLocation && !allowActualLocationOverride) {
-      throw new Error("Actual Bin khác To Bin. Chỉ admin mới được override");
+    if (plannedLocation && resolved !== plannedLocation && !canOverrideActualLocation) {
+      throw new Error("Actual Bin khác To Bin. Chỉ Supervisor/Admin mới được override");
     }
     const validated = validateMoveDestination(fromLocation, resolved);
     movePallet(line.palletId, validated, line.note);

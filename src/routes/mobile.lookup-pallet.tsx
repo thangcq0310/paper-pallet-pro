@@ -7,22 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/services/store";
 import { loadMobileScanSettings } from "@/services/mobileScanSettings";
 import { appendScanEvent } from "@/services/scanService";
-import { lookupPalletByScan } from "@/services/mobileWorkflowService";
+import { lookupPalletByParsed } from "@/services/mobileWorkflowService";
 import { formatLocationPath } from "@/utils/location";
 import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Package, ArrowLeft } from "lucide-react";
+import { expectParsedScanType, parseScannedCode } from "@/utils/scan";
 
 export const Route = createFileRoute("/mobile/lookup-pallet")({ component: MobileLookupPalletPage });
 
 function MobileLookupPalletPage() {
   const locations = useStore((s) => s.locations);
-  const [result, setResult] = useState<ReturnType<typeof lookupPalletByScan> | null>(null);
+  const [result, setResult] = useState<ReturnType<typeof lookupPalletByParsed> | null>(null);
   const [message, setMessage] = useState("");
   const settings = loadMobileScanSettings();
 
   const handleScan = (rawValue: string) => {
     try {
-      const next = lookupPalletByScan(rawValue);
+      const parsed = parseScannedCode(rawValue);
+      expectParsedScanType(parsed, "PALLET", "Hãy scan Pallet ID hợp lệ");
+      const next = lookupPalletByParsed(parsed);
       setResult(next);
       const isWarning = next.openTasks.length > 0;
       setMessage(isWarning ? `Pallet có ${next.openTasks.length} task mở` : "Tìm thấy pallet");
@@ -79,7 +82,7 @@ function MobileLookupPalletPage() {
         label="Scan Pallet ID"
         placeholder="PLT:..."
         hint="Cho phép quét QR hoặc nhập tay pallet ID."
-        onScan={(rawValue) => handleScan(rawValue)}
+        onScan={(_, rawValue) => handleScan(rawValue)}
       />
 
       {message && (

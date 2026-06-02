@@ -26,6 +26,7 @@ import { Route as MobileTasksRouteImport } from './routes/mobile.tasks'
 import { Route as MobileScanPutawayRouteImport } from './routes/mobile.scan-putaway'
 import { Route as MobileScanPickRouteImport } from './routes/mobile.scan-pick'
 import { Route as MobileScanMoveRouteImport } from './routes/mobile.scan-move'
+import { Route as MobileScanLogRouteImport } from './routes/mobile.scan-log'
 import { Route as MobileLookupPalletRouteImport } from './routes/mobile.lookup-pallet'
 import { Route as MobileLookupLocationRouteImport } from './routes/mobile.lookup-location'
 import { Route as MasterSkuRouteImport } from './routes/master.sku'
@@ -119,6 +120,11 @@ const MobileScanMoveRoute = MobileScanMoveRouteImport.update({
   path: '/scan-move',
   getParentRoute: () => MobileRoute,
 } as any)
+const MobileScanLogRoute = MobileScanLogRouteImport.update({
+  id: '/scan-log',
+  path: '/scan-log',
+  getParentRoute: () => MobileRoute,
+} as any)
 const MobileLookupPalletRoute = MobileLookupPalletRouteImport.update({
   id: '/lookup-pallet',
   path: '/lookup-pallet',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/master/sku': typeof MasterSkuRoute
   '/mobile/lookup-location': typeof MobileLookupLocationRoute
   '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
+  '/mobile/scan-log': typeof MobileScanLogRoute
   '/mobile/scan-move': typeof MobileScanMoveRoute
   '/mobile/scan-pick': typeof MobileScanPickRoute
   '/mobile/scan-putaway': typeof MobileScanPutawayRoute
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/master/sku': typeof MasterSkuRoute
   '/mobile/lookup-location': typeof MobileLookupLocationRoute
   '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
+  '/mobile/scan-log': typeof MobileScanLogRoute
   '/mobile/scan-move': typeof MobileScanMoveRoute
   '/mobile/scan-pick': typeof MobileScanPickRoute
   '/mobile/scan-putaway': typeof MobileScanPutawayRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/master/sku': typeof MasterSkuRoute
   '/mobile/lookup-location': typeof MobileLookupLocationRoute
   '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
+  '/mobile/scan-log': typeof MobileScanLogRoute
   '/mobile/scan-move': typeof MobileScanMoveRoute
   '/mobile/scan-pick': typeof MobileScanPickRoute
   '/mobile/scan-putaway': typeof MobileScanPutawayRoute
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/mobile/lookup-location'
     | '/mobile/lookup-pallet'
+    | '/mobile/scan-log'
     | '/mobile/scan-move'
     | '/mobile/scan-pick'
     | '/mobile/scan-putaway'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/mobile/lookup-location'
     | '/mobile/lookup-pallet'
+    | '/mobile/scan-log'
     | '/mobile/scan-move'
     | '/mobile/scan-pick'
     | '/mobile/scan-putaway'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/master/sku'
     | '/mobile/lookup-location'
     | '/mobile/lookup-pallet'
+    | '/mobile/scan-log'
     | '/mobile/scan-move'
     | '/mobile/scan-pick'
     | '/mobile/scan-putaway'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MobileScanMoveRouteImport
       parentRoute: typeof MobileRoute
     }
+    '/mobile/scan-log': {
+      id: '/mobile/scan-log'
+      path: '/scan-log'
+      fullPath: '/mobile/scan-log'
+      preLoaderRoute: typeof MobileScanLogRouteImport
+      parentRoute: typeof MobileRoute
+    }
     '/mobile/lookup-pallet': {
       id: '/mobile/lookup-pallet'
       path: '/lookup-pallet'
@@ -509,6 +528,7 @@ declare module '@tanstack/react-router' {
 interface MobileRouteChildren {
   MobileLookupLocationRoute: typeof MobileLookupLocationRoute
   MobileLookupPalletRoute: typeof MobileLookupPalletRoute
+  MobileScanLogRoute: typeof MobileScanLogRoute
   MobileScanMoveRoute: typeof MobileScanMoveRoute
   MobileScanPickRoute: typeof MobileScanPickRoute
   MobileScanPutawayRoute: typeof MobileScanPutawayRoute
@@ -518,6 +538,7 @@ interface MobileRouteChildren {
 const MobileRouteChildren: MobileRouteChildren = {
   MobileLookupLocationRoute: MobileLookupLocationRoute,
   MobileLookupPalletRoute: MobileLookupPalletRoute,
+  MobileScanLogRoute: MobileScanLogRoute,
   MobileScanMoveRoute: MobileScanMoveRoute,
   MobileScanPickRoute: MobileScanPickRoute,
   MobileScanPutawayRoute: MobileScanPutawayRoute,

@@ -1,0 +1,6 @@
+{
+  "appId": "com.paperpalletpro.mobile",
+  "appName": "Paper Pallet Pro",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

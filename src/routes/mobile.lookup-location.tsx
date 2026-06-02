@@ -6,19 +6,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { loadMobileScanSettings } from "@/services/mobileScanSettings";
 import { appendScanEvent } from "@/services/scanService";
-import { lookupLocationByScan } from "@/services/mobileWorkflowService";
+import { lookupLocationByParsed } from "@/services/mobileWorkflowService";
 import { formatLocationPath } from "@/utils/location";
 import { MapPin, ArrowLeft } from "lucide-react";
+import { expectParsedScanType, parseScannedCode } from "@/utils/scan";
 
 export const Route = createFileRoute("/mobile/lookup-location")({ component: MobileLookupLocationPage });
 
 function MobileLookupLocationPage() {
-  const [result, setResult] = useState<ReturnType<typeof lookupLocationByScan> | null>(null);
+  const [result, setResult] = useState<ReturnType<typeof lookupLocationByParsed> | null>(null);
   const settings = loadMobileScanSettings();
 
   const handleScan = (rawValue: string) => {
     try {
-      const next = lookupLocationByScan(rawValue);
+      const parsed = parseScannedCode(rawValue);
+      expectParsedScanType(parsed, "LOCATION", "Hãy scan Location Code hợp lệ");
+      const next = lookupLocationByParsed(parsed);
       setResult(next);
       appendScanEvent({
         scanType: "LOOKUP_LOCATION",
@@ -68,7 +71,7 @@ function MobileLookupLocationPage() {
         label="Scan Location Code"
         placeholder="LOC:..."
         hint="Quét QR location hoặc nhập tay location code."
-        onScan={(rawValue) => handleScan(rawValue)}
+        onScan={(_, rawValue) => handleScan(rawValue)}
       />
 
       {result && (

@@ -1,7 +1,7 @@
 import { getState } from "./store";
 import { getTaskByNo, getTaskLineByTaskNoAndPalletId, confirmTaskLine } from "./taskService";
 import { parseScannedCode } from "@/utils/scan";
-import type { Location, Pallet, TaskType, WarehouseTask } from "@/types";
+import type { Location, Pallet, TaskType, UserRole, WarehouseTask } from "@/types";
 
 export interface MobileLookupPalletResult {
   parsed: ReturnType<typeof parseScannedCode>;
@@ -27,6 +27,13 @@ export interface MobileScanConfirmResult {
 
 const OPEN_TASK_STATUSES: WarehouseTask["status"][] = ["Open", "Printed", "Partially Confirmed"];
 
+function expectScanType(parsed: ReturnType<typeof parseScannedCode>, expectedType: "PALLET" | "LOCATION" | "TASK", label: string) {
+  if (parsed.parsedType !== expectedType || !parsed.parsedCode) {
+    throw new Error(label);
+  }
+  return parsed.parsedCode;
+}
+
 function findPalletByCode(code: string) {
   const lookup = code.trim().toUpperCase();
   return getState().pallets.find((p) => p.palletId.toUpperCase() === lookup) ?? null;
@@ -48,10 +55,12 @@ function listOpenTasksForPallet(palletId: string) {
 
 export function lookupPalletByScan(scannedValue: string): MobileLookupPalletResult {
   const parsed = parseScannedCode(scannedValue);
-  if (parsed.parsedType !== "PALLET" || !parsed.parsedCode) {
-    throw new Error("Hãy scan Pallet ID hợp lệ");
-  }
-  const pallet = findPalletByCode(parsed.parsedCode);
+  return lookupPalletByParsed(parsed);
+}
+
+export function lookupPalletByParsed(parsed: ReturnType<typeof parseScannedCode>): MobileLookupPalletResult {
+  const palletCode = expectScanType(parsed, "PALLET", "Hãy scan Pallet ID hợp lệ");
+  const pallet = findPalletByCode(palletCode);
   if (!pallet) throw new Error(`Pallet ${parsed.parsedCode} không tồn tại`);
   return {
     parsed,
@@ -62,10 +71,12 @@ export function lookupPalletByScan(scannedValue: string): MobileLookupPalletResu
 
 export function lookupLocationByScan(scannedValue: string): MobileLookupLocationResult {
   const parsed = parseScannedCode(scannedValue);
-  if (parsed.parsedType !== "LOCATION" || !parsed.parsedCode) {
-    throw new Error("Hãy scan Location Code hợp lệ");
-  }
-  const location = findLocationByCode(parsed.parsedCode);
+  return lookupLocationByParsed(parsed);
+}
+
+export function lookupLocationByParsed(parsed: ReturnType<typeof parseScannedCode>): MobileLookupLocationResult {
+  const locationCode = expectScanType(parsed, "LOCATION", "Hãy scan Location Code hợp lệ");
+  const location = findLocationByCode(locationCode);
   if (!location) throw new Error(`Location ${parsed.parsedCode} không tồn tại`);
   const pallets = getState()
     .pallets
@@ -89,10 +100,12 @@ export function getOpenTasksByType(taskType: TaskType) {
 
 export function getTaskByScan(scannedValue: string) {
   const parsed = parseScannedCode(scannedValue);
-  if (parsed.parsedType !== "TASK" || !parsed.parsedCode) {
-    throw new Error("Hãy scan Task No hợp lệ");
-  }
-  const task = getTaskByNo(parsed.parsedCode);
+  return getTaskByParsed(parsed);
+}
+
+export function getTaskByParsed(parsed: ReturnType<typeof parseScannedCode>) {
+  const taskNo = expectScanType(parsed, "TASK", "Hãy scan Task No hợp lệ");
+  const task = getTaskByNo(taskNo);
   if (!task) throw new Error(`Task ${parsed.parsedCode} không tồn tại`);
   return { parsed, task };
 }
@@ -103,6 +116,7 @@ export function confirmTaskLineByScan(input: {
   actualLocationCode?: string | null;
   allowOpenTaskConfirm: boolean;
   allowActualLocationOverride: boolean;
+  role: UserRole;
 }) {
   const task = getTaskByNo(input.taskNo.trim());
   if (!task) throw new Error(`Task ${input.taskNo} không tồn tại`);
@@ -114,11 +128,12 @@ export function confirmTaskLineByScan(input: {
   }
 
   const actualLocationCode = input.actualLocationCode?.trim() || null;
+  const canOverrideActualLocation = input.role !== "Operator" && input.allowActualLocationOverride;
 
   if (task.taskType === "PUTAWAY" || task.taskType === "MOVE") {
     const plannedLocation = (line.toLocation ?? "").trim();
     if (!plannedLocation) throw new Error("Task line chưa có To Bin");
-    if (actualLocationCode && actualLocationCode !== plannedLocation && !input.allowActualLocationOverride) {
+    if (actualLocationCode && actualLocationCode !== plannedLocation && !canOverrideActualLocation) {
       return {
         parsed: parseScannedCode(actualLocationCode),
         task,
