@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, Tags, MapPin, Tag,
-  Boxes, Move, ArrowUpFromLine, ListChecks, History, Bell, Smartphone,
+  Boxes, Move, ArrowUpFromLine, ListChecks, History, Bell,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -41,12 +41,6 @@ const groups = [
     items: [
       { title: "Movement History", url: "/movements", icon: History },
       { title: "Alerts", url: "/alerts", icon: Bell },
-    ],
-  },
-  {
-    label: "Mobile",
-    items: [
-      { title: "Scan Home", url: "/mobile", icon: Smartphone },
     ],
   },
 ];

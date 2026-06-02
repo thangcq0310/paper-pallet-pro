@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter, useRouterState, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { MobileLayout } from "@/components/mobile/MobileLayout";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -38,17 +37,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#020617" },
-      { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { title: "Mini WMS — Manual Warehouse" },
       { name: "description", content: "Mini WMS nội bộ — quản lý SKU, Batch, Pallet, Location, Movement thủ công." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/pwa/icon-192.svg" },
-      { rel: "icon", href: "/pwa/icon-192.svg", type: "image/svg+xml" },
     ],
   }),
   shellComponent: RootShell,
@@ -69,32 +62,24 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const isMobileRoute = pathname.startsWith("/mobile");
   return (
     <QueryClientProvider client={queryClient}>
-      {isMobileRoute ? (
-        <MobileLayout>
-          <Outlet />
-        </MobileLayout>
-      ) : (
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full bg-background">
-            <AppSidebar />
-            <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-14 border-b bg-card/80 backdrop-blur sticky top-0 z-10 flex items-center px-4 gap-2 no-print">
-                <SidebarTrigger />
-                <span className="font-semibold text-sm">Mini WMS</span>
-                <span className="text-xs text-muted-foreground ml-2">Manual warehouse operations</span>
-              </header>
-              <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-                <Outlet />
-              </main>
-            </div>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-background">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <header className="h-14 border-b bg-card/80 backdrop-blur sticky top-0 z-10 flex items-center px-4 gap-2 no-print">
+              <SidebarTrigger />
+              <span className="font-semibold text-sm">Mini WMS</span>
+              <span className="text-xs text-muted-foreground ml-2">Manual warehouse operations</span>
+            </header>
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+              <Outlet />
+            </main>
           </div>
-        </SidebarProvider>
-      )}
-        <Toaster richColors position="top-right" />
+        </div>
+      </SidebarProvider>
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }

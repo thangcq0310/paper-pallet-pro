@@ -14,7 +14,6 @@ import { Route as PutawayRouteImport } from './routes/putaway'
 import { Route as OutboundRouteImport } from './routes/outbound'
 import { Route as MovementsRouteImport } from './routes/movements'
 import { Route as MoveRouteImport } from './routes/move'
-import { Route as MobileRouteImport } from './routes/mobile'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,13 +21,6 @@ import { Route as TasksTaskNoRouteImport } from './routes/tasks.$taskNo'
 import { Route as PalletPrintBatchRouteImport } from './routes/pallet.print-batch'
 import { Route as PalletCreateRouteImport } from './routes/pallet.create'
 import { Route as PalletPalletIdRouteImport } from './routes/pallet.$palletId'
-import { Route as MobileTasksRouteImport } from './routes/mobile.tasks'
-import { Route as MobileScanPutawayRouteImport } from './routes/mobile.scan-putaway'
-import { Route as MobileScanPickRouteImport } from './routes/mobile.scan-pick'
-import { Route as MobileScanMoveRouteImport } from './routes/mobile.scan-move'
-import { Route as MobileScanLogRouteImport } from './routes/mobile.scan-log'
-import { Route as MobileLookupPalletRouteImport } from './routes/mobile.lookup-pallet'
-import { Route as MobileLookupLocationRouteImport } from './routes/mobile.lookup-location'
 import { Route as MasterSkuRouteImport } from './routes/master.sku'
 import { Route as MasterLocationRouteImport } from './routes/master.location'
 import { Route as MasterBatchRouteImport } from './routes/master.batch'
@@ -58,11 +50,6 @@ const MovementsRoute = MovementsRouteImport.update({
 const MoveRoute = MoveRouteImport.update({
   id: '/move',
   path: '/move',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MobileRoute = MobileRouteImport.update({
-  id: '/mobile',
-  path: '/mobile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InventoryRoute = InventoryRouteImport.update({
@@ -100,41 +87,6 @@ const PalletPalletIdRoute = PalletPalletIdRouteImport.update({
   path: '/pallet/$palletId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MobileTasksRoute = MobileTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileScanPutawayRoute = MobileScanPutawayRouteImport.update({
-  id: '/scan-putaway',
-  path: '/scan-putaway',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileScanPickRoute = MobileScanPickRouteImport.update({
-  id: '/scan-pick',
-  path: '/scan-pick',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileScanMoveRoute = MobileScanMoveRouteImport.update({
-  id: '/scan-move',
-  path: '/scan-move',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileScanLogRoute = MobileScanLogRouteImport.update({
-  id: '/scan-log',
-  path: '/scan-log',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileLookupPalletRoute = MobileLookupPalletRouteImport.update({
-  id: '/lookup-pallet',
-  path: '/lookup-pallet',
-  getParentRoute: () => MobileRoute,
-} as any)
-const MobileLookupLocationRoute = MobileLookupLocationRouteImport.update({
-  id: '/lookup-location',
-  path: '/lookup-location',
-  getParentRoute: () => MobileRoute,
-} as any)
 const MasterSkuRoute = MasterSkuRouteImport.update({
   id: '/master/sku',
   path: '/master/sku',
@@ -165,7 +117,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
   '/inventory': typeof InventoryRoute
-  '/mobile': typeof MobileRouteWithChildren
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
@@ -174,13 +125,6 @@ export interface FileRoutesByFullPath {
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
   '/master/sku': typeof MasterSkuRoute
-  '/mobile/lookup-location': typeof MobileLookupLocationRoute
-  '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
-  '/mobile/scan-log': typeof MobileScanLogRoute
-  '/mobile/scan-move': typeof MobileScanMoveRoute
-  '/mobile/scan-pick': typeof MobileScanPickRoute
-  '/mobile/scan-putaway': typeof MobileScanPutawayRoute
-  '/mobile/tasks': typeof MobileTasksRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
@@ -192,7 +136,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
   '/inventory': typeof InventoryRoute
-  '/mobile': typeof MobileRouteWithChildren
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
@@ -201,13 +144,6 @@ export interface FileRoutesByTo {
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
   '/master/sku': typeof MasterSkuRoute
-  '/mobile/lookup-location': typeof MobileLookupLocationRoute
-  '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
-  '/mobile/scan-log': typeof MobileScanLogRoute
-  '/mobile/scan-move': typeof MobileScanMoveRoute
-  '/mobile/scan-pick': typeof MobileScanPickRoute
-  '/mobile/scan-putaway': typeof MobileScanPutawayRoute
-  '/mobile/tasks': typeof MobileTasksRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
@@ -220,7 +156,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
   '/inventory': typeof InventoryRoute
-  '/mobile': typeof MobileRouteWithChildren
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
@@ -229,13 +164,6 @@ export interface FileRoutesById {
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
   '/master/sku': typeof MasterSkuRoute
-  '/mobile/lookup-location': typeof MobileLookupLocationRoute
-  '/mobile/lookup-pallet': typeof MobileLookupPalletRoute
-  '/mobile/scan-log': typeof MobileScanLogRoute
-  '/mobile/scan-move': typeof MobileScanMoveRoute
-  '/mobile/scan-pick': typeof MobileScanPickRoute
-  '/mobile/scan-putaway': typeof MobileScanPutawayRoute
-  '/mobile/tasks': typeof MobileTasksRoute
   '/pallet/$palletId': typeof PalletPalletIdRoute
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
@@ -249,7 +177,6 @@ export interface FileRouteTypes {
     | '/'
     | '/alerts'
     | '/inventory'
-    | '/mobile'
     | '/move'
     | '/movements'
     | '/outbound'
@@ -258,13 +185,6 @@ export interface FileRouteTypes {
     | '/master/batch'
     | '/master/location'
     | '/master/sku'
-    | '/mobile/lookup-location'
-    | '/mobile/lookup-pallet'
-    | '/mobile/scan-log'
-    | '/mobile/scan-move'
-    | '/mobile/scan-pick'
-    | '/mobile/scan-putaway'
-    | '/mobile/tasks'
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
@@ -276,7 +196,6 @@ export interface FileRouteTypes {
     | '/'
     | '/alerts'
     | '/inventory'
-    | '/mobile'
     | '/move'
     | '/movements'
     | '/outbound'
@@ -285,13 +204,6 @@ export interface FileRouteTypes {
     | '/master/batch'
     | '/master/location'
     | '/master/sku'
-    | '/mobile/lookup-location'
-    | '/mobile/lookup-pallet'
-    | '/mobile/scan-log'
-    | '/mobile/scan-move'
-    | '/mobile/scan-pick'
-    | '/mobile/scan-putaway'
-    | '/mobile/tasks'
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
@@ -303,7 +215,6 @@ export interface FileRouteTypes {
     | '/'
     | '/alerts'
     | '/inventory'
-    | '/mobile'
     | '/move'
     | '/movements'
     | '/outbound'
@@ -312,13 +223,6 @@ export interface FileRouteTypes {
     | '/master/batch'
     | '/master/location'
     | '/master/sku'
-    | '/mobile/lookup-location'
-    | '/mobile/lookup-pallet'
-    | '/mobile/scan-log'
-    | '/mobile/scan-move'
-    | '/mobile/scan-pick'
-    | '/mobile/scan-putaway'
-    | '/mobile/tasks'
     | '/pallet/$palletId'
     | '/pallet/create'
     | '/pallet/print-batch'
@@ -331,7 +235,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertsRoute: typeof AlertsRoute
   InventoryRoute: typeof InventoryRoute
-  MobileRoute: typeof MobileRouteWithChildren
   MoveRoute: typeof MoveRoute
   MovementsRoute: typeof MovementsRoute
   OutboundRoute: typeof OutboundRoute
@@ -380,13 +283,6 @@ declare module '@tanstack/react-router' {
       path: '/move'
       fullPath: '/move'
       preLoaderRoute: typeof MoveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mobile': {
-      id: '/mobile'
-      path: '/mobile'
-      fullPath: '/mobile'
-      preLoaderRoute: typeof MobileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inventory': {
@@ -438,55 +334,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PalletPalletIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mobile/tasks': {
-      id: '/mobile/tasks'
-      path: '/tasks'
-      fullPath: '/mobile/tasks'
-      preLoaderRoute: typeof MobileTasksRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/scan-putaway': {
-      id: '/mobile/scan-putaway'
-      path: '/scan-putaway'
-      fullPath: '/mobile/scan-putaway'
-      preLoaderRoute: typeof MobileScanPutawayRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/scan-pick': {
-      id: '/mobile/scan-pick'
-      path: '/scan-pick'
-      fullPath: '/mobile/scan-pick'
-      preLoaderRoute: typeof MobileScanPickRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/scan-move': {
-      id: '/mobile/scan-move'
-      path: '/scan-move'
-      fullPath: '/mobile/scan-move'
-      preLoaderRoute: typeof MobileScanMoveRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/scan-log': {
-      id: '/mobile/scan-log'
-      path: '/scan-log'
-      fullPath: '/mobile/scan-log'
-      preLoaderRoute: typeof MobileScanLogRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/lookup-pallet': {
-      id: '/mobile/lookup-pallet'
-      path: '/lookup-pallet'
-      fullPath: '/mobile/lookup-pallet'
-      preLoaderRoute: typeof MobileLookupPalletRouteImport
-      parentRoute: typeof MobileRoute
-    }
-    '/mobile/lookup-location': {
-      id: '/mobile/lookup-location'
-      path: '/lookup-location'
-      fullPath: '/mobile/lookup-location'
-      preLoaderRoute: typeof MobileLookupLocationRouteImport
-      parentRoute: typeof MobileRoute
-    }
     '/master/sku': {
       id: '/master/sku'
       path: '/master/sku'
@@ -524,29 +371,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface MobileRouteChildren {
-  MobileLookupLocationRoute: typeof MobileLookupLocationRoute
-  MobileLookupPalletRoute: typeof MobileLookupPalletRoute
-  MobileScanLogRoute: typeof MobileScanLogRoute
-  MobileScanMoveRoute: typeof MobileScanMoveRoute
-  MobileScanPickRoute: typeof MobileScanPickRoute
-  MobileScanPutawayRoute: typeof MobileScanPutawayRoute
-  MobileTasksRoute: typeof MobileTasksRoute
-}
-
-const MobileRouteChildren: MobileRouteChildren = {
-  MobileLookupLocationRoute: MobileLookupLocationRoute,
-  MobileLookupPalletRoute: MobileLookupPalletRoute,
-  MobileScanLogRoute: MobileScanLogRoute,
-  MobileScanMoveRoute: MobileScanMoveRoute,
-  MobileScanPickRoute: MobileScanPickRoute,
-  MobileScanPutawayRoute: MobileScanPutawayRoute,
-  MobileTasksRoute: MobileTasksRoute,
-}
-
-const MobileRouteWithChildren =
-  MobileRoute._addFileChildren(MobileRouteChildren)
 
 interface TasksTaskNoRouteChildren {
   TasksTaskNoPrintRoute: typeof TasksTaskNoPrintRoute
@@ -586,7 +410,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertsRoute: AlertsRoute,
   InventoryRoute: InventoryRoute,
-  MobileRoute: MobileRouteWithChildren,
   MoveRoute: MoveRoute,
   MovementsRoute: MovementsRoute,
   OutboundRoute: OutboundRoute,
