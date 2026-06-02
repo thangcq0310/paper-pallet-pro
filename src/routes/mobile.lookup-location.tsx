@@ -56,8 +56,10 @@ function MobileLookupLocationPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
+          <a href="/mobile">
+            <ArrowLeft className="h-4 w-4" />
+          </a>
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Lookup</div>
@@ -69,7 +71,7 @@ function MobileLookupLocationPage() {
         label="Scan Location Code"
         placeholder="LOC:..."
         hint="Quét QR location hoặc nhập tay location code."
-        onScan={(_, rawValue) => handleScan(rawValue)}
+        onScan={(rawValue) => handleScan(rawValue)}
       />
 
       {result && (

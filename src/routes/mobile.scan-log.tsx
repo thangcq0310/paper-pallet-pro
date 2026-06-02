@@ -62,8 +62,10 @@ function MobileScanLogPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
+          <a href="/mobile">
+            <ArrowLeft className="h-4 w-4" />
+          </a>
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Mobile</div>
@@ -222,18 +224,18 @@ function MobileScanLogPage() {
 
                   <div className="flex flex-wrap gap-2">
                     {task && (
-                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/tasks")}>
-                        {task.taskNo}
+                      <Button asChild variant="outline" className="h-9 rounded-full">
+                        <a href="/mobile/tasks">{task.taskNo}</a>
                       </Button>
                     )}
                     {pallet && (
-                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
-                        {pallet.palletId}
+                      <Button asChild variant="outline" className="h-9 rounded-full">
+                        <a href="/mobile/lookup-pallet">{pallet.palletId}</a>
                       </Button>
                     )}
                     {location && (
-                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/lookup-location")}>
-                        {location.locationCode}
+                      <Button asChild variant="outline" className="h-9 rounded-full">
+                        <a href="/mobile/lookup-location">{location.locationCode}</a>
                       </Button>
                     )}
                   </div>

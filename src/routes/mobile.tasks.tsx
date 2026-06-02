@@ -82,14 +82,6 @@ function MobileTasksPage() {
   const printedCount = tasks.filter((task) => task.status === "Printed").length;
   const confirmedCount = tasks.filter((task) => task.status === "Confirmed").length;
 
-  const openTask = (task: WarehouseTask) => {
-    window.location.assign(getTaskScanRoute(task));
-  };
-
-  const printTask = (taskNo: string) => {
-    window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer");
-  };
-
   const handleTaskScan = (rawValue: string) => {
     try {
       const parsed = parseScannedCode(rawValue);
@@ -108,8 +100,10 @@ function MobileTasksPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
+          <a href="/mobile">
+            <ArrowLeft className="h-4 w-4" />
+          </a>
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Mobile</div>
@@ -127,7 +121,7 @@ function MobileTasksPage() {
             label="Task No"
             placeholder="TASK:..."
             hint="Quét QR task hoặc nhập tay để lọc đúng task đang cầm."
-            onScan={(_, rawValue) => handleTaskScan(rawValue)}
+            onScan={(rawValue) => handleTaskScan(rawValue)}
           />
           <div className="flex flex-wrap gap-2">
             <Button variant={taskFilter ? "outline" : "default"} className="h-10 rounded-full" onClick={() => setTaskFilter("")}>
@@ -243,19 +237,25 @@ function MobileTasksPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Button className="h-11 rounded-2xl" onClick={() => openTask(task)}>
-                      <ScanLine className="mr-2 h-4 w-4" />
-                      {task.taskType === "PUTAWAY" ? "Scan Putaway" : task.taskType === "MOVE" ? "Scan Move" : "Scan Pick"}
+                    <Button asChild className="h-11 rounded-2xl">
+                      <a href={getTaskScanRoute(task)}>
+                        <ScanLine className="mr-2 h-4 w-4" />
+                        Thực hiện task
+                      </a>
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="h-11 rounded-2xl"
-                      onClick={() => printTask(task.taskNo)}
-                      disabled={task.status === "Confirmed" || task.status === "Cancelled"}
-                    >
-                      <Printer className="mr-2 h-4 w-4" />
-                      Print
-                    </Button>
+                    {task.status === "Confirmed" || task.status === "Cancelled" ? (
+                      <Button variant="outline" className="h-11 rounded-2xl" disabled>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print
+                      </Button>
+                    ) : (
+                      <Button asChild variant="outline" className="h-11 rounded-2xl">
+                        <a href={`/tasks/${encodeURIComponent(task.taskNo)}/print`} target="_blank" rel="noopener noreferrer">
+                          <Printer className="mr-2 h-4 w-4" />
+                          Print
+                        </a>
+                      </Button>
+                    )}
                   </div>
 
                   <div className="space-y-2">

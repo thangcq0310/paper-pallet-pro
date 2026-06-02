@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { parseScannedCode, type ParsedScannedCode } from "@/utils/scan";
 import { Camera, CameraOff, ScanLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +28,7 @@ export function ScanInput({
   className?: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   autoFocus?: boolean;
-  onScan: (parsed: ParsedScannedCode, rawValue: string) => void;
+  onScan: (rawValue: string) => void;
 }) {
   const [value, setValue] = useState("");
   const [cameraOn, setCameraOn] = useState(false);
@@ -158,8 +157,7 @@ export function ScanInput({
   }, [cameraOn]);
 
   const handleRawValue = (rawValue: string) => {
-    const parsed = parseScannedCode(rawValue);
-    onScan(parsed, rawValue);
+    onScan(rawValue);
     setValue("");
   };
 

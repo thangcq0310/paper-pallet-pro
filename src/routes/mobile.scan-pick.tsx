@@ -10,7 +10,7 @@ import { appendScanEvent } from "@/services/scanService";
 import { confirmTaskLineByScan, getOpenTasksByType, getTaskByParsed } from "@/services/mobileWorkflowService";
 import { formatLocationPath } from "@/utils/location";
 import { TaskStatusBadge } from "@/components/StatusBadges";
-import { ArrowUpFromLine, ArrowLeft, ScanLine, Package, MapPin, CheckCircle, XCircle } from "lucide-react";
+import { ArrowUpFromLine, ArrowLeft, ScanLine, Package, MapPin } from "lucide-react";
 import { expectParsedScanType, parseScannedCode } from "@/utils/scan";
 import { toast } from "sonner";
 
@@ -287,8 +287,10 @@ function MobileScanPickPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
+          <a href="/mobile">
+            <ArrowLeft className="h-4 w-4" />
+          </a>
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Scan</div>
@@ -302,7 +304,7 @@ function MobileScanPickPage() {
             <ScanLine className="h-4 w-4 text-primary" />
             <div className="text-sm font-semibold">1. Scan Task No</div>
           </div>
-            <ScanInput label="Task No" placeholder="TASK:..." onScan={(_, rawValue) => handleTaskScan(rawValue)} />
+            <ScanInput label="Task No" placeholder="TASK:..." onScan={(rawValue) => handleTaskScan(rawValue)} />
           <div className="flex flex-wrap gap-2">
             {openTasks.slice(0, 5).map((t) => (
               <Button key={t.id} variant="outline" className="h-10 rounded-full" onClick={() => setTaskNo(t.taskNo)}>
@@ -353,7 +355,7 @@ function MobileScanPickPage() {
               label="Pallet ID"
               placeholder="PLT:..."
               inputRef={palletInputRef}
-              onScan={(_, rawValue) => handlePalletScan(rawValue)}
+              onScan={(rawValue) => handlePalletScan(rawValue)}
             />
             {line && (
               <div className="rounded-2xl border p-3 text-sm">
@@ -377,7 +379,7 @@ function MobileScanPickPage() {
               <MapPin className="h-4 w-4 text-primary" />
               <div className="text-sm font-semibold">3. Scan Current Location *</div>
             </div>
-            <ScanInput label="Current Location" placeholder="LOC:..." onScan={(_, rawValue) => handleLocationScan(rawValue)} />
+            <ScanInput label="Current Location" placeholder="LOC:..." onScan={(rawValue) => handleLocationScan(rawValue)} />
             <div className="rounded-2xl border p-3 text-sm">
               <div className="text-[11px] uppercase text-muted-foreground">Scanned current location</div>
               <div className="font-mono">{currentLocationCode || "—"}</div>
@@ -421,21 +423,34 @@ function MobileScanPickPage() {
               </div>
             </div>
 
-            {lastConfirmation.nextPalletId ? (
-              <div className="rounded-2xl border border-dashed p-3 text-sm">
-                <div className="text-[11px] uppercase text-muted-foreground">Gợi ý line tiếp theo</div>
-                <div className="mt-1 font-mono font-semibold">{lastConfirmation.nextPalletId}</div>
-                <div className="text-xs text-muted-foreground">{lastConfirmation.nextCurrentLocation ?? "—"}</div>
+            {lastConfirmation.remainingCount === 0 ? (
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-primary/20 bg-background p-3 text-sm font-semibold text-primary">
+                  Task đã hoàn thành
+                </div>
+                <Button asChild className="h-12 w-full rounded-2xl">
+                  <a href="/mobile/tasks">Về danh sách task</a>
+                </Button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed p-3 text-sm text-muted-foreground">
-                Không còn line Open.
+              <div className="space-y-3">
+                {lastConfirmation.nextPalletId ? (
+                  <div className="rounded-2xl border border-dashed p-3 text-sm">
+                    <div className="text-[11px] uppercase text-muted-foreground">Gợi ý line tiếp theo</div>
+                    <div className="mt-1 font-mono font-semibold">{lastConfirmation.nextPalletId}</div>
+                    <div className="text-xs text-muted-foreground">{lastConfirmation.nextCurrentLocation ?? "—"}</div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed p-3 text-sm text-muted-foreground">
+                    Không còn line Open.
+                  </div>
+                )}
+
+                <Button className="h-12 w-full rounded-2xl" onClick={() => palletInputRef.current?.focus()}>
+                  Scan pallet tiếp theo
+                </Button>
               </div>
             )}
-
-            <Button className="h-12 w-full rounded-2xl" onClick={() => palletInputRef.current?.focus()}>
-              Scan pallet tiếp theo
-            </Button>
           </CardContent>
         </Card>
       )}
