@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,10 +62,8 @@ function MobileScanLogPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
-          <Link to="/mobile">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Mobile</div>
@@ -224,18 +222,18 @@ function MobileScanLogPage() {
 
                   <div className="flex flex-wrap gap-2">
                     {task && (
-                      <Button asChild variant="outline" className="h-9 rounded-full">
-                        <Link to="/mobile/tasks">{task.taskNo}</Link>
+                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/tasks")}>
+                        {task.taskNo}
                       </Button>
                     )}
                     {pallet && (
-                      <Button asChild variant="outline" className="h-9 rounded-full">
-                        <Link to="/mobile/lookup-pallet">{pallet.palletId}</Link>
+                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
+                        {pallet.palletId}
                       </Button>
                     )}
                     {location && (
-                      <Button asChild variant="outline" className="h-9 rounded-full">
-                        <Link to="/mobile/lookup-location">{location.locationCode}</Link>
+                      <Button type="button" variant="outline" className="h-9 rounded-full" onClick={() => window.location.assign("/mobile/lookup-location")}>
+                        {location.locationCode}
                       </Button>
                     )}
                   </div>

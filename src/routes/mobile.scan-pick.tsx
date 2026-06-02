@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ScanInput } from "@/components/mobile/ScanInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +29,7 @@ function MobileScanPickPage() {
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const locations = useStore((s) => s.locations);
+  const pallets = useStore((s) => s.pallets);
   const settings = loadMobileScanSettings();
   const palletInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -180,7 +181,7 @@ function MobileScanPickPage() {
       const locationCode = expectParsedScanType(parsed, "LOCATION", "Hãy scan Current Location hợp lệ");
 
       // Verify location matches fromLocation
-      const pallet = getState().pallets.find((p) => p.palletId === line.palletId);
+      const pallet = pallets.find((p) => p.palletId === line.palletId);
       if (pallet && pallet.currentLocation) {
         if (locationCode.toUpperCase() !== pallet.currentLocation.toUpperCase()) {
           const errorMessage = `Location ${locationCode} không khớp với vị trí hiện tại của pallet (${pallet.currentLocation})`;
@@ -286,10 +287,8 @@ function MobileScanPickPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
-          <Link to="/mobile">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Scan</div>

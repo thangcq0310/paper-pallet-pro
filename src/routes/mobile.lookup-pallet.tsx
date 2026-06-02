@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ScanInput } from "@/components/mobile/ScanInput";
 import { Button } from "@/components/ui/button";
@@ -67,10 +67,8 @@ function MobileLookupPalletPage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
-          <Link to="/mobile">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Lookup</div>
@@ -133,8 +131,14 @@ function MobileLookupPalletPage() {
               ) : (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {result.openTasks.slice(0, 3).map((task) => (
-                    <Button key={task.id} asChild variant="outline" className="rounded-full">
-                      <Link to={`/tasks/${task.taskNo}`}>{task.taskNo}</Link>
+                    <Button
+                      key={task.id}
+                      type="button"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => window.location.assign(`/tasks/${encodeURIComponent(task.taskNo)}`)}
+                    >
+                      {task.taskNo}
                     </Button>
                   ))}
                   {result.openTasks.length > 3 && <Badge variant="secondary">+{result.openTasks.length - 3}</Badge>}

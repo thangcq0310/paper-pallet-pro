@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { loadMobileScanSettings, saveMobileScanSettings, type MobileScanSettings } from "@/services/mobileScanSettings";
@@ -42,44 +42,32 @@ function MobileHomePage() {
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button asChild className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90">
-            <Link to="/mobile/scan-putaway">
-              <ArrowDownToLine className="mr-2 h-4 w-4" />
-              Putaway
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white text-slate-950 hover:bg-white/90" onClick={() => window.location.assign("/mobile/scan-putaway")}>
+            <ArrowDownToLine className="mr-2 h-4 w-4" />
+            Putaway
           </Button>
-          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
-            <Link to="/mobile/scan-move">
-              <ArrowUpFromLine className="mr-2 h-4 w-4" />
-              Move
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-move")}>
+            <ArrowUpFromLine className="mr-2 h-4 w-4" />
+            Move
           </Button>
-          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
-            <Link to="/mobile/scan-pick">
-              <Package className="mr-2 h-4 w-4" />
-              Pick
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-pick")}>
+            <Package className="mr-2 h-4 w-4" />
+            Pick
           </Button>
-          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
-            <Link to="/mobile/lookup-pallet">
-              <Search className="mr-2 h-4 w-4" />
-              Lookup
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
+            <Search className="mr-2 h-4 w-4" />
+            Lookup
           </Button>
         </div>
 
         <div className="mt-2 grid grid-cols-2 gap-2">
-          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
-            <Link to="/mobile/tasks">
-              <ListChecks className="mr-2 h-4 w-4" />
-              Task list
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/tasks")}>
+            <ListChecks className="mr-2 h-4 w-4" />
+            Task list
           </Button>
-          <Button asChild className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15">
-            <Link to="/mobile/scan-log">
-              <History className="mr-2 h-4 w-4" />
-              Scan log
-            </Link>
+          <Button type="button" className="h-12 rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => window.location.assign("/mobile/scan-log")}>
+            <History className="mr-2 h-4 w-4" />
+            Scan log
           </Button>
         </div>
       </div>
@@ -202,11 +190,11 @@ function MobileHomePage() {
       </Card>
 
       <div className="grid grid-cols-2 gap-2">
-        <Button asChild variant="outline" className="h-12 rounded-2xl">
-          <Link to="/mobile/lookup-pallet">Lookup Pallet</Link>
+        <Button type="button" variant="outline" className="h-12 rounded-2xl" onClick={() => window.location.assign("/mobile/lookup-pallet")}>
+          Lookup Pallet
         </Button>
-        <Button asChild variant="outline" className="h-12 rounded-2xl">
-          <Link to="/mobile/lookup-location">Lookup Location</Link>
+        <Button type="button" variant="outline" className="h-12 rounded-2xl" onClick={() => window.location.assign("/mobile/lookup-location")}>
+          Lookup Location
         </Button>
       </div>
     </div>

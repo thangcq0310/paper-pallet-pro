@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 import { PwaInstallPrompt } from "./PwaInstallPrompt";
+import { Button } from "@/components/ui/button";
 
 export function MobileLayout({ children }: { children: ReactNode }) {
   return (
@@ -12,12 +12,12 @@ export function MobileLayout({ children }: { children: ReactNode }) {
             <div className="text-sm font-semibold">Mobile Scan</div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/" className="rounded-full border px-3 py-2 text-xs font-medium">
+            <Button type="button" variant="outline" className="h-8 rounded-full px-3 text-xs font-medium" onClick={() => window.location.assign("/")}>
               Desktop
-            </Link>
-            <Link to="/mobile" className="rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">
+            </Button>
+            <Button type="button" className="h-8 rounded-full px-3 text-xs font-medium" onClick={() => window.location.assign("/mobile")}>
               Home
-            </Link>
+            </Button>
           </div>
         </div>
       </header>

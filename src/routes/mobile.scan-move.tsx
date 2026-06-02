@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ScanInput } from "@/components/mobile/ScanInput";
 import { Button } from "@/components/ui/button";
@@ -235,10 +235,8 @@ function MobileScanMovePage() {
   return (
     <div className="space-y-4 pb-6">
       <div className="flex items-center gap-2">
-        <Button asChild variant="outline" size="icon" className="h-11 w-11 rounded-2xl">
-          <Link to="/mobile">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-2xl" onClick={() => window.location.assign("/mobile")}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Scan</div>
