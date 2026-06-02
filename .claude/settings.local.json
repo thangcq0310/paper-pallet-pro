@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C d:/Git/paper-pallet-pro log --oneline -10)",
+      "Bash(npm run build)",
+      "Bash(git -C d:/Git/paper-pallet-pro log --oneline -20 --all)",
+      "Bash(git -C d:/Git/paper-pallet-pro show --stat 311e07b)"
+    ]
+  }
+}

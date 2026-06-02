@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, useRouter, useLocation, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { MobileLayout } from "@/components/mobile/MobileLayout";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -62,6 +63,18 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const pathname = typeof location.pathname === 'string' ? location.pathname : String(location.pathname);
+  const isMobile = pathname.startsWith("/mobile");
+
+  if (isMobile) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <MobileLayout />
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <SidebarProvider>
