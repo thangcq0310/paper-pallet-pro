@@ -29,9 +29,10 @@ function PrintBatchPage() {
   useEffect(() => {
     if (!pallets.length || autoPrintedRef.current) return;
     autoPrintedRef.current = true;
+    // Wait for QR codes to load (async)
     const t = window.setTimeout(() => {
       window.print();
-    }, 120);
+    }, 800);
     return () => window.clearTimeout(t);
   }, [pallets.length]);
 
