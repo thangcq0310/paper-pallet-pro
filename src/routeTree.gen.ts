@@ -18,6 +18,7 @@ import { Route as MobileRouteImport } from './routes/mobile'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MobileIndexRouteImport } from './routes/mobile/index'
 import { Route as TasksTaskNoRouteImport } from './routes/tasks.$taskNo'
 import { Route as PalletPrintBatchRouteImport } from './routes/pallet.print-batch'
 import { Route as PalletCreateRouteImport } from './routes/pallet.create'
@@ -76,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MobileIndexRoute = MobileIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MobileRoute,
 } as any)
 const TasksTaskNoRoute = TasksTaskNoRouteImport.update({
   id: '/$taskNo',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
+  '/mobile/': typeof MobileIndexRoute
   '/master/location/print': typeof MasterLocationPrintRoute
   '/mobile/execute/$taskNo': typeof MobileExecuteTaskNoRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
@@ -171,7 +178,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alerts': typeof AlertsRoute
   '/inventory': typeof InventoryRoute
-  '/mobile': typeof MobileRouteWithChildren
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
@@ -187,6 +193,7 @@ export interface FileRoutesByTo {
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
+  '/mobile': typeof MobileIndexRoute
   '/master/location/print': typeof MasterLocationPrintRoute
   '/mobile/execute/$taskNo': typeof MobileExecuteTaskNoRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
@@ -212,6 +219,7 @@ export interface FileRoutesById {
   '/pallet/create': typeof PalletCreateRoute
   '/pallet/print-batch': typeof PalletPrintBatchRoute
   '/tasks/$taskNo': typeof TasksTaskNoRouteWithChildren
+  '/mobile/': typeof MobileIndexRoute
   '/master/location/print': typeof MasterLocationPrintRoute
   '/mobile/execute/$taskNo': typeof MobileExecuteTaskNoRoute
   '/tasks/$taskNo/print': typeof TasksTaskNoPrintRoute
@@ -238,6 +246,7 @@ export interface FileRouteTypes {
     | '/pallet/create'
     | '/pallet/print-batch'
     | '/tasks/$taskNo'
+    | '/mobile/'
     | '/master/location/print'
     | '/mobile/execute/$taskNo'
     | '/tasks/$taskNo/print'
@@ -246,7 +255,6 @@ export interface FileRouteTypes {
     | '/'
     | '/alerts'
     | '/inventory'
-    | '/mobile'
     | '/move'
     | '/movements'
     | '/outbound'
@@ -262,6 +270,7 @@ export interface FileRouteTypes {
     | '/pallet/create'
     | '/pallet/print-batch'
     | '/tasks/$taskNo'
+    | '/mobile'
     | '/master/location/print'
     | '/mobile/execute/$taskNo'
     | '/tasks/$taskNo/print'
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/pallet/create'
     | '/pallet/print-batch'
     | '/tasks/$taskNo'
+    | '/mobile/'
     | '/master/location/print'
     | '/mobile/execute/$taskNo'
     | '/tasks/$taskNo/print'
@@ -373,6 +383,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/mobile/': {
+      id: '/mobile/'
+      path: '/'
+      fullPath: '/mobile/'
+      preLoaderRoute: typeof MobileIndexRouteImport
+      parentRoute: typeof MobileRoute
     }
     '/tasks/$taskNo': {
       id: '/tasks/$taskNo'
@@ -472,6 +489,7 @@ interface MobileRouteChildren {
   MobileLookupLocationRoute: typeof MobileLookupLocationRoute
   MobileLookupPalletRoute: typeof MobileLookupPalletRoute
   MobileTasksRoute: typeof MobileTasksRoute
+  MobileIndexRoute: typeof MobileIndexRoute
   MobileExecuteTaskNoRoute: typeof MobileExecuteTaskNoRoute
 }
 
@@ -479,6 +497,7 @@ const MobileRouteChildren: MobileRouteChildren = {
   MobileLookupLocationRoute: MobileLookupLocationRoute,
   MobileLookupPalletRoute: MobileLookupPalletRoute,
   MobileTasksRoute: MobileTasksRoute,
+  MobileIndexRoute: MobileIndexRoute,
   MobileExecuteTaskNoRoute: MobileExecuteTaskNoRoute,
 }
 
