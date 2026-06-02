@@ -35,7 +35,7 @@ function MobileExecuteTask() {
   }, [taskLines, task]);
 
   const unconfirmedLines = useMemo(() => {
-    return taskLinesForTask.filter((l) => l.status !== "Confirmed");
+    return taskLinesForTask.filter((l) => l.status === "Open");
   }, [taskLinesForTask]);
 
   const confirmedCount = taskLinesForTask.filter((l) => l.status === "Confirmed").length;
@@ -99,50 +99,69 @@ function MobileExecuteTask() {
     }
 
     const taskType = task.taskType;
-    let hasMismatch = false;
 
-    // Location validation for PUTAWAY/MOVE - compare with toLocation
-    if ((taskType === "PUTAWAY" || taskType === "MOVE") && locationInput) {
+    // ===== PUTAWAY/MOVE: bắt buộc scan Actual Location =====
+    if (taskType === "PUTAWAY" || taskType === "MOVE") {
+      if (!locationInput) {
+        toast.error("Vui lòng scan/nhập Actual Location trước khi confirm");
+        return;
+      }
+
       const normalizedLoc = normalizeScanCode(locationInput);
       const actualLoc = normalizedLoc.code;
       if (actualLoc !== matchedLine.toLocation) {
-        setWarning(`⚠️ Cảnh báo: Actual Location (${actualLoc}) khác Target Bin (${matchedLine.toLocation})`);
-        hasMismatch = true;
+        setWarning(`⚠️ Actual Location (${actualLoc}) khác Target Bin (${matchedLine.toLocation})`);
+        return;
       }
+
+      // Location đúng → confirm
+      try {
+        confirmTaskLine(matchedLine.id, { allowOpenTask: true, actualLocation: actualLoc });
+        setPalletInput("");
+        setLocationInput("");
+        setWarning(null);
+
+        const remaining = unconfirmedLines.length - 1;
+        toast.success(`Đã confirm pallet ${palletId}. Còn ${remaining} line chưa confirm.`);
+        if (remaining === 0) {
+          toast.success("Task đã hoàn thành!");
+        }
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+      return;
     }
 
-    // For PICK - validate current location if provided
-    if (taskType === "PICK" && locationInput && matchedLine.palletId) {
-      const pallet = pallets.find((p) => p.palletId?.toUpperCase() === palletId.toUpperCase());
-      if (pallet && pallet.currentLocation) {
-        const normalizedLoc = normalizeScanCode(locationInput);
-        const actualLoc = normalizedLoc.code;
-        if (actualLoc !== pallet.currentLocation) {
-          setWarning(`⚠️ Cảnh báo: Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation})`);
-          hasMismatch = true;
+    // ===== PICK: location scan optional, nhưng sai thì không confirm =====
+    if (taskType === "PICK") {
+      if (locationInput && matchedLine.palletId) {
+        const pallet = pallets.find((p) => p.palletId?.toUpperCase() === palletId.toUpperCase());
+        if (pallet && pallet.currentLocation) {
+          const normalizedLoc = normalizeScanCode(locationInput);
+          const actualLoc = normalizedLoc.code;
+          if (actualLoc !== pallet.currentLocation) {
+            setWarning(`⚠️ Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation})`);
+            return;
+          }
         }
       }
-    }
 
-    // Confirm the line - allow Open task (mobile doesn't require print)
-    try {
-      const actualLoc = locationInput || matchedLine.toLocation || undefined;
-      confirmTaskLine(matchedLine.id, { allowOpenTask: true, actualLocation: actualLoc });
+      // Không scan location hoặc location đúng → confirm
+      try {
+        confirmTaskLine(matchedLine.id, { allowOpenTask: true });
+        setPalletInput("");
+        setLocationInput("");
+        setWarning(null);
 
-      setLastConfirmed(palletId);
-      setPalletInput("");
-      setLocationInput("");
-      setWarning(null);
-
-      const remaining = unconfirmedLines.length - 1;
-      toast.success(`Đã confirm pallet ${palletId}. Còn ${remaining} line chưa confirm.`);
-
-      // Check if task is complete
-      if (remaining === 0) {
-        toast.success("Task đã hoàn thành!");
+        const remaining = unconfirmedLines.length - 1;
+        toast.success(`Đã confirm pallet ${palletId}. Còn ${remaining} line chưa confirm.`);
+        if (remaining === 0) {
+          toast.success("Task đã hoàn thành!");
+        }
+      } catch (e: any) {
+        toast.error(e.message);
       }
-    } catch (e: any) {
-      toast.error(e.message);
+      return;
     }
   };
 
@@ -187,8 +206,11 @@ function MobileExecuteTask() {
           <CardContent className="p-6 text-center space-y-2">
             <CheckCircle className="h-10 w-10 text-green-600 mx-auto" />
             <p className="font-semibold text-green-700">Task đã hoàn thành!</p>
-            <Link to="/mobile/tasks">
-              <Button variant="outline" className="mt-2">Về danh sách task</Button>
+            <Link
+              to="/mobile/tasks"
+              className="mt-2 inline-flex items-center justify-center gap-2 w-full h-10 px-4 rounded-md border border-input bg-background font-medium hover:bg-accent"
+            >
+              Về danh sách task
             </Link>
           </CardContent>
         </Card>

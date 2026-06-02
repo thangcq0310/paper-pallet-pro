@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Package, MapPin, ListChecks } from "lucide-react";
 
@@ -57,27 +56,30 @@ function MobileHome() {
       </div>
 
       {/* Main Action */}
-      <Link to="/mobile/tasks" className="block">
-        <Button size="lg" className="w-full text-base h-14">
-          <ListChecks className="h-5 w-5 mr-2" />
-          Bắt đầu làm việc
-          <ArrowRight className="h-5 w-5 ml-2" />
-        </Button>
+      <Link
+        to="/mobile/tasks"
+        className="flex items-center justify-center gap-2 w-full text-base h-14 px-4 rounded-md bg-primary text-primary-foreground font-medium"
+      >
+        <ListChecks className="h-5 w-5" />
+        Bắt đầu làm việc
+        <ArrowRight className="h-5 w-5" />
       </Link>
 
       {/* Secondary Actions */}
       <div className="grid grid-cols-2 gap-3">
-        <Link to="/mobile/lookup-pallet" className="block">
-          <Button variant="outline" size="lg" className="w-full h-14">
-            <Package className="h-5 w-5 mr-2" />
-            Tra pallet
-          </Button>
+        <Link
+          to="/mobile/lookup-pallet"
+          className="flex items-center justify-center gap-2 w-full h-14 px-4 rounded-md border border-input bg-background font-medium"
+        >
+          <Package className="h-5 w-5" />
+          Tra pallet
         </Link>
-        <Link to="/mobile/lookup-location" className="block">
-          <Button variant="outline" size="lg" className="w-full h-14">
-            <MapPin className="h-5 w-5 mr-2" />
-            Tra location
-          </Button>
+        <Link
+          to="/mobile/lookup-location"
+          className="flex items-center justify-center gap-2 w-full h-14 px-4 rounded-md border border-input bg-background font-medium"
+        >
+          <MapPin className="h-5 w-5" />
+          Tra location
         </Link>
       </div>
     </div>

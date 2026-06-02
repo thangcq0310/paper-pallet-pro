@@ -118,10 +118,12 @@ function MobileTasks() {
                         <TaskStatusBadge status={t.status} />
                       </div>
                     </div>
-                    <Link to={`/mobile/execute/${encodeURIComponent(t.taskNo)}`}>
-                      <Button size="sm" variant="outline">
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
+                    <Link
+                      to="/mobile/execute/$taskNo"
+                      params={{ taskNo: t.taskNo }}
+                      className="p-2 rounded-md border border-input bg-background hover:bg-accent"
+                    >
+                      <ArrowRight className="h-4 w-4" />
                     </Link>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
