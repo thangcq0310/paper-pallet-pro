@@ -35,7 +35,7 @@ function TasksPage() {
   );
 
   const doPrint = (taskNo: string) => {
-    window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer");
+    window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`);
   };
 
   return (
@@ -121,4 +121,3 @@ function TasksPage() {
     </div>
   );
 }
-

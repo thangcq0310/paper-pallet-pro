@@ -36,7 +36,7 @@ function PutawayPage() {
   const openPrint = (taskId: string) => {
     const t = tasks.find((x) => x.id === taskId);
     if (!t) { toast.error("Task không tồn tại"); return; }
-    window.open(`/tasks/${encodeURIComponent(t.taskNo)}/print`, "_blank", "noopener,noreferrer");
+    window.location.assign(`/tasks/${encodeURIComponent(t.taskNo)}/print`);
   };
 
   return (

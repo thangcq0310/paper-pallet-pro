@@ -59,13 +59,13 @@ function TaskDetailPage() {
         description={`${task.taskType} • ${task.inboundNo || task.outboundNo || "—"}`}
         action={
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => window.open(`/tasks/${encodeURIComponent(task.taskNo)}/print`, "_blank", "noopener,noreferrer")}
-              disabled={task.status === "Cancelled" || task.status === "Confirmed"}
-            >
-              Print
-            </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.location.assign(`/tasks/${encodeURIComponent(task.taskNo)}/print`)}
+                      disabled={task.status === "Cancelled" || task.status === "Confirmed"}
+                    >
+                      Print
+                    </Button>
             <Button
               variant="outline"
               onClick={() => {

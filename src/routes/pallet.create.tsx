@@ -591,7 +591,7 @@ function InboundPalletizePutawayPage() {
   };
 
   const openPrintTask = (taskNo: string) => {
-    window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer");
+    window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`);
   };
 
   const doAutoAllocate = () => {

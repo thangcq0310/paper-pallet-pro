@@ -198,14 +198,14 @@ function MovePage() {
       />
 
       {createdTask && (
-        <CreatedTaskBanner
-          label="MOVE task vừa tạo"
-          taskNo={createdTask.taskNo}
-          status={createdTask.status}
-          taskType={createdTask.taskType}
-          onPrint={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}
-        />
-      )}
+          <CreatedTaskBanner
+            label="MOVE task vừa tạo"
+            taskNo={createdTask.taskNo}
+            status={createdTask.status}
+            taskType={createdTask.taskType}
+          onPrint={() => window.location.assign(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`)}
+          />
+        )}
 
       <SkuBatchSelectionSection
         title="Section 1 - Chọn SKU/Batch"
@@ -390,7 +390,7 @@ function MovePage() {
           lineMap={openTaskMap}
           currentTaskNo={lastTaskNo}
           emptyMessage="Không có MOVE task mở"
-          onPrintTask={(taskNo) => window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer")}
+          onPrintTask={(taskNo) => window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`)}
           onCancelTask={(task) => {
             try {
               cancelTask(task.id);

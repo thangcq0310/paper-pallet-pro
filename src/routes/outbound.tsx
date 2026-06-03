@@ -194,14 +194,14 @@ function OutboundPage() {
       />
 
       {createdTask && (
-        <CreatedTaskBanner
-          label="PICK task vừa tạo"
-          taskNo={createdTask.taskNo}
-          status={createdTask.status}
-          taskType={createdTask.taskType}
-          onPrint={() => window.open(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`, "_blank", "noopener,noreferrer")}
-        />
-      )}
+          <CreatedTaskBanner
+            label="PICK task vừa tạo"
+            taskNo={createdTask.taskNo}
+            status={createdTask.status}
+            taskType={createdTask.taskType}
+          onPrint={() => window.location.assign(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`)}
+          />
+        )}
 
       <Card className="rounded-2xl">
         <CardHeader className="pb-2"><CardTitle className="text-base">Thông tin outbound</CardTitle></CardHeader>
@@ -299,7 +299,7 @@ function OutboundPage() {
           lineMap={lineMap}
           currentTaskNo={lastTaskNo}
           emptyMessage="Chưa có PICK task theo outbound hiện tại"
-          onPrintTask={(taskNo) => window.open(`/tasks/${encodeURIComponent(taskNo)}/print`, "_blank", "noopener,noreferrer")}
+          onPrintTask={(taskNo) => window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`)}
           onCancelTask={(task) => {
             try {
               cancelTask(task.id);
