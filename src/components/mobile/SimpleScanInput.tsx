@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ClipboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Scan, Camera, X } from "lucide-react";
@@ -129,7 +129,7 @@ export function SimpleScanInput({ placeholder = "Quét mã...", onScan, disabled
   };
 
   // Prevent paste - only scanner input should work
-  const handlePaste = (e: React.ReactClipboardEvent) => {
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
   };
 

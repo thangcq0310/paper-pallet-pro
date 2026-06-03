@@ -294,7 +294,7 @@ function MobileExecuteTask() {
                         ) : null}
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {line.qty} {line.unit ?? "U"}
+                        {line.qty} {line.uom ?? "U"}
                       </span>
                     </div>
                   );

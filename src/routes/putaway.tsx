@@ -43,26 +43,26 @@ function PutawayPage() {
     <div>
       <PageHeader
         title="Putaway"
-        description="TASK-FIRST: tạo PUTAWAY task ở màn hình Inbound Palletize & Putaway → in → làm thực tế → confirm theo line"
+        description="TASK-FIRST: tạo PUTAWAY task ở màn Inbound Palletize & Putaway → in nhãn → làm thực tế → confirm theo line"
         action={
           <Button variant="outline" onClick={() => (window.location.href = "/pallet/create")}>
-            Inbound Palletize & Putaway
+            Mở Inbound Palletize & Putaway
           </Button>
         }
       />
 
       <Card className="rounded-2xl">
         <CardContent className="p-6">
-          <h3 className="font-semibold mb-4">Open PUTAWAY Tasks</h3>
+          <h3 className="font-semibold mb-4">PUTAWAY task đang mở</h3>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Task</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Lines</TableHead>
-                <TableHead className="text-right">Confirmed</TableHead>
-                <TableHead className="text-right">Print</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Mã task</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="text-right">Tổng line</TableHead>
+                <TableHead className="text-right">Đã confirm</TableHead>
+                <TableHead className="text-right">Số lần in</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

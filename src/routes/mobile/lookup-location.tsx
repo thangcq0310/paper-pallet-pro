@@ -111,7 +111,7 @@ function LookupLocation() {
                   <span className="text-xs text-muted-foreground ml-2">{p.skuCode}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {p.qty} {p.unit ?? "U"}
+                  {p.qty} {p.uom ?? "U"}
                 </div>
               </div>
             ))}
