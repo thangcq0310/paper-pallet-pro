@@ -54,6 +54,25 @@ function pickField(o: Record<string, string>, names: string[]) {
   return "";
 }
 
+function derivePlantAndSloc(locationType: string, zone: string) {
+  const state = getState();
+  const defaultPlant = state.plants[0]?.plantCode ?? "PLANT-HCM";
+  const plantCode = defaultPlant;
+  const zoneUpper = zone.trim().toUpperCase();
+  const preferredSloc =
+    locationType === "STORAGE"
+      ? (zoneUpper.startsWith("DRY")
+        ? state.slocs.find((s) => s.plantCode === plantCode && s.slocCode.includes("DRY"))
+        : zoneUpper.startsWith("FZ") || zoneUpper.startsWith("CHL")
+          ? state.slocs.find((s) => s.plantCode === plantCode && s.slocCode.includes("COLD"))
+          : state.slocs.find((s) => s.plantCode === plantCode))
+      : state.slocs.find((s) => s.plantCode === plantCode && s.slocCode.includes("OPS")) ?? state.slocs.find((s) => s.plantCode === plantCode);
+  return {
+    plantCode,
+    slocCode: preferredSloc?.slocCode ?? state.slocs[0]?.slocCode ?? "HCM-OPS",
+  };
+}
+
 export function importSkusFromCsv(text: string): BulkImportResult {
   const { header, rows } = parseTable(text);
   const required = ["skuCode", "skuName", "uom", "weightPerUnit", "storageType"];
@@ -166,6 +185,8 @@ export function importBatchesFromCsv(text: string): BulkImportResult {
 
 export function importLocationsFromCsv(text: string): BulkImportResult {
   const { header, rows } = parseTable(text);
+  const hasPlantCode = header.includes("plantCode") || header.includes("plant");
+  const hasSlocCode = header.includes("slocCode") || header.includes("sloc");
   const hasLocationCode = header.includes("locationCode") || header.includes("binCode");
   const hasZone = header.includes("zone");
   const hasLocationType = header.includes("locationType") || header.includes("binType");
@@ -199,12 +220,15 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
       const o = mapRow(header, r);
       const locationCode = assertNonEmpty(pickField(o, ["locationCode", "binCode"]), "locationCode");
       const locationName = hasLocationName ? pickField(o, ["locationName", "binName"]) : "";
+      const locationType = assertNonEmpty(pickField(o, ["locationType", "binType"]), "locationType");
       const zone = assertNonEmpty(o.zone, "zone");
+      const derived = derivePlantAndSloc(locationType, zone);
+      const plantCode = hasPlantCode ? assertNonEmpty(pickField(o, ["plantCode", "plant"]), "plantCode") : derived.plantCode;
+      const slocCode = hasSlocCode ? assertNonEmpty(pickField(o, ["slocCode", "sloc"]), "slocCode") : derived.slocCode;
       const aisle = hasAisle ? (o.aisle ?? "").trim() : "";
       const block = hasBlock ? (o.block ?? "").trim() : "";
       const tier = hasTier ? (o.tier ?? "").trim() : "";
       const nextAisle = aisle || block;
-      const locationType = assertNonEmpty(pickField(o, ["locationType", "binType"]), "locationType");
       if (!["RECEIVING", "STORAGE", "STAGING", "DOCK"].includes(locationType)) {
         throw new Error("locationType phải là RECEIVING/STORAGE/STAGING/DOCK");
       }
@@ -214,6 +238,8 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
       if (!["Active", "Blocked"].includes(status)) throw new Error("status phải là Active/Blocked");
       if (locationType === "STORAGE" && !nextAisle) throw new Error("Dãy (aisle/block) bắt buộc với STORAGE");
       if (tier && !nextAisle) throw new Error("Tầng chỉ hợp lệ khi có Dãy");
+      if (!getState().plants.some((p) => p.plantCode === plantCode)) throw new Error(`Plant ${plantCode} không tồn tại`);
+      if (!getState().slocs.some((s) => s.slocCode === slocCode && s.plantCode === plantCode)) throw new Error(`Sloc ${slocCode} không tồn tại cho Plant ${plantCode}`);
 
       const existing = byCode.get(locationCode);
       if (existing) {
@@ -221,6 +247,8 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
           ...existing,
           locationCode,
           locationName: hasLocationName ? (locationName || existing.locationName) : existing.locationName,
+          plantCode,
+          slocCode,
           zone,
           block: block || nextAisle || existing.block,
           aisle: nextAisle || existing.aisle,
@@ -238,6 +266,8 @@ export function importLocationsFromCsv(text: string): BulkImportResult {
           id: uid(),
           locationCode,
           locationName: locationName || undefined,
+          plantCode,
+          slocCode,
           zone,
           block: block || nextAisle || "-",
           aisle: nextAisle || undefined,

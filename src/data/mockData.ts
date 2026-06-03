@@ -1,4 +1,4 @@
-import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument } from "@/types";
+import type { SKU, Batch, Plant, Sloc, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument } from "@/types";
 
 const now = new Date().toISOString();
 const baseDate = new Date("2026-01-01T00:00:00.000Z");
@@ -16,6 +16,18 @@ const skuSeeds = [
 ] as const;
 
 const genericSkuTypes = ["Frozen", "Chilled", "Dry"] as const;
+
+export const mockPlants: Plant[] = [
+  { id: "pl1", plantCode: "PLANT-HCM", plantName: "Plant Hồ Chí Minh", status: "Active", createdAt: now, updatedAt: now },
+  { id: "pl2", plantCode: "PLANT-HN", plantName: "Plant Hà Nội", status: "Active", createdAt: now, updatedAt: now },
+];
+
+export const mockSlocs: Sloc[] = [
+  { id: "sl1", slocCode: "HCM-OPS", slocName: "Operation Area", plantCode: "PLANT-HCM", status: "Active", createdAt: now, updatedAt: now },
+  { id: "sl2", slocCode: "HCM-COLD", slocName: "Cold Storage", plantCode: "PLANT-HCM", status: "Active", createdAt: now, updatedAt: now },
+  { id: "sl3", slocCode: "HCM-DRY", slocName: "Dry Storage", plantCode: "PLANT-HCM", status: "Active", createdAt: now, updatedAt: now },
+  { id: "sl4", slocCode: "HN-OPS", slocName: "Operation Area", plantCode: "PLANT-HN", status: "Active", createdAt: now, updatedAt: now },
+];
 
 export const mockSKUs: SKU[] = [
   ...skuSeeds,
@@ -135,17 +147,17 @@ const reservedStorageOccupancy: Record<string, number> = {
 };
 
 const operationalLocations: Location[] = [
-  { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", locationType: "RECEIVING", zone: "RECV", block: "-", aisle: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", locationType: "STAGING", zone: "STG", block: "-", aisle: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
-  { id: "l2", locationCode: "DOCK-01", locationName: "Loading Dock 1", locationType: "DOCK", zone: "DOCK", block: "-", aisle: "-", capacityPallet: 30, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l0", locationCode: "RCV-01", locationName: "Receiving Area 1", plantCode: "PLANT-HCM", slocCode: "HCM-OPS", locationType: "RECEIVING", zone: "RECV", block: "-", aisle: "-", capacityPallet: 100, currentPalletCount: 1, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l1", locationCode: "STG-01", locationName: "Staging Area 1", plantCode: "PLANT-HCM", slocCode: "HCM-OPS", locationType: "STAGING", zone: "STG", block: "-", aisle: "-", capacityPallet: 50, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
+  { id: "l2", locationCode: "DOCK-01", locationName: "Loading Dock 1", plantCode: "PLANT-HCM", slocCode: "HCM-OPS", locationType: "DOCK", zone: "DOCK", block: "-", aisle: "-", capacityPallet: 30, currentPalletCount: 0, status: "Active", createdAt: now, updatedAt: now },
 ];
 
 const storageZones = [
-  { zone: "FZ-A", label: "Frozen Zone A", capacityPallet: 2 },
-  { zone: "FZ-B", label: "Frozen Zone B", capacityPallet: 2 },
-  { zone: "CHL-A", label: "Chilled Zone A", capacityPallet: 2 },
-  { zone: "DRY-A", label: "Dry Zone A", capacityPallet: 4 },
-  { zone: "DRY-B", label: "Dry Zone B", capacityPallet: 4 },
+  { zone: "FZ-A", label: "Frozen Zone A", plantCode: "PLANT-HCM", slocCode: "HCM-COLD", capacityPallet: 2 },
+  { zone: "FZ-B", label: "Frozen Zone B", plantCode: "PLANT-HCM", slocCode: "HCM-COLD", capacityPallet: 2 },
+  { zone: "CHL-A", label: "Chilled Zone A", plantCode: "PLANT-HCM", slocCode: "HCM-COLD", capacityPallet: 2 },
+  { zone: "DRY-A", label: "Dry Zone A", plantCode: "PLANT-HCM", slocCode: "HCM-DRY", capacityPallet: 4 },
+  { zone: "DRY-B", label: "Dry Zone B", plantCode: "PLANT-HCM", slocCode: "HCM-DRY", capacityPallet: 4 },
 ] as const;
 
 const specialBinStatus: Record<string, Location["status"]> = {
@@ -238,6 +250,8 @@ function buildStorageBins(locationCounts: Map<string, number>): Location[] {
           id: `l${String(zoneIdx + 3).padStart(2, "0")}${aisleCode}${tierCode}`,
           locationCode,
           locationName: `${zoneDef.label} - Aisle ${aisleCode} - Tier ${tierCode}`,
+          plantCode: zoneDef.plantCode,
+          slocCode: zoneDef.slocCode,
           locationType: "STORAGE",
           zone: zoneDef.zone,
           block: aisleCode,

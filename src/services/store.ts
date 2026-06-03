@@ -1,13 +1,15 @@
 ﻿// Central reactive store. Swap with Firestore later by replacing read/write functions.
 import { useSyncExternalStore, useRef } from "react";
-import type { SKU, Batch, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument, ScanEvent } from "@/types";
+import type { SKU, Batch, Plant, Sloc, Location, Pallet, Movement, WarehouseTask, WarehouseTaskLine, OutboundDocument, ScanEvent } from "@/types";
 import {
-  mockSKUs, mockBatches, mockLocations, mockPallets, mockMovements, mockTasks, mockTaskLines, mockOutbounds,
+  mockSKUs, mockBatches, mockPlants, mockSlocs, mockLocations, mockPallets, mockMovements, mockTasks, mockTaskLines, mockOutbounds,
 } from "@/data/mockData";
 
 interface State {
   skus: SKU[];
   batches: Batch[];
+  plants: Plant[];
+  slocs: Sloc[];
   locations: Location[];
   pallets: Pallet[];
   movements: Movement[];
@@ -18,6 +20,33 @@ interface State {
 }
 
 const STORAGE_KEY = "mini-wms-state-v2";
+
+function normalizeLocation(raw: any, index: number): Location {
+  const zone = String(raw?.zone ?? "");
+  const fallbackPlant = mockPlants[0]?.plantCode ?? "PLANT-HCM";
+  const fallbackSloc = zone.startsWith("DRY")
+    ? "HCM-DRY"
+    : zone.startsWith("FZ") || zone.startsWith("CHL")
+      ? "HCM-COLD"
+      : "HCM-OPS";
+  return {
+    id: String(raw?.id ?? `loc-${index}`),
+    locationCode: String(raw?.locationCode ?? ""),
+    locationName: raw?.locationName ? String(raw.locationName) : undefined,
+    plantCode: String(raw?.plantCode ?? fallbackPlant),
+    slocCode: String(raw?.slocCode ?? fallbackSloc),
+    locationType: raw?.locationType,
+    zone,
+    block: String(raw?.block ?? "-"),
+    aisle: raw?.aisle ? String(raw.aisle) : undefined,
+    tier: raw?.tier ? String(raw.tier) : undefined,
+    capacityPallet: Number.isFinite(raw?.capacityPallet) ? raw.capacityPallet : 0,
+    currentPalletCount: Number.isFinite(raw?.currentPalletCount) ? raw.currentPalletCount : 0,
+    status: raw?.status ?? "Active",
+    createdAt: raw?.createdAt ?? new Date().toISOString(),
+    updatedAt: raw?.updatedAt ?? new Date().toISOString(),
+  };
+}
 
 function normalizeTasksAndLines(input: {
   rawTasks: any;
@@ -129,7 +158,7 @@ function normalizeTasksAndLines(input: {
 
 function load(): State {
   if (typeof window === "undefined") {
-    return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
+    return { skus: mockSKUs, batches: mockBatches, plants: mockPlants, slocs: mockSlocs, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -141,10 +170,17 @@ function load(): State {
         rawTaskLines: (parsed as any).taskLines,
         pallets,
       });
+      const plants = Array.isArray((parsed as any).plants) ? (parsed as Plant[]) : mockPlants;
+      const slocs = Array.isArray((parsed as any).slocs) ? (parsed as Sloc[]) : mockSlocs;
+      const locations = Array.isArray(parsed.locations)
+        ? parsed.locations.map((loc, index) => normalizeLocation(loc, index))
+        : mockLocations;
       return {
         skus: Array.isArray(parsed.skus) ? (parsed.skus as SKU[]) : mockSKUs,
         batches: Array.isArray(parsed.batches) ? (parsed.batches as Batch[]) : mockBatches,
-        locations: Array.isArray(parsed.locations) ? (parsed.locations as Location[]) : mockLocations,
+        plants,
+        slocs,
+        locations,
         pallets,
         movements: Array.isArray(parsed.movements) ? (parsed.movements as Movement[]) : mockMovements,
         tasks,
@@ -154,7 +190,7 @@ function load(): State {
       };
     }
   } catch {}
-  return { skus: mockSKUs, batches: mockBatches, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
+  return { skus: mockSKUs, batches: mockBatches, plants: mockPlants, slocs: mockSlocs, locations: mockLocations, pallets: mockPallets, movements: mockMovements, tasks: mockTasks, taskLines: mockTaskLines, outbounds: mockOutbounds, scanEvents: [] };
 }
 
 let state: State = load();

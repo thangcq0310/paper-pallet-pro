@@ -19,6 +19,25 @@ export interface Batch {
   updatedAt: string;
 }
 
+export interface Plant {
+  id: string;
+  plantCode: string;
+  plantName?: string;
+  status: LocationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Sloc {
+  id: string;
+  slocCode: string;
+  slocName?: string;
+  plantCode: string;
+  status: LocationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type LocationStatus = "Active" | "Blocked";
 export type LocationType = "RECEIVING" | "STORAGE" | "STAGING" | "DOCK";
 
@@ -26,6 +45,8 @@ export interface Location {
   id: string;
   locationCode: string;
   locationName?: string;
+  plantCode: string;
+  slocCode: string;
   locationType: LocationType;
   zone: string;
   block: string;
