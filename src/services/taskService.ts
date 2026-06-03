@@ -133,7 +133,7 @@ export function addTaskLines(taskId: string, linesInput: Array<{
       const fromLoc = s.locations.find((l) => l.locationCode === fromLocation);
       if (!fromLoc) throw new Error(`Location ${fromLocation} không tồn tại`);
       if (fromLoc.locationType !== "RECEIVING") throw new Error(`Pallet ${p.palletId} không nằm ở RECEIVING`);
-      toLocation = validatePutawayDestination(String(toLocation ?? ""));
+      toLocation = toLocation?.trim() ? validatePutawayDestination(String(toLocation)) : null;
     } else if (task.taskType === "MOVE") {
       toLocation = validateMoveDestination(fromLocation, String(toLocation ?? ""));
     } else if (task.taskType === "PICK") {
@@ -311,7 +311,7 @@ export function createSingleLineTask(input: {
     const fromLoc = s.locations.find((l) => l.locationCode === fromLocation);
     if (!fromLoc) throw new Error(`Location ${fromLocation} không tồn tại`);
     if (fromLoc.locationType !== "RECEIVING") throw new Error(`Pallet ${p.palletId} không nằm ở RECEIVING`);
-    validatedToLocation = validatePutawayDestination(String(validatedToLocation ?? ""));
+    validatedToLocation = validatedToLocation ? validatePutawayDestination(validatedToLocation) : null;
   } else if (input.taskType === "MOVE") {
     validatedToLocation = validateMoveDestination(fromLocation, String(validatedToLocation ?? ""));
   } else if (input.taskType === "PICK") {

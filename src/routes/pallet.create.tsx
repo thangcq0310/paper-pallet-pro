@@ -597,7 +597,7 @@ function InboundPalletizePutawayPage() {
   const doAutoAllocate = () => {
     try {
       const asg = autoAllocatePalletsToBins({ palletIds: selectedPalletIdsOrdered, targetLocations: targetBins });
-      setAssignments(Object.fromEntries(asg.map((a) => [a.palletId, a.targetLocation])));
+      setAssignments(Object.fromEntries(asg.map((a) => [a.palletId, a.targetLocation ?? ""]).filter(([, targetLocation]) => !!targetLocation)));
       toast.success("Đã auto allocate");
     } catch (e: any) {
       toast.error(e.message);
@@ -613,7 +613,7 @@ function InboundPalletizePutawayPage() {
       // Create tasks without pre-assigning bins - workers scan actual bin on the floor
       const asg: PutawayAssignment[] = selectedPalletIdsOrdered.map((palletId) => ({
         palletId,
-        targetLocation: "", // filled on floor during putaway
+        targetLocation: null, // filled on floor during putaway
       }));
       const created = createPutawayTaskWithLines({ inboundNo, assignments: asg });
       setCreatedTaskNo(created.task.taskNo);
@@ -659,7 +659,7 @@ function InboundPalletizePutawayPage() {
     <div className="space-y-6">
       <PageHeader
         title="Inbound Palletize & Putaway"
-        description="Bước 1: nhập inbound và thêm nhiều SKU/Batch line → Bước 2: generate pallet ID, in label và chọn pallet → Bước 3: tạo PUTAWAY task"
+        description="Bước 1: nhập inbound và thêm nhiều SKU/Batch line → Bước 2: generate pallet ID, in label và chọn pallet → Bước 3: tạo PUTAWAY task, quét actual bin khi confirm"
       />
 
       <Card className="rounded-2xl">

@@ -65,6 +65,21 @@ function TaskPrintPage() {
           ? "Lấy pallet từ location hiện tại và load/xuất luôn. Sau khi confirm, pallet được xem là Shipped."
           : "");
 
+  const plannedLocationLabel = (line: typeof lines[number]) => {
+    if (task.taskType === "PICK") return outboundDoc?.destination ?? "External";
+    if (line.toLocation) {
+      return formatLocationPath(locations.find((loc) => loc.locationCode === line.toLocation) ?? null);
+    }
+    return task.taskType === "PUTAWAY" ? "Scan actual bin on floor" : "—";
+  };
+
+  const actualLocationLabel = (line: typeof lines[number]) => {
+    if (line.actualLocation) {
+      return formatLocationPath(locations.find((loc) => loc.locationCode === line.actualLocation) ?? null);
+    }
+    return task.taskType === "PICK" ? "—" : "________________";
+  };
+
   return (
     <div className="print-area p-6">
       <div className="no-print flex justify-end mb-4">
@@ -75,7 +90,7 @@ function TaskPrintPage() {
         <CardContent className="p-8 space-y-6">
           <div className="flex items-start justify-between gap-4 border-b-2 border-foreground pb-4">
             <div>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground">WAREHOUSE TASK</div>
+              <div className="text-xs uppercase tracking-widest text-muted-foreground">WAREHOUSE TASK TEMPLATE</div>
               <div className="text-2xl font-bold mt-1">{task.taskType}</div>
               <div className="font-mono text-sm mt-1">{task.taskNo}</div>
               <div className="text-xs text-muted-foreground mt-1">Priority: {task.priority}</div>
@@ -115,8 +130,8 @@ function TaskPrintPage() {
                     <th className="p-2">Batch</th>
                     <th className="p-2 text-right">Qty/UOM</th>
                     <th className="p-2">From</th>
-                    <th className="p-2">{task.taskType === "PICK" ? "Destination" : "To Bin"}</th>
-                    <th className="p-2">{task.taskType === "PICK" ? "Actual" : "Actual Bin"}</th>
+                    <th className="p-2">{task.taskType === "PICK" ? "Destination" : "Planned Bin"}</th>
+                    <th className="p-2">Actual Bin</th>
                     <th className="p-2">Remark</th>
                   </tr>
                 </thead>
@@ -129,14 +144,16 @@ function TaskPrintPage() {
                       <td className="p-2 font-mono">{l.batchNo}</td>
                       <td className="p-2 text-right font-mono">{l.qty} {l.uom}</td>
                       <td className="p-2 font-mono">{formatLocationPath(locations.find((loc) => loc.locationCode === l.fromLocation) ?? null)}</td>
-                      <td className="p-2">{task.taskType === "PICK" ? (outboundDoc?.destination ?? "External") : formatLocationPath(locations.find((loc) => loc.locationCode === l.toLocation) ?? null)}</td>
+                      <td className="p-2">{plannedLocationLabel(l)}</td>
                       <td className="p-2">
-                        {l.actualLocation
-                          ? <span className="font-mono">{formatLocationPath(locations.find((loc) => loc.locationCode === l.actualLocation) ?? null)}</span>
-                          : <div className="border-b border-foreground/40 h-4" />}
+                        {l.actualLocation ? (
+                          <span className="font-mono">{actualLocationLabel(l)}</span>
+                        ) : (
+                          <div className="min-h-5 border-b border-dashed border-foreground/50" />
+                        )}
                       </td>
                       <td className="p-2">
-                        <div className="border-b border-foreground/40 h-4" />
+                        <div className="min-h-5 border-b border-dashed border-foreground/40" />
                       </td>
                     </tr>
                   ))}
@@ -153,6 +170,26 @@ function TaskPrintPage() {
           <div className="text-sm">
             <div className="text-xs text-muted-foreground uppercase mb-1">Instruction</div>
             <div className="whitespace-pre-line">{instruction}</div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="rounded-xl border p-4">
+              <div className="text-xs text-muted-foreground uppercase mb-2">Execution checklist</div>
+              <div className="space-y-2">
+                <div>1. Scan Task No</div>
+                <div>2. Scan Pallet ID</div>
+                <div>3. Scan actual bin if PUTAWAY/MOVE</div>
+                <div>4. Confirm line trên hệ thống</div>
+              </div>
+            </div>
+            <div className="rounded-xl border p-4">
+              <div className="text-xs text-muted-foreground uppercase mb-2">Print note</div>
+              <div className="space-y-2">
+                <div>PUTAWAY: actual bin sẽ được quét khi làm thực tế.</div>
+                <div>PICK: không dùng target bin.</div>
+                <div>MOVE: chỉ nhập actual bin khi confirm nếu cần override.</div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-muted-foreground">

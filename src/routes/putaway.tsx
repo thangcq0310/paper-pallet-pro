@@ -69,6 +69,7 @@ function PutawayPage() {
               {openTasks.map((t) => {
                 const lines = taskLinesByTaskId.get(t.id) ?? [];
                 const confirmed = lines.filter((l) => l.status === "Confirmed").length;
+                const hasPlannedTarget = lines.every((l) => (l.toLocation ?? "").trim());
                 return (
                   <TableRow key={t.id}>
                     <TableCell className="font-mono text-xs">{t.taskNo}</TableCell>
@@ -92,7 +93,7 @@ function PutawayPage() {
                             toast.error(e.message);
                           }
                         }}
-                        disabled={t.status !== "Printed" && t.status !== "Partially Confirmed"}
+                        disabled={(t.status !== "Printed" && t.status !== "Partially Confirmed") || !hasPlannedTarget}
                       >
                         Confirm All
                       </Button>

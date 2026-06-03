@@ -5,7 +5,7 @@ import { addTaskLines, createTaskHeader } from "./taskService";
 
 export interface PutawayAssignment {
   palletId: string;
-  targetLocation: string;
+  targetLocation: string | null;
 }
 
 export interface PalletPreviewRow {
@@ -189,13 +189,11 @@ function validatePutawayAssignments(input: { inboundNo?: string; assignments: Pu
 
   const s = getState();
   const palletIdSet = new Set<string>();
-  const assignCountByLoc = new Map<string, number>();
 
   for (const a of assignments) {
     const palletId = a.palletId.trim();
-    const targetLocation = a.targetLocation.trim();
+    const targetLocation = a.targetLocation?.trim() ?? "";
     if (!palletId) throw new Error("Assignment palletId không hợp lệ");
-    if (!targetLocation) throw new Error("Assignment targetLocation không hợp lệ");
     if (palletIdSet.has(palletId)) throw new Error(`Pallet ${palletId} bị assign trùng`);
     palletIdSet.add(palletId);
 
@@ -222,26 +220,16 @@ function validatePutawayAssignments(input: { inboundNo?: string; assignments: Pu
       throw new Error(`Pallet ${palletId} không thuộc inboundNo ${inboundNo}`);
     }
 
-    const target = s.locations.find((l) => l.locationCode === targetLocation);
-    if (!target) throw new Error(`Target Bin ${targetLocation} không tồn tại`);
-    if (target.locationType !== "STORAGE") throw new Error(`Target Bin ${targetLocation} không phải STORAGE`);
-    if (target.status !== "Active") throw new Error(`Target Bin ${targetLocation} đang Blocked`);
-
-    assignCountByLoc.set(targetLocation, (assignCountByLoc.get(targetLocation) ?? 0) + 1);
-  }
-
-  // capacity check per bin
-  const caps = getMultiTargetBinCapacity(Array.from(assignCountByLoc.keys()));
-  for (const cap of caps) {
-    const assigned = assignCountByLoc.get(cap.location.locationCode) ?? 0;
-    if (assigned > cap.availableCapacity) {
-      throw new Error(`Bin ${cap.location.locationCode} không đủ capacity (assigned ${assigned} > available ${cap.availableCapacity})`);
+    if (targetLocation) {
+      const target = s.locations.find((l) => l.locationCode === targetLocation);
+      if (!target) throw new Error(`Target Bin ${targetLocation} không tồn tại`);
+      if (target.locationType !== "STORAGE") throw new Error(`Target Bin ${targetLocation} không phải STORAGE`);
+      if (target.status !== "Active") throw new Error(`Target Bin ${targetLocation} đang Blocked`);
     }
   }
 
   return {
     inboundNo,
-    assignCountByLoc,
   };
 }
 
@@ -262,7 +250,7 @@ export function createPutawayTaskWithLines(input: {
     task.id,
     input.assignments.map((a) => ({
       palletId: a.palletId,
-      toLocation: a.targetLocation,
+      toLocation: a.targetLocation ?? null,
       note: inboundNo ? `Inbound ${inboundNo}` : undefined,
     })),
   );
