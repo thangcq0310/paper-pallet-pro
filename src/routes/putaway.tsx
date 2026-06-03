@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useStore } from "@/services/store";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/putaway")({ component: PutawayPage });
 
 function PutawayPage() {
+  const router = useRouter();
   const tasks=useStore((s)=>s.tasks);
   const taskLines=useStore((s)=>s.taskLines);
 
@@ -36,7 +37,7 @@ function PutawayPage() {
   const openPrint = (taskId: string) => {
     const t = tasks.find((x) => x.id === taskId);
     if (!t) { toast.error("Task không tồn tại"); return; }
-    window.location.assign(`/tasks/${encodeURIComponent(t.taskNo)}/print`);
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: t.taskNo } });
   };
 
   return (

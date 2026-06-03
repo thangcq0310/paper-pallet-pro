@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask, cancelTaskLine, confirmAllTaskLines, confirmTaskLine } from "@/services/taskService";
@@ -16,6 +16,7 @@ import { formatLocationPath } from "@/utils/location";
 export const Route = createFileRoute("/tasks/$taskNo")({ component: TaskDetailPage });
 
 function TaskDetailPage() {
+  const router = useRouter();
   const { taskNo } = Route.useParams();
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
@@ -61,7 +62,7 @@ function TaskDetailPage() {
           <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => window.location.assign(`/tasks/${encodeURIComponent(task.taskNo)}/print`)}
+                      onClick={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: task.taskNo } })}
                       disabled={task.status === "Cancelled" || task.status === "Confirmed"}
                     >
                       Print

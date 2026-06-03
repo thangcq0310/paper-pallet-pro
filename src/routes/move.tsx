@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask, createMoveTaskWithLines } from "@/services/taskService";
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/move")({ component: MovePage });
 
 function MovePage() {
+  const router = useRouter();
   const skus = useStore((s) => s.skus);
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
@@ -203,7 +204,7 @@ function MovePage() {
             taskNo={createdTask.taskNo}
             status={createdTask.status}
             taskType={createdTask.taskType}
-          onPrint={() => window.location.assign(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`)}
+          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo } })}
           />
         )}
 
@@ -390,7 +391,7 @@ function MovePage() {
           lineMap={openTaskMap}
           currentTaskNo={lastTaskNo}
           emptyMessage="Không có MOVE task mở"
-          onPrintTask={(taskNo) => window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`)}
+          onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } })}
           onCancelTask={(task) => {
             try {
               cancelTask(task.id);

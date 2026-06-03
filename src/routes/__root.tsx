@@ -66,6 +66,7 @@ function RootComponent() {
   const location = useLocation();
   const pathname = typeof location.pathname === 'string' ? location.pathname : String(location.pathname);
   const isMobile = pathname.startsWith("/mobile");
+  const isPrintPage = pathname.startsWith("/tasks/") && pathname.endsWith("/print");
 
   if (isMobile) {
     return (
@@ -77,6 +78,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {isPrintPage ? (
+        <div className="min-h-screen bg-background">
+          <Outlet />
+        </div>
+      ) : (
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
@@ -92,6 +98,7 @@ function RootComponent() {
           </div>
         </div>
       </SidebarProvider>
+      )}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

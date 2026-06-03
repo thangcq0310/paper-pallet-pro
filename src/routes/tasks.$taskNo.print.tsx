@@ -21,11 +21,18 @@ function TaskPrintPage() {
   const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
   const autoPrintedRef = useRef(false);
 
+  const triggerPrint = () => {
+    window.focus();
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => window.print(), 0);
+    });
+  };
+
   const doPrint = () => {
     try {
       if (!task) throw new Error("Task không tồn tại");
       printTask(task.id);
-      window.print();
+      triggerPrint();
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -37,7 +44,7 @@ function TaskPrintPage() {
     const t = window.setTimeout(() => {
       try {
         printTask(task.id);
-        window.print();
+        triggerPrint();
       } catch (e: any) {
         toast.error(e.message);
       }

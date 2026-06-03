@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "@/services/store";
 import { createOutbound, syncOutboundStatusByNo } from "@/services/outboundService";
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/outbound")({ component: OutboundPage });
 
 function OutboundPage() {
+  const router = useRouter();
   const skus = useStore((s) => s.skus);
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
@@ -199,7 +200,7 @@ function OutboundPage() {
             taskNo={createdTask.taskNo}
             status={createdTask.status}
             taskType={createdTask.taskType}
-          onPrint={() => window.location.assign(`/tasks/${encodeURIComponent(createdTask.taskNo)}/print`)}
+          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo } })}
           />
         )}
 
@@ -299,7 +300,7 @@ function OutboundPage() {
           lineMap={lineMap}
           currentTaskNo={lastTaskNo}
           emptyMessage="Chưa có PICK task theo outbound hiện tại"
-          onPrintTask={(taskNo) => window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`)}
+          onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } })}
           onCancelTask={(task) => {
             try {
               cancelTask(task.id);

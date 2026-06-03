@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask } from "@/services/taskService";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/tasks")({ component: TasksPage });
 
 function TasksPage() {
+  const router = useRouter();
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const [typeFilter, setTypeFilter] = useState("all");
@@ -35,7 +36,7 @@ function TasksPage() {
   );
 
   const doPrint = (taskNo: string) => {
-    window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`);
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } });
   };
 
   return (

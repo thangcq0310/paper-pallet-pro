@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Batch, SKU } from "@/types";
 import { useStore } from "@/services/store";
@@ -305,6 +305,7 @@ function InboundLineCard(props: {
 }
 
 function InboundPalletizePutawayPage() {
+  const router = useRouter();
   const skus = useStore((s) => s.skus);
   const batches = useStore((s) => s.batches);
   const locations = useStore((s) => s.locations);
@@ -591,7 +592,7 @@ function InboundPalletizePutawayPage() {
   };
 
   const openPrintTask = (taskNo: string) => {
-    window.location.assign(`/tasks/${encodeURIComponent(taskNo)}/print`);
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } });
   };
 
   const doAutoAllocate = () => {
