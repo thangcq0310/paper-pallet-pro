@@ -54,54 +54,57 @@ function PrintBatchPage() {
 
   const LabelCard = ({ pallet }: { pallet: (typeof pallets)[number] }) => (
     <Card className="rounded-2xl border-2 border-foreground print-label break-inside-avoid">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between gap-4 pb-3 border-b-2 border-foreground">
-          <div className="flex-1">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Pallet Label</p>
-            <h2 className="text-3xl font-bold mt-1 font-mono">{pallet.palletId}</h2>
-            <div className="mt-1 text-xs font-mono text-muted-foreground">{`PLT:${pallet.palletId}`}</div>
-          </div>
-          <QrCode value={`PLT:${pallet.palletId}`} className="h-28 w-28 shrink-0" />
+      <CardContent className="p-5">
+        {/***** Header: palletId *****/}
+        <div className="text-center mb-3">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Pallet Label</p>
+          <h2 className="text-2xl font-black font-mono tracking-tight">{pallet.palletId}</h2>
         </div>
-        <div className="grid grid-cols-2 gap-y-3 gap-x-6 mt-4 text-sm">
+
+        {/***** QR: centered, large *****/}
+        <div className="flex justify-center mb-3">
+          <QrCode value={`PLT:${pallet.palletId}`} className="w-96 h-96" />
+        </div>
+
+        {/***** Info grid *****/}
+        <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm border-t-2 border-foreground pt-3">
           <div className="col-span-2">
-            <div className="text-xs text-muted-foreground uppercase">Material / SKU</div>
-            <div className="font-semibold">{pallet.skuCode} — {pallet.skuName}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Material / SKU</div>
+            <div className="font-bold text-base">{pallet.skuCode} — {pallet.skuName}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">Batch</div>
-            <div className="font-semibold font-mono">{pallet.batchNo}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Batch</div>
+            <div className="font-bold font-mono">{pallet.batchNo}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">Bin</div>
-            <div className="font-semibold">{pallet.currentLocation ?? "—"}</div>
-            <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === pallet.currentLocation) ?? null)}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Bin</div>
+            <div className="font-bold">{pallet.currentLocation ?? "—"}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">Quantity</div>
-            <div className="text-xl font-bold">{pallet.qty} {pallet.uom}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Quantity</div>
+            <div className="font-bold text-lg">{pallet.qty} {pallet.uom}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">Weight</div>
-            <div className="text-xl font-bold">{pallet.weight} kg</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Weight</div>
+            <div className="font-bold text-lg">{pallet.weight} kg</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">MFG Date</div>
-            <div className="font-semibold">{pallet.mfgDate || "—"}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">MFG Date</div>
+            <div className="font-bold">{pallet.mfgDate || "—"}</div>
           </div>
           <div>
-            <div className="text-xs text-muted-foreground uppercase">EXP Date</div>
-            <div className="font-semibold">{pallet.expDate || "—"}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide">EXP Date</div>
+            <div className="font-bold">{pallet.expDate || "—"}</div>
           </div>
           {pallet.referenceDocumentNo && (
             <div className="col-span-2">
-              <div className="text-xs text-muted-foreground uppercase">Ref Doc No</div>
-              <div className="font-semibold">{pallet.referenceDocumentNo}</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Ref Doc No</div>
+              <div className="font-bold">{pallet.referenceDocumentNo}</div>
             </div>
           )}
-          <div className="col-span-2 pt-2 border-t flex justify-between items-center">
+          <div className="col-span-2 flex justify-between items-center pt-2 border-t">
             <PalletStatusBadge status={pallet.status} />
-            <div className="text-xs text-muted-foreground">{pallet.createdAt?.slice(0, 16).replace("T", " ")}</div>
+            <div className="text-[10px] text-muted-foreground">{pallet.createdAt?.slice(0, 16).replace("T", " ")}</div>
           </div>
         </div>
       </CardContent>

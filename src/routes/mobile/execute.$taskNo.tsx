@@ -132,23 +132,25 @@ function MobileExecuteTask() {
       return;
     }
 
-    // ===== PICK: location scan optional, nhưng sai thì không confirm =====
+    // ===== PICK: bắt buộc scan Actual Location (verify pallet đã lấy đúng chỗ) =====
     if (taskType === "PICK") {
-      if (locationInput && matchedLine.palletId) {
-        const pallet = pallets.find((p) => p.palletId?.toUpperCase() === palletId.toUpperCase());
-        if (pallet && pallet.currentLocation) {
-          const normalizedLoc = normalizeScanCode(locationInput);
-          const actualLoc = normalizedLoc.code;
-          if (actualLoc !== pallet.currentLocation) {
-            setWarning(`⚠️ Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation})`);
-            return;
-          }
-        }
+      if (!locationInput) {
+        toast.error("Vui lòng scan/nhập Actual Location (vị trí lấy pallet thực tế) trước khi confirm");
+        return;
       }
 
-      // Không scan location hoặc location đúng → confirm
+      const pallet = pallets.find((p) => p.palletId?.toUpperCase() === palletId.toUpperCase());
+      const normalizedLoc = normalizeScanCode(locationInput);
+      const actualLoc = normalizedLoc.code;
+
+      if (pallet && pallet.currentLocation && actualLoc !== pallet.currentLocation) {
+        setWarning(`⚠️ Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation})`);
+        return;
+      }
+
+      // Location đúng → confirm
       try {
-        confirmTaskLine(matchedLine.id, { allowOpenTask: true });
+        confirmTaskLine(matchedLine.id, { allowOpenTask: true, actualLocation: actualLoc });
         setPalletInput("");
         setLocationInput("");
         setWarning(null);

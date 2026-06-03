@@ -5,6 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouterGenerator } from "@tanstack/router-plugin/vite";
 
 export default defineConfig({
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
   plugins: [
     tailwindcss(),
     react(),

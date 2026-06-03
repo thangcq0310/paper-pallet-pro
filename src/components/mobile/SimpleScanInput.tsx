@@ -53,8 +53,9 @@ export function SimpleScanInput({ placeholder = "Quét mã...", onScan, disabled
       await scannerRef.current.start(
         { facingMode: "environment" },
         {
-          fps: 10,
-          qrbox: { width: 300, height: 300 },
+          fps: 20,
+          qrbox: { width: 220, height: 220 },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
           onScan(decodedText);

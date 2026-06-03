@@ -552,11 +552,11 @@ function InboundPalletizePutawayPage() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => openPrintLabels(generatedPalletIds)}>
                   <Printer className="h-4 w-4 mr-1" />
-                  Print All Pallet Labels ({generatedPalletIds.length})
+                  Print All ({generatedPalletIds.length})
                 </Button>
                 <Button variant="outline" onClick={() => openPrintLabels(selectedPalletIds)} disabled={selectedPalletIds.length === 0}>
                   <Printer className="h-4 w-4 mr-1" />
-                  Print Selected Labels ({selectedPalletIds.length})
+                  Print Selected ({selectedPalletIds.length})
                 </Button>
               </div>
 
@@ -595,13 +595,15 @@ function InboundPalletizePutawayPage() {
                             <div>{p.currentLocation ?? "—"}</div>
                             <div className="text-[11px] text-muted-foreground">{formatLocationPath(locations.find((l) => l.locationCode === p.currentLocation) ?? null)}</div>
                           </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button size="sm" variant="outline" onClick={() => openPrintLabels([p.palletId])}>
-                              Print Label
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => openCancelDialog(p.palletId)} disabled={p.status !== "Pending Putaway"}>
-                              Cancel Unused Pallet
-                            </Button>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button size="sm" variant="outline" onClick={() => openPrintLabels([p.palletId])}>
+                                <Printer className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => openCancelDialog(p.palletId)} disabled={p.status !== "Pending Putaway"}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -880,7 +882,6 @@ function InboundPalletizePutawayPage() {
                   <TableHead>taskNo</TableHead>
                   <TableHead>status</TableHead>
                   <TableHead className="text-right">totalLines</TableHead>
-                  <TableHead className="text-right">actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -889,15 +890,10 @@ function InboundPalletizePutawayPage() {
                     <TableCell className="font-mono text-xs">{createdTask.taskNo}</TableCell>
                     <TableCell>{createdTask.status}</TableCell>
                     <TableCell className="text-right font-mono">{createdTaskLines.length}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button size="sm" variant="outline" onClick={() => openPrintTask(createdTask.taskNo)} disabled={createdTask.status === "Cancelled" || createdTask.status === "Confirmed"}>
-                        Print
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Chưa có PUTAWAY task</TableCell>
+                    <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">Chưa có PUTAWAY task</TableCell>
                   </TableRow>
                 )}
               </TableBody>
