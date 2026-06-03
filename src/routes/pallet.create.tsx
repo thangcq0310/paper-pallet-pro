@@ -186,11 +186,7 @@ function InboundPalletizePutawayPage() {
 
   const canCreatePutaway =
     generatedPalletIds.length > 0 &&
-    targetBins.length > 0 &&
-    selectedPalletIdsOrdered.length > 0 &&
-    allocationSummary.totalAssigned === allocationSummary.totalSelected &&
-    allocationSummary.totalAvailable >= allocationSummary.totalSelected &&
-    !allocationSummary.perBinOver;
+    selectedPalletIdsOrdered.length > 0;
 
   const doCalculate = () => {
     try {
@@ -291,9 +287,10 @@ function InboundPalletizePutawayPage() {
 
   const doCreatePutawayTasks = () => {
     try {
-      const asg: PutawayAssignment[] = selectedPalletIdsOrdered.map((palletId) => ({
+      // Create tasks without pre-assigning bins - workers scan actual bin on the floor
+      const asg:[] = selectedPalletIdsOrdered.map((palletId) => ({
         palletId,
-        targetLocation: assignments[palletId],
+        targetLocation: "", // filled on floor during putaway
       }));
       const created = createPutawayTaskWithLines({ inboundNo: form.inboundNo, assignments: asg });
       setCreatedTaskNo(created.task.taskNo);
@@ -340,12 +337,6 @@ function InboundPalletizePutawayPage() {
       <PageHeader
         title="Inbound Palletize & Putaway"
         description="Nhập thông tin → tính pallet → generate pallet ID → in nhãn → tạo PUTAWAY task (không auto confirm)"
-        action={
-          <Button onClick={doGenerateIds} disabled={!canGenerateIds || generating}>
-            <Layers className="h-4 w-4 mr-1" />
-            {generating ? "Đang tạo..." : `Generate Pallet IDs (${previewRows.length})`}
-          </Button>
-        }
       />
 
       <Card className="rounded-2xl">
@@ -486,6 +477,15 @@ function InboundPalletizePutawayPage() {
                 </div>
               )}
 
+              {previewRows.length > 0 && (
+                <div className="flex justify-end">
+                  <Button onClick={doGenerateIds} disabled={!canGenerateIds || generating || overLimit}>
+                    <Layers className="h-4 w-4 mr-1" />
+                    {generating ? "Đang tạo..." : `Generate Pallet IDs (${previewRows.length})`}
+                  </Button>
+                </div>
+              )}
+
               {previewRows.length > 0 ? (
                 <div className="overflow-x-auto border rounded-xl">
                   <Table>
@@ -623,231 +623,17 @@ function InboundPalletizePutawayPage() {
 
       <Card className="rounded-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Section 3 — Target Bin Allocation</CardTitle>
-        </CardHeader>
-        <CardContent className="p-5 pt-0 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <Label>Kho</Label>
-                  <Select
-                    value={warehouseFilter}
-                    onValueChange={(v) => {
-                      setWarehouseFilter(v);
-                      setZoneFilter("");
-                      setBinPicker("");
-                    }}
-                    disabled={generatedPalletIds.length === 0}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Chọn kho" /></SelectTrigger>
-                    <SelectContent>
-                      {warehouses.map((w) => (
-                        <SelectItem key={w} value={w}>{w}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Zone</Label>
-                  <Select
-                    value={zoneFilter}
-                    onValueChange={(v) => {
-                      setZoneFilter(v);
-                      setBinPicker("");
-                    }}
-                    disabled={!warehouseFilter || generatedPalletIds.length === 0}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Chọn zone" /></SelectTrigger>
-                    <SelectContent>
-                      {zonesForWarehouse.map((z) => (
-                        <SelectItem key={z} value={z}>{z}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Target Bin</Label>
-                  <Select
-                    value={binPicker}
-                    onValueChange={setBinPicker}
-                    disabled={generatedPalletIds.length === 0 || !warehouseFilter || !zoneFilter}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Chọn bin" /></SelectTrigger>
-                    <SelectContent>
-                      {binsForPicker.map((l) => (
-                        <SelectItem key={l.id} value={l.locationCode}>
-                          {l.locationCode} ({l.currentPalletCount}/{l.capacityPallet})
-                        </SelectItem>
-                      ))}
-                      {binsForPicker.length === 0 && (
-                        <SelectItem value="__empty" disabled>
-                          Không có bin phù hợp
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (!binPicker) return;
-                  setTargetBins((prev) => [...prev, binPicker]);
-                  setBinPicker("");
-                }}
-                disabled={!binPicker}
-              >
-                Add Target Bin
-              </Button>
-              <Button variant="outline" onClick={doAutoAllocate} disabled={selectedPalletIdsOrdered.length === 0 || targetBins.length === 0}>
-                Auto Allocate
-              </Button>
-              <Button variant="outline" onClick={doClearAllocation} disabled={Object.keys(assignments).length === 0}>
-                Clear Allocation
-              </Button>
-              <Button onClick={doCreatePutawayTasks} disabled={!canCreatePutaway}>
-                Create PUTAWAY Tasks ({selectedPalletIdsOrdered.length})
-              </Button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Target Bin</TableHead>
-                  <TableHead className="text-right">Capacity</TableHead>
-                  <TableHead className="text-right">Current</TableHead>
-                  <TableHead className="text-right">Open Putaway Tasks</TableHead>
-                  <TableHead className="text-right">Available</TableHead>
-                  <TableHead className="text-right">Assigned</TableHead>
-                  <TableHead className="text-right">Remaining</TableHead>
-                  <TableHead className="text-right">Remove</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {binCaps.map((c) => {
-                  const assigned = assignedCountByBin.get(c.location.locationCode) ?? 0;
-                  const remaining = c.availableCapacity - assigned;
-                  const warn = remaining < 0;
-                  return (
-                    <TableRow key={c.location.locationCode} className={warn ? "bg-destructive/5" : ""}>
-                      <TableCell className="font-mono text-xs">{c.location.locationCode}</TableCell>
-                      <TableCell className="text-right font-mono">{c.location.capacityPallet}</TableCell>
-                      <TableCell className="text-right font-mono">{c.location.currentPalletCount}</TableCell>
-                      <TableCell className="text-right font-mono">{c.openPutawayTaskCount}</TableCell>
-                      <TableCell className="text-right font-mono">{c.availableCapacity}</TableCell>
-                      <TableCell className="text-right font-mono">{assigned}</TableCell>
-                      <TableCell className={`text-right font-mono ${warn ? "text-destructive" : ""}`}>{remaining}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const loc = c.location.locationCode;
-                            setTargetBins((prev) => prev.filter((x) => x !== loc));
-                            setAssignments((prev) => {
-                              const next: Record<string, string> = {};
-                              for (const [palletId, b] of Object.entries(prev)) {
-                                if (b === loc) continue;
-                                next[palletId] = b;
-                              }
-                              return next;
-                            });
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {binCaps.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                      Chưa chọn Target Bin nào
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pallet ID</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Batch</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead>Target Bin</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedPalletIdsOrdered.map((palletId) => {
-                  const p = generatedPallets.find((x) => x.palletId === palletId);
-                  if (!p) return null;
-                  const assignedBin = assignments[palletId] ?? "";
-                  return (
-                    <TableRow key={palletId}>
-                      <TableCell className="font-mono text-xs">{p.palletId}</TableCell>
-                      <TableCell className="text-xs">{p.skuCode}</TableCell>
-                      <TableCell className="font-mono text-xs">{p.batchNo}</TableCell>
-                      <TableCell className="text-right font-mono">{p.qty}</TableCell>
-                      <TableCell>
-                        <Select
-                          value={assignedBin}
-                          onValueChange={(v) => setAssignments((prev) => ({ ...prev, [palletId]: v }))}
-                          disabled={targetBins.length === 0}
-                        >
-                          <SelectTrigger className="w-44"><SelectValue placeholder="Chọn bin" /></SelectTrigger>
-                          <SelectContent>
-                            {targetBins.map((b) => (
-                              <SelectItem key={b} value={b}>{b}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {selectedPalletIdsOrdered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                      Chưa chọn pallet
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {allocationSummary.totalAvailable < allocationSummary.totalSelected && (
-            <div className="flex items-center gap-2 text-sm text-destructive p-3 rounded-lg bg-destructive/10">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              Tổng available capacity ({allocationSummary.totalAvailable}) không đủ cho pallet đã chọn ({allocationSummary.totalSelected}).
-            </div>
-          )}
-          {allocationSummary.perBinOver && (
-            <div className="flex items-center gap-2 text-sm text-destructive p-3 rounded-lg bg-destructive/10">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              Có bin bị assign vượt available capacity.
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2">
           <CardTitle className="text-base">Section 4 — Created Putaway Tasks</CardTitle>
         </CardHeader>
         <CardContent className="p-5 pt-0 space-y-3">
           <div className="flex gap-2">
+            <Button
+              onClick={doCreatePutawayTasks}
+              disabled={!canCreatePutaway}
+            >
+              <Layers className="h-4 w-4 mr-1" />
+              Create PUTAWAY Tasks ({selectedPalletIdsOrdered.length})
+            </Button>
             <Button
               variant="outline"
               onClick={() => {
