@@ -42,7 +42,7 @@ export function QrCode({
       {loading ? (
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       ) : svg ? (
-        <div dangerouslySetInnerHTML={{ __html: svg }} className="w-full h-full" />
+        <div dangerouslySetInnerHTML={{ __html: svg }} className="w-full h-full [&>svg]:w-full [&>svg]:h-full" />
       ) : null}
     </div>
   );

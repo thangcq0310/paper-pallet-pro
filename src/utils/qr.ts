@@ -5,7 +5,6 @@ export async function buildQrSvg(value: string, options?: { margin?: number }): 
   return QRCode.toString(value, {
     type: "svg",
     margin: margin,
-    width: 100,
     color: {
       dark: "#000000",
       light: "#ffffff",
