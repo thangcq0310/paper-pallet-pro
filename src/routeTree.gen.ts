@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
-import { Route as PutawayRouteImport } from './routes/putaway'
 import { Route as OutboundRouteImport } from './routes/outbound'
 import { Route as MovementsRouteImport } from './routes/movements'
 import { Route as MoveRouteImport } from './routes/move'
@@ -36,11 +35,6 @@ import { Route as MasterLocationPrintRouteImport } from './routes/master.locatio
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PutawayRoute = PutawayRouteImport.update({
-  id: '/putaway',
-  path: '/putaway',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OutboundRoute = OutboundRouteImport.update({
@@ -157,7 +151,6 @@ export interface FileRoutesByFullPath {
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
-  '/putaway': typeof PutawayRoute
   '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
@@ -181,7 +174,6 @@ export interface FileRoutesByTo {
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
-  '/putaway': typeof PutawayRoute
   '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
@@ -207,7 +199,6 @@ export interface FileRoutesById {
   '/move': typeof MoveRoute
   '/movements': typeof MovementsRoute
   '/outbound': typeof OutboundRoute
-  '/putaway': typeof PutawayRoute
   '/tasks': typeof TasksRouteWithChildren
   '/master/batch': typeof MasterBatchRoute
   '/master/location': typeof MasterLocationRouteWithChildren
@@ -234,7 +225,6 @@ export interface FileRouteTypes {
     | '/move'
     | '/movements'
     | '/outbound'
-    | '/putaway'
     | '/tasks'
     | '/master/batch'
     | '/master/location'
@@ -258,7 +248,6 @@ export interface FileRouteTypes {
     | '/move'
     | '/movements'
     | '/outbound'
-    | '/putaway'
     | '/tasks'
     | '/master/batch'
     | '/master/location'
@@ -283,7 +272,6 @@ export interface FileRouteTypes {
     | '/move'
     | '/movements'
     | '/outbound'
-    | '/putaway'
     | '/tasks'
     | '/master/batch'
     | '/master/location'
@@ -309,7 +297,6 @@ export interface RootRouteChildren {
   MoveRoute: typeof MoveRoute
   MovementsRoute: typeof MovementsRoute
   OutboundRoute: typeof OutboundRoute
-  PutawayRoute: typeof PutawayRoute
   TasksRoute: typeof TasksRouteWithChildren
   MasterBatchRoute: typeof MasterBatchRoute
   MasterLocationRoute: typeof MasterLocationRouteWithChildren
@@ -326,13 +313,6 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/putaway': {
-      id: '/putaway'
-      path: '/putaway'
-      fullPath: '/putaway'
-      preLoaderRoute: typeof PutawayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/outbound': {
@@ -546,7 +526,6 @@ const rootRouteChildren: RootRouteChildren = {
   MoveRoute: MoveRoute,
   MovementsRoute: MovementsRoute,
   OutboundRoute: OutboundRoute,
-  PutawayRoute: PutawayRoute,
   TasksRoute: TasksRouteWithChildren,
   MasterBatchRoute: MasterBatchRoute,
   MasterLocationRoute: MasterLocationRouteWithChildren,

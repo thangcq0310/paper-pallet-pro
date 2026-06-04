@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Package, Tags, MapPin, Tag,
-  Boxes, Move, ArrowUpFromLine, ArrowDownToLine, ListChecks, History, Bell,
+  Boxes, Move, ArrowUpFromLine, ListChecks, History, Bell,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -31,7 +31,6 @@ const groups = [
     label: "Tồn kho & Vận hành",
     items: [
       { title: "Inventory", url: "/inventory", icon: Boxes },
-      { title: "Putaway", url: "/putaway", icon: ArrowDownToLine },
       { title: "Move Location", url: "/move", icon: Move },
       { title: "Outbound", url: "/outbound", icon: ArrowUpFromLine },
       { title: "Tasks", url: "/tasks", icon: ListChecks },
