@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
-import { PalletStatusBadge } from "@/components/StatusBadges";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -27,7 +26,6 @@ function InventoryPage() {
   const [search, setSearch] = useState("");
   const [skuFilter, setSkuFilter] = useState("all");
   const [locFilter, setLocFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [includeShipped, setIncludeShipped] = useState(false);
   const [includeCancelled, setIncludeCancelled] = useState(false);
   const locationPathByCode = Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)]));
@@ -37,7 +35,6 @@ function InventoryPage() {
     (includeCancelled || p.status !== "Cancelled") &&
     (skuFilter === "all" || p.skuCode === skuFilter) &&
     (locFilter === "all" || p.currentLocation === locFilter || (p.status === "Shipped" && p.lastLocation === locFilter)) &&
-    (statusFilter === "all" || p.status === statusFilter) &&
     (search.trim() === "" ||
       p.palletId.toLowerCase().includes(search.toLowerCase()) ||
       p.skuCode.toLowerCase().includes(search.toLowerCase()) ||
@@ -136,13 +133,6 @@ function InventoryPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                {["Pending Putaway", "In Stock", "Staged", "Shipped", "Cancelled"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Switch id="include-shipped" checked={includeShipped} onCheckedChange={setIncludeShipped} />
@@ -164,13 +154,11 @@ function InventoryPage() {
                 <TableHead>UOM</TableHead>
                 <TableHead className="text-right">Weight</TableHead>
                 <TableHead>Bins</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>EXP (earliest)</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {grouped.map((g) => {
                   const uniqueLocations = Array.from(new Set(g.pallets.map((p) => p.currentLocation || p.lastLocation || "N/A"))).sort();
-                  const statusLabel = g.statuses.size === 1 ? Array.from(g.statuses)[0] : "Mixed";
                   return (
                     <TableRow key={`${g.skuCode}__${g.batchNo}`}>
                       <TableCell>
@@ -190,16 +178,11 @@ function InventoryPage() {
                           {uniqueLocations.length > 3 && <span className="text-muted-foreground">+{uniqueLocations.length - 3}</span>}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {statusLabel === "Mixed"
-                          ? <span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary">Mixed</span>
-                          : <PalletStatusBadge status={statusLabel as any} />}
-                      </TableCell>
                       <TableCell className="text-xs">{g.expDate || "-"}</TableCell>
                     </TableRow>
                   );
                 })}
-                {grouped.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Không có pallet</TableCell></TableRow>}
+                {grouped.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Không có pallet</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
