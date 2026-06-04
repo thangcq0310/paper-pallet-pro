@@ -284,6 +284,15 @@ export function createPickTaskWithLines(input: {
   return { task, lines };
 }
 
+export function createPickTaskWithLinesMultiSku(input: {
+  outboundNo: string;
+  palletIds: string[];
+  destination: string;
+  note?: string;
+}): { task: WarehouseTask; lines: WarehouseTaskLine[] } {
+  return createPickTaskWithLines(input);
+}
+
 export function createSingleLineTask(input: {
   taskType: TaskType;
   palletId: string;

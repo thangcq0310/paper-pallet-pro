@@ -2,20 +2,33 @@ import { getState, setState } from "./store";
 import { generateOutboundNo, uid } from "@/utils/idGenerator";
 import type { OutboundDocument } from "@/types";
 
+export interface OutboundBatchEntry {
+  skuCode: string;
+  batchNo: string;
+  requiredQty: number;
+}
+
 export function listOutbounds() { return getState().outbounds; }
 
-export function createOutbound(input: { outboundNo?: string; destination: string; skuCode: string; batchNo?: string; requiredQty: number; selectedPalletIds: string[] }): OutboundDocument {
+export function createOutbound(input: {
+  outboundNo?: string;
+  destination: string;
+  batches: OutboundBatchEntry[];
+  selectedPalletIds: string[];
+}): OutboundDocument {
   const outboundNo = generateOutboundNo(getState().outbounds.map((o) => o.outboundNo));
   const resolvedNo = input.outboundNo?.trim() || outboundNo;
   if (getState().outbounds.some((o) => o.outboundNo === resolvedNo)) throw new Error(`Outbound No ${resolvedNo} đã tồn tại`);
+  if (!input.batches.length) throw new Error("Thiếu batch để tạo outbound");
+  if (!input.destination.trim()) throw new Error("Thiếu destination");
   const now = new Date().toISOString();
   const doc: OutboundDocument = {
     id: uid(),
     outboundNo: resolvedNo,
     destination: input.destination,
-    skuCode: input.skuCode,
-    batchNo: input.batchNo?.trim() || undefined,
-    requiredQty: input.requiredQty,
+    skuCode: input.batches.map((b) => b.skuCode).join(", "),
+    batchNo: input.batches.map((b) => b.batchNo).join(", "),
+    requiredQty: input.batches.reduce((sum, b) => sum + b.requiredQty, 0),
     selectedPalletIds: input.selectedPalletIds,
     status: "Draft",
     createdAt: now,

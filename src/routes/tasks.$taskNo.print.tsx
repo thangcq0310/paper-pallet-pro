@@ -16,9 +16,9 @@ function TaskPrintPage() {
   const taskLines = useStore((s) => s.taskLines);
   const outbounds = useStore((s) => s.outbounds);
   const locations = useStore((s) => s.locations);
-  const task = tasks.find((t) => t.taskNo === taskNo);
-  const lines = taskLines.filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
-  const outboundDoc = task?.outboundNo ? outbounds.find((o) => o.outboundNo === task.outboundNo) : undefined;
+  const task = (Array.isArray(tasks) ? tasks : []).find((t) => t.taskNo === taskNo);
+  const lines = (Array.isArray(taskLines) ? taskLines : []).filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
+  const outboundDoc = task?.outboundNo ? (Array.isArray(outbounds) ? outbounds : []).find((o) => o.outboundNo === task.outboundNo) : undefined;
   const autoPrintedRef = useRef(false);
 
   const triggerPrint = () => {
@@ -75,14 +75,14 @@ function TaskPrintPage() {
   const plannedLocationLabel = (line: typeof lines[number]) => {
     if (task.taskType === "PICK") return outboundDoc?.destination ?? "External";
     if (line.toLocation) {
-      return formatLocationPath(locations.find((loc) => loc.locationCode === line.toLocation) ?? null);
+      return formatLocationPath((Array.isArray(locations) ? locations : []).find((loc) => loc.locationCode === line.toLocation) ?? null);
     }
     return task.taskType === "PUTAWAY" ? "Scan actual bin on floor" : "—";
   };
 
   const actualLocationLabel = (line: typeof lines[number]) => {
     if (line.actualLocation) {
-      return formatLocationPath(locations.find((loc) => loc.locationCode === line.actualLocation) ?? null);
+      return formatLocationPath((Array.isArray(locations) ? locations : []).find((loc) => loc.locationCode === line.actualLocation) ?? null);
     }
     return task.taskType === "PICK" ? "—" : "________________";
   };
@@ -150,7 +150,7 @@ function TaskPrintPage() {
                       <td className="p-2">{l.skuCode}</td>
                       <td className="p-2 font-mono">{l.batchNo}</td>
                       <td className="p-2 text-right font-mono">{l.qty} {l.uom}</td>
-                      <td className="p-2 font-mono">{formatLocationPath(locations.find((loc) => loc.locationCode === l.fromLocation) ?? null)}</td>
+                      <td className="p-2 font-mono">{formatLocationPath((Array.isArray(locations) ? locations : []).find((loc) => loc.locationCode === l.fromLocation) ?? null)}</td>
                       <td className="p-2">{plannedLocationLabel(l)}</td>
                       <td className="p-2">
                         {l.actualLocation ? (

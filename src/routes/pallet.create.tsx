@@ -640,7 +640,7 @@ function InboundPalletizePutawayPage() {
     setCancelDialogOpen(true);
   };
 
-  const doCancelUnused = () => {
+const doCancelUnused = () => {
     try {
       cancelUnusedPallet(cancelPalletId, cancelReason);
       setSelectedPallet((prev) => ({ ...prev, [cancelPalletId]: false }));
@@ -655,6 +655,22 @@ function InboundPalletizePutawayPage() {
       toast.error(e.message);
     }
   };
+
+  // Get all open PUTAWAY tasks for display
+  const openPutawayTasks = useMemo(
+    () => tasks.filter((t) => t.taskType === "PUTAWAY" && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed")),
+    [tasks],
+  );
+
+  const putawayLineMap = useMemo(() => {
+    const map = new Map<string, typeof taskLines>();
+    for (const l of taskLines) {
+      const arr = map.get(l.taskId) ?? [];
+      arr.push(l);
+      map.set(l.taskId, arr);
+    }
+    return map;
+  }, [taskLines]);
 
   return (
     <div className="space-y-6">
@@ -973,7 +989,7 @@ function InboundPalletizePutawayPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+<Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cancel Unused Pallet</DialogTitle>
@@ -992,7 +1008,7 @@ function InboundPalletizePutawayPage() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+</Dialog>
     </div>
   );
 }
