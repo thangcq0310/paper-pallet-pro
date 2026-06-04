@@ -33,7 +33,7 @@ const groups = [
       { title: "Inventory", url: "/inventory", icon: Boxes },
       { title: "Move Location", url: "/move", icon: Move },
       { title: "Outbound", url: "/outbound", icon: ArrowUpFromLine },
-      { title: "Tasks", url: "/tasks", icon: ListChecks },
+      { title: "Warehouse Tasklist", url: "/tasks", icon: ListChecks },
     ],
   },
   {
