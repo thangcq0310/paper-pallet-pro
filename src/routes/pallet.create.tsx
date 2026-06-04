@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/PageHeader";
+import { TaskListCard } from "@/components/TaskListCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -922,32 +923,22 @@ const doCancelUnused = () => {
             </Button>
           </div>
 
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã task</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Tổng dòng</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {createdTask ? (
-                  <TableRow key={createdTask.id}>
-                    <TableCell className="font-mono text-xs">{createdTask.taskNo}</TableCell>
-                    <TableCell>{createdTask.status}</TableCell>
-                    <TableCell className="text-right font-mono">{createdTaskLines.length}</TableCell>
-                  </TableRow>
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
-                      Chưa có PUTAWAY task
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <TaskListCard
+            title="Danh sách PUTAWAY tasks đang mở"
+            tasks={openPutawayTasks}
+            lineMap={putawayLineMap}
+            currentTaskNo={createdTaskNo || undefined}
+            emptyMessage="Không có PUTAWAY task đang mở"
+            onPrintTask={openPrintTask}
+            onCancelTask={(task) => {
+              try {
+                cancelTask(task.id);
+                toast.success("Cancelled task");
+              } catch (e: any) {
+                toast.error(e.message);
+              }
+            }}
+          />
 
           {createdTask && (
             <div className="overflow-x-auto border rounded-xl">

@@ -1,20 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
+import { cancelTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { formatLocationPath } from "@/utils/location";
+import { TaskListCard } from "@/components/TaskListCard";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/movements")({ component: MovementsPage });
 
 const TYPES = ["LABEL_CREATED", "LABEL_ATTACHED", "LABEL_CANCELLED", "IN", "PUT", "MOVE", "PICK", "OUT", "ADJ"];
 
 function MovementsPage() {
+  const router = useRouter();
   const movements = useStore((s) => s.movements);
   const locations = useStore((s) => s.locations);
+  const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
   const [type, setType] = useState("all");
   const [q, setQ] = useState("");
 
@@ -22,6 +28,22 @@ function MovementsPage() {
     (type === "all" || m.movementType === type) &&
     (q === "" || m.palletId.toLowerCase().includes(q.toLowerCase()) || m.skuCode.toLowerCase().includes(q.toLowerCase()) || m.batchNo.toLowerCase().includes(q.toLowerCase())),
   );
+
+  const allTasks = useMemo(() => tasks, [tasks]);
+
+  const taskLineMap = useMemo(() => {
+    const map = new Map<string, typeof taskLines>();
+    for (const line of taskLines) {
+      const arr = map.get(line.taskId) ?? [];
+      arr.push(line);
+      map.set(line.taskId, arr);
+    }
+    return map;
+  }, [taskLines]);
+
+  const openPrintTask = (taskNo: string) => {
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } });
+  };
 
   return (
     <div>
@@ -65,6 +87,22 @@ function MovementsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <TaskListCard
+        title="All Tasks"
+        tasks={allTasks}
+        lineMap={taskLineMap}
+        emptyMessage="Không có task"
+        onPrintTask={openPrintTask}
+        onCancelTask={(task) => {
+          try {
+            cancelTask(task.id);
+            toast.success("Cancelled task");
+          } catch (e: any) {
+            toast.error(e.message);
+          }
+        }}
+      />
     </div>
   );
 }

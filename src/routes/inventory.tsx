@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
+import { cancelTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,13 +12,18 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { formatLocationPath } from "@/utils/location";
+import { TaskListCard } from "@/components/TaskListCard";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/inventory")({ component: InventoryPage });
 
 function InventoryPage() {
+  const router = useRouter();
   const pallets = useStore((s) => s.pallets);
   const skus = useStore((s) => s.skus);
   const locations = useStore((s) => s.locations);
+  const tasks = useStore((s) => s.tasks);
+  const taskLines = useStore((s) => s.taskLines);
   const [search, setSearch] = useState("");
   const [skuFilter, setSkuFilter] = useState("all");
   const [locFilter, setLocFilter] = useState("all");
@@ -87,6 +93,25 @@ function InventoryPage() {
     (acc, g) => ({ pallets: acc.pallets + g.pallets.length, qty: acc.qty + g.totalQty, weight: acc.weight + g.totalWeight }),
     { pallets: 0, qty: 0, weight: 0 },
   );
+
+  const openTasks = useMemo(
+    () => tasks.filter((t) => t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed"),
+    [tasks],
+  );
+
+  const taskLineMap = useMemo(() => {
+    const map = new Map<string, typeof taskLines>();
+    for (const line of taskLines) {
+      const arr = map.get(line.taskId) ?? [];
+      arr.push(line);
+      map.set(line.taskId, arr);
+    }
+    return map;
+  }, [taskLines]);
+
+  const openPrintTask = (taskNo: string) => {
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } });
+  };
 
   return (
     <div>
@@ -180,6 +205,22 @@ function InventoryPage() {
           </div>
         </CardContent>
       </Card>
+
+      <TaskListCard
+        title="Open Tasks"
+        tasks={openTasks}
+        lineMap={taskLineMap}
+        emptyMessage="Không có open task"
+        onPrintTask={openPrintTask}
+        onCancelTask={(task) => {
+          try {
+            cancelTask(task.id);
+            toast.success("Cancelled task");
+          } catch (e: any) {
+            toast.error(e.message);
+          }
+        }}
+      />
     </div>
   );
 }
