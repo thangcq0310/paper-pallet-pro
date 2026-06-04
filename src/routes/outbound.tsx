@@ -298,7 +298,7 @@ function OutboundPage() {
           taskNo={createdTask.taskNo}
           status={createdTask.status}
           taskType={createdTask.taskType}
-          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo } })}
+          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo }, search: { autoprint: true } })}
         />
       )}
 
@@ -588,7 +588,7 @@ function OutboundPage() {
           lineMap={lineMap}
           currentTaskNo={lastTaskNo}
           emptyMessage="Chưa có PICK task theo outbound hiện tại"
-          onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } })}
+          onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoprint: true } })}
           onCancelTask={(task) => {
             try {
               cancelTask(task.id);

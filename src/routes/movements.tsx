@@ -42,7 +42,7 @@ function MovementsPage() {
   }, [taskLines]);
 
   const openPrintTask = (taskNo: string) => {
-    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } });
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoprint: true } });
   };
 
   return (

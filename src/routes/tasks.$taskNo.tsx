@@ -62,7 +62,7 @@ function TaskDetailPage() {
           <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: task.taskNo } })}
+                      onClick={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: task.taskNo }, search: { autoprint: true } })}
                       disabled={task.status === "Cancelled" || task.status === "Confirmed"}
                     >
                       Print

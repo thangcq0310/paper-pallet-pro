@@ -9,10 +9,16 @@ import { formatLocationPath } from "@/utils/location";
 import { QrCode } from "@/components/qr/QrCode";
 import { Download } from "lucide-react";
 
-export const Route = createFileRoute("/tasks/$taskNo/print")({ component: TaskPrintPage });
+export const Route = createFileRoute("/tasks/$taskNo/print")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    autoprint: search.autoprint === true || search.autoprint === "true" || search.autoprint === "1",
+  }),
+  component: TaskPrintPage,
+});
 
 function TaskPrintPage() {
   const { taskNo } = Route.useParams();
+  const { autoprint } = Route.useSearch();
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const outbounds = useStore((s) => s.outbounds);
@@ -114,7 +120,7 @@ function TaskPrintPage() {
   };
 
   useEffect(() => {
-    if (!task || autoPrintedRef.current) return;
+    if (!task || !autoprint || autoPrintedRef.current) return;
     autoPrintedRef.current = true;
     const t = window.setTimeout(() => {
       try {
@@ -123,9 +129,9 @@ function TaskPrintPage() {
       } catch (e: any) {
         toast.error(e.message);
       }
-    }, 800); // Tăng lên 800ms để chờ QR Code gen xong
+    }, 800);
     return () => window.clearTimeout(t);
-  }, [task]);
+  }, [autoprint, task]);
 
   if (!task) {
     return (
