@@ -170,8 +170,8 @@ function load(): State {
         rawTaskLines: (parsed as any).taskLines,
         pallets,
       });
-      const plants = Array.isArray((parsed as any).plants) ? (parsed as Plant[]) : mockPlants;
-      const slocs = Array.isArray((parsed as any).slocs) ? (parsed as Sloc[]) : mockSlocs;
+      const plants = Array.isArray((parsed as any).plants) ? (parsed as any).plants as Plant[] : mockPlants;
+      const slocs = Array.isArray((parsed as any).slocs) ? (parsed as any).slocs as Sloc[] : mockSlocs;
       const locations = Array.isArray(parsed.locations)
         ? parsed.locations.map((loc, index) => normalizeLocation(loc, index))
         : mockLocations;
@@ -186,7 +186,7 @@ function load(): State {
         tasks,
         taskLines,
         outbounds: Array.isArray(parsed.outbounds) ? (parsed.outbounds as OutboundDocument[]) : mockOutbounds,
-        scanEvents: Array.isArray((parsed as any).scanEvents) ? (parsed as ScanEvent[]) : [],
+        scanEvents: Array.isArray((parsed as any).scanEvents) ? (parsed as any).scanEvents as ScanEvent[] : [],
       };
     }
   } catch {}

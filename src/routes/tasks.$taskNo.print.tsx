@@ -24,7 +24,7 @@ function TaskPrintPage() {
   const triggerPrint = () => {
     window.focus();
     window.requestAnimationFrame(() => {
-      window.setTimeout(() => window.print(), 0);
+      window.setTimeout(() => window.print(), 300);
     });
   };
 
@@ -48,7 +48,7 @@ function TaskPrintPage() {
       } catch (e: any) {
         toast.error(e.message);
       }
-    }, 120);
+    }, 800); // Tăng lên 800ms để chờ QR Code gen xong
     return () => window.clearTimeout(t);
   }, [task]);
 

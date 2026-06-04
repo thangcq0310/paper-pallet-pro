@@ -84,6 +84,7 @@ function MobileExecuteTask() {
     const normalized = normalizeScanCode(value);
     const locationCode = normalized.code;
     setLocationInput(locationCode);
+    setWarning(null);
   };
 
   const handleConfirm = () => {
@@ -109,8 +110,8 @@ function MobileExecuteTask() {
 
       const normalizedLoc = normalizeScanCode(locationInput);
       const actualLoc = normalizedLoc.code;
-      if (actualLoc !== matchedLine.toLocation) {
-        setWarning(`⚠️ Actual Location (${actualLoc}) khác Target Bin (${matchedLine.toLocation})`);
+      if (actualLoc !== matchedLine.toLocation && !warning) {
+        setWarning(`⚠️ Actual Location (${actualLoc}) khác Target Bin (${matchedLine.toLocation}). Nhấn Confirm lần nữa để Override.`);
         return;
       }
 
@@ -143,8 +144,8 @@ function MobileExecuteTask() {
       const normalizedLoc = normalizeScanCode(locationInput);
       const actualLoc = normalizedLoc.code;
 
-      if (pallet && pallet.currentLocation && actualLoc !== pallet.currentLocation) {
-        setWarning(`⚠️ Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation})`);
+      if (pallet && pallet.currentLocation && actualLoc !== pallet.currentLocation && !warning) {
+        setWarning(`⚠️ Location scan (${actualLoc}) khác Pallet current location (${pallet.currentLocation}). Nhấn Confirm lần nữa để Override.`);
         return;
       }
 
@@ -265,10 +266,10 @@ function MobileExecuteTask() {
               size="lg"
               className="w-full h-14 text-base"
               onClick={handleConfirm}
-              disabled={!!warning}
+              variant={warning ? "destructive" : "default"}
             >
               <CheckCircle className="h-5 w-5 mr-2" />
-              Confirm
+              {warning ? "Confirm Override" : "Confirm"}
             </Button>
           )}
 

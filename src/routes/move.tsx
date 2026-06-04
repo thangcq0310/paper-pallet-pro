@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/services/store";
 import { cancelTask, createMoveTaskWithLines } from "@/services/taskService";
 import { getAvailableBatchSummaryBySku, getAvailableSkuSummary, listAvailablePalletsBySkuBatch } from "@/services/taskQueryService";
-import { autoAllocatePalletsToBins, getMultiTargetBinCapacityByTaskType } from "@/services/taskAllocationService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader } from "@/components/PageHeader";
 import { CreatedTaskBanner } from "@/components/CreatedTaskBanner";
 import { SkuBatchSelectionSection } from "@/components/SkuBatchSelectionSection";
-import { PalletSelectionPanel } from "@/components/PalletSelectionPanel";
 import { TaskListCard } from "@/components/TaskListCard";
-import { WorkflowStepperCard } from "@/components/WorkflowStepperCard";
 import { formatLocationPath } from "@/utils/location";
 import { toast } from "sonner";
 
@@ -24,18 +21,19 @@ export const Route = createFileRoute("/move")({ component: MovePage });
 function MovePage() {
   const router = useRouter();
   const skus = useStore((s) => s.skus);
+  const slocs = useStore((s) => s.slocs);
+  const pallets = useStore((s) => s.pallets);
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const locations = useStore((s) => s.locations);
 
   const [skuCode, setSkuCode] = useState("");
   const [batchNo, setBatchNo] = useState("");
-
-  const [selectedPallet, setSelectedPallet] = useState<Record<string, boolean>>({});
-  const [targetBins, setTargetBins] = useState<string[]>([]);
-  const [binPicker, setBinPicker] = useState("");
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [lastTaskNo, setLastTaskNo] = useState("");
+  const [slocFilter, setSlocFilter] = useState("");
+  const [zoneFilter, setZoneFilter] = useState("");
+  const [binSearch, setBinSearch] = useState("");
 
   const availableBatchSummaries = useMemo(() => {
     if (!skuCode) return [];
@@ -43,78 +41,69 @@ function MovePage() {
   }, [skuCode, tasks, taskLines, locations]);
 
   const availableSkuSummaries = useMemo(() => getAvailableSkuSummary({ purpose: "MOVE" }), [tasks, taskLines, locations]);
+
   const availablePallets = useMemo(() => {
     if (!skuCode || !batchNo) return [];
     return listAvailablePalletsBySkuBatch({ skuCode, batchNo, purpose: "MOVE" });
   }, [skuCode, batchNo, tasks, taskLines, locations]);
-  const locationZoneByCode = useMemo(
-    () => Object.fromEntries(locations.map((l) => [l.locationCode, l.zone])),
-    [locations],
-  );
-  const locationPathByCode = useMemo(
-    () => Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)])),
-    [locations],
-  );
-  const daysToExpiry = (expDate?: string) => {
-    if (!expDate) return null;
-    const diff = new Date(expDate).getTime() - new Date().getTime();
-    if (!Number.isFinite(diff)) return null;
-    return Math.ceil(diff / (24 * 60 * 60 * 1000));
-  };
-  const selectedIds = useMemo(
-    () => availablePallets.filter((p) => selectedPallet[p.palletId]).map((p) => p.palletId),
-    [availablePallets, selectedPallet],
-  );
 
   const storageBins = useMemo(
     () => locations.filter((l) => l.locationType === "STORAGE" && l.status === "Active"),
     [locations],
   );
 
-  const binsForPicker = useMemo(
-    () => storageBins.filter((l) => !targetBins.includes(l.locationCode)),
-    [storageBins, targetBins],
+  const slocOptions = useMemo(
+    () => {
+      if (!Array.isArray(slocs)) return [];
+      const used = new Set(storageBins.map((l) => l.slocCode));
+      return slocs.filter((s) => used.has(s.slocCode));
+    },
+    [storageBins, slocs],
   );
 
-  const binCaps = useMemo(() => {
-    if (!targetBins.length) return [];
-    try {
-      return getMultiTargetBinCapacityByTaskType({ locationCodes: targetBins, taskType: "MOVE" });
-    } catch {
-      return [];
-    }
-  }, [targetBins]);
+  const zoneOptions = useMemo(() => {
+    if (!slocFilter) return [];
+    return Array.from(new Set(storageBins.filter((l) => l.slocCode === slocFilter).map((l) => l.zone))).sort();
+  }, [storageBins, slocFilter]);
 
-  const assignedCountByBin = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const palletId of selectedIds) {
-      const bin = assignments[palletId];
-      if (!bin) continue;
-      map.set(bin, (map.get(bin) ?? 0) + 1);
+  const filteredBins = useMemo(() => {
+    let result = storageBins;
+    if (slocFilter) result = result.filter((l) => l.slocCode === slocFilter);
+    if (zoneFilter) result = result.filter((l) => l.zone === zoneFilter);
+    if (binSearch.trim()) {
+      const q = binSearch.toLowerCase();
+      result = result.filter((l) => l.locationCode.toLowerCase().includes(q));
     }
-    return map;
-  }, [assignments, selectedIds]);
+    return result;
+  }, [storageBins, slocFilter, zoneFilter, binSearch]);
+
+  const locationPathByCode = useMemo(
+    () => Object.fromEntries(locations.map((l) => [l.locationCode, formatLocationPath(l)])),
+    [locations],
+  );
+
+  const daysToExpiry = (expDate?: string) => {
+    if (!expDate) return null;
+    const diff = new Date(expDate).getTime() - new Date().getTime();
+    if (!Number.isFinite(diff)) return null;
+    return Math.ceil(diff / (24 * 60 * 60 * 1000));
+  };
+
+  const selectedPalletIds = useMemo(
+    () => availablePallets.filter((p) => assignments[p.palletId]).map((p) => p.palletId),
+    [availablePallets, assignments],
+  );
 
   const totalSelectedQty = useMemo(
-    () => availablePallets.filter((p) => selectedPallet[p.palletId]).reduce((sum, p) => sum + p.qty, 0),
-    [availablePallets, selectedPallet],
+    () => availablePallets.filter((p) => assignments[p.palletId]).reduce((sum, p) => sum + p.qty, 0),
+    [availablePallets, assignments],
   );
-
-  const allocationStatus = useMemo(() => {
-    const totalAvailable = binCaps.reduce((sum, c) => sum + c.availableCapacity, 0);
-    const totalAssigned = selectedIds.filter((palletId) => !!assignments[palletId]).length;
-    const perBinOver = binCaps.some((c) => (assignedCountByBin.get(c.locationCode) ?? 0) > c.availableCapacity);
-    return { totalAvailable, totalAssigned, perBinOver };
-  }, [assignedCountByBin, assignments, binCaps, selectedIds]);
 
   const canCreateTask =
     !!skuCode &&
     !!batchNo &&
-    selectedIds.length > 0 &&
-    targetBins.length > 0 &&
-    allocationStatus.totalAssigned === selectedIds.length &&
-    !allocationStatus.perBinOver &&
-    allocationStatus.totalAvailable >= selectedIds.length;
+    selectedPalletIds.length > 0 &&
+    selectedPalletIds.every((pid) => assignments[pid]);
 
   const openMoveTasks = useMemo(
     () => tasks.filter((t) => t.taskType === "MOVE" && (t.status === "Open" || t.status === "Printed" || t.status === "Partially Confirmed")),
@@ -136,52 +125,13 @@ function MovePage() {
     [lastTaskNo, tasks],
   );
 
-  const selectPalletIds = (palletIds: string[]) => {
-    setSelectedPallet((prev) => {
-      const next = { ...prev };
-      for (const palletId of palletIds) next[palletId] = true;
-      return next;
-    });
-  };
-
-  const clearPalletIds = (palletIds: string[]) => {
-    setSelectedPallet((prev) => {
-      const next = { ...prev };
-      for (const palletId of palletIds) {
-        delete next[palletId];
-      }
-      return next;
-    });
-  };
-
-  const stepIndex = !skuCode
-    ? 0
-    : !batchNo
-      ? 1
-      : selectedIds.length === 0
-        ? 2
-        : targetBins.length === 0
-          ? 3
-          : 4;
-
-  const doAutoAllocate = () => {
-    try {
-      const auto = autoAllocatePalletsToBins({ palletIds: selectedIds, targetLocations: targetBins, taskType: "MOVE" });
-      setAssignments(Object.fromEntries(auto.map((x) => [x.palletId, x.targetLocation])));
-      toast.success("Đã auto allocate target bin");
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-  };
-
   const doCreateMoveTask = () => {
     try {
       const created = createMoveTaskWithLines({
-        assignments: selectedIds.map((palletId) => ({ palletId, targetLocation: assignments[palletId] })),
+        assignments: selectedPalletIds.map((palletId) => ({ palletId, targetLocation: assignments[palletId] })),
         note: `MOVE ${skuCode}/${batchNo}`,
       });
       setLastTaskNo(created.task.taskNo);
-      setSelectedPallet({});
       setAssignments({});
       toast.success(`Đã tạo MOVE task ${created.task.taskNo} (${created.lines.length} lines)`);
     } catch (e: any) {
@@ -191,25 +141,20 @@ function MovePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Move Bin" description="Chọn SKU/Batch → chọn pallet → allocate target bin → tạo 1 MOVE task nhiều lines" />
-
-      <WorkflowStepperCard
-        steps={["Chọn SKU/Batch", "Chọn pallet", "Phân bổ target bin", "Tạo/In MOVE task"]}
-        activeStepIndex={stepIndex}
-      />
+      <PageHeader title="Move Bin" description="Chọn SKU/Batch, chọn pallet và target bin inline trong 1 bảng" />
 
       {createdTask && (
-          <CreatedTaskBanner
-            label="MOVE task vừa tạo"
-            taskNo={createdTask.taskNo}
-            status={createdTask.status}
-            taskType={createdTask.taskType}
+        <CreatedTaskBanner
+          label="MOVE task vừa tạo"
+          taskNo={createdTask.taskNo}
+          status={createdTask.status}
+          taskType={createdTask.taskType}
           onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo } })}
-          />
-        )}
+        />
+      )}
 
       <SkuBatchSelectionSection
-        title="Section 1 - Chọn SKU/Batch"
+        title="Chọn SKU/Batch"
         purposeLabel="MOVE"
         skus={skus}
         availableSkuSummaries={availableSkuSummaries}
@@ -219,189 +164,179 @@ function MovePage() {
         onSkuSelect={(nextSkuCode) => {
           setSkuCode(nextSkuCode);
           setBatchNo("");
-          setSelectedPallet({});
           setAssignments({});
+          setSlocFilter("");
+          setZoneFilter("");
+          setBinSearch("");
         }}
         onBatchSelect={(nextBatchNo) => {
           setBatchNo(nextBatchNo);
-          setSelectedPallet({});
           setAssignments({});
+          setSlocFilter("");
+          setZoneFilter("");
+          setBinSearch("");
         }}
         formatLocationLabel={(locationCode) => locationPathByCode[locationCode] ?? locationCode}
       >
         <div className="text-sm text-muted-foreground">
-          Pallet đã chọn: {selectedIds.length}/{availablePallets.length} | Qty đã chọn: {totalSelectedQty}
+          Đã chọn: {selectedPalletIds.length} pallet | Qty: {totalSelectedQty}
         </div>
       </SkuBatchSelectionSection>
 
       <Card className="rounded-2xl">
-        <CardContent className="space-y-3 pt-6">
-          <PalletSelectionPanel
-            title="Pallet khả dụng của batch đã chọn"
-            pallets={availablePallets}
-            selectedPalletIds={selectedPallet}
-            onSelectPalletIds={selectPalletIds}
-            onClearPalletIds={clearPalletIds}
-            locationPathByCode={locationPathByCode}
-            locationZoneByCode={locationZoneByCode}
-            daysToExpiry={daysToExpiry}
-            searchPlaceholder="Tìm Pallet ID / Current Bin"
-            emptyMessage="Chọn SKU/Batch để xem pallet phù hợp"
-            locationLabel="Bin"
-            zoneLabel="Zone"
-          />
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Phân bổ target bin</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Select value={binPicker} onValueChange={setBinPicker}>
-              <SelectTrigger className="w-64"><SelectValue placeholder="Chọn target bin" /></SelectTrigger>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Chọn pallet và target bin</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 pt-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={slocFilter} onValueChange={(v) => { setSlocFilter(v); setZoneFilter(""); setBinSearch(""); }}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Chọn Sloc" /></SelectTrigger>
               <SelectContent>
-                {binsForPicker.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)}
+                {slocOptions.map((s) => <SelectItem key={s.id} value={s.slocCode}>{s.slocCode} — {s.slocName}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!binPicker) return;
-                setTargetBins((prev) => Array.from(new Set([...prev, binPicker])));
-                setBinPicker("");
-              }}
-              disabled={!binPicker}
-            >
-              Add Target Bin
-            </Button>
-            <Button variant="outline" onClick={doAutoAllocate} disabled={!selectedIds.length || !targetBins.length}>Auto Allocate</Button>
-            <Button variant="outline" onClick={() => setAssignments({})} disabled={!Object.keys(assignments).length}>Clear Allocation</Button>
+            <Select value={zoneFilter} onValueChange={(v) => { setZoneFilter(v); setBinSearch(""); }} disabled={!slocFilter}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="Chọn Zone" /></SelectTrigger>
+              <SelectContent>
+                {zoneOptions.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Tìm bin..."
+              value={binSearch}
+              onChange={(e) => setBinSearch(e.target.value)}
+              className="w-48"
+            />
+            {filteredBins.length > 0 && (
+              <span className="text-xs text-muted-foreground ml-2">{filteredBins.length} bin</span>
+            )}
           </div>
 
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Target Bin</TableHead>
-                  <TableHead className="text-right">Capacity</TableHead>
-                  <TableHead className="text-right">Current</TableHead>
-                  <TableHead className="text-right">Open MOVE Lines</TableHead>
-                  <TableHead className="text-right">Available</TableHead>
-                  <TableHead className="text-right">Assigned</TableHead>
-                  <TableHead className="text-right">Remaining</TableHead>
-                  <TableHead className="text-right">Remove</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {binCaps.map((c) => {
-                  const assigned = assignedCountByBin.get(c.locationCode) ?? 0;
-                  const remaining = c.availableCapacity - assigned;
-                  return (
-                    <TableRow key={c.locationCode}>
-                      <TableCell className="font-mono text-xs">{c.locationCode}</TableCell>
-                      <TableCell className="text-right font-mono">{c.capacityPallet}</TableCell>
-                      <TableCell className="text-right font-mono">{c.currentPalletCount}</TableCell>
-                      <TableCell className="text-right font-mono">{c.openTaskLineCount}</TableCell>
-                      <TableCell className="text-right font-mono">{c.availableCapacity}</TableCell>
-                      <TableCell className="text-right font-mono">{assigned}</TableCell>
-                      <TableCell className={`text-right font-mono ${remaining < 0 ? "text-destructive" : ""}`}>{remaining}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setTargetBins((prev) => prev.filter((x) => x !== c.locationCode));
-                            setAssignments((prev) => {
-                              const next = { ...prev };
-                              for (const palletId of Object.keys(next)) {
-                                if (next[palletId] === c.locationCode) delete next[palletId];
-                              }
-                              return next;
-                            });
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {binCaps.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Chưa chọn target bin</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="overflow-x-auto border rounded-xl">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Pallet ID</TableHead>
+          {(!skuCode || !batchNo) ? (
+            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-xl">
+              Chọn SKU/Batch để xem pallet khả dụng
+            </div>
+          ) : availablePallets.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-xl">
+              Không có pallet khả dụng cho batch này
+            </div>
+          ) : (
+            <div className="overflow-x-auto border rounded-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedPalletIds.length === availablePallets.length && availablePallets.length > 0}
+                        ref={(el) => {
+                          if (el) el.indeterminate = selectedPalletIds.length > 0 && selectedPalletIds.length < availablePallets.length;
+                        }}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const all: Record<string, string> = {};
+                            for (const p of availablePallets) {
+                              all[p.palletId] = assignments[p.palletId] ?? "";
+                            }
+                            setAssignments(all);
+                          } else {
+                            setAssignments({});
+                          }
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead>Pallet ID</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Weight</TableHead>
                     <TableHead>Current Bin</TableHead>
-                  <TableHead>Target Bin</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedIds.map((palletId) => {
-                  const pallet = availablePallets.find((x) => x.palletId === palletId);
-                  if (!pallet) return null;
-                  return (
-                    <TableRow key={palletId}>
-                      <TableCell className="font-mono text-xs">{palletId}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        <div>{pallet.currentLocation ?? "—"}</div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {locationPathByCode[pallet.currentLocation ?? ""] ?? "—"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={assignments[palletId] || ""}
-                          onValueChange={(v) => setAssignments((prev) => ({ ...prev, [palletId]: v }))}
-                        >
-                          <SelectTrigger className="w-56"><SelectValue placeholder="Chọn target bin" /></SelectTrigger>
-                          <SelectContent>
-                            {targetBins.map((bin) => <SelectItem key={bin} value={bin}>{bin}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {selectedIds.length === 0 && (
-                  <TableRow><TableCell colSpan={3} className="py-6 text-center text-muted-foreground">Chưa chọn pallet</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    <TableHead>EXP</TableHead>
+                    <TableHead>Target Bin</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {availablePallets.map((p) => {
+                    const days = p.expDate ? daysToExpiry(p.expDate) : null;
+                    return (
+                      <TableRow key={p.palletId} className={!assignments[p.palletId] ? "opacity-60" : ""}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={!!assignments[p.palletId]}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAssignments((prev) => ({ ...prev, [p.palletId]: "" }));
+                              } else {
+                                setAssignments((prev) => {
+                                  const next = { ...prev };
+                                  delete next[p.palletId];
+                                  return next;
+                                });
+                              }
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{p.palletId}</TableCell>
+                        <TableCell className="text-right font-mono">{p.qty}</TableCell>
+                        <TableCell className="text-right font-mono">{p.weight}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          <div>{p.currentLocation ?? "—"}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {locationPathByCode[p.currentLocation ?? ""] ?? "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {p.expDate ? (
+                            <span className={days !== null && days <= 7 ? "text-destructive" : ""}>
+                              {p.expDate} {days !== null ? `(${days}d)` : ""}
+                            </span>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="min-w-[220px]">
+                          <Select
+                            value={assignments[p.palletId] || ""}
+                            onValueChange={(v) => setAssignments((prev) => ({ ...prev, [p.palletId]: v }))}
+                          >
+                            <SelectTrigger className="w-48"><SelectValue placeholder="Chọn target bin" /></SelectTrigger>
+                            <SelectContent>
+                              {filteredBins.map((l) => <SelectItem key={l.id} value={l.locationCode}>{l.locationCode}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={doCreateMoveTask} disabled={!canCreateTask}>
+              Tạo MOVE Task ({selectedPalletIds.length})
+            </Button>
+            {selectedPalletIds.length > 0 && selectedPalletIds.some((pid) => !assignments[pid]) && (
+              <span className="text-sm text-destructive">Mỗi pallet phải chọn target bin.</span>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={doCreateMoveTask} disabled={!canCreateTask}>Tạo MOVE Task ({selectedIds.length})</Button>
-          {allocationStatus.totalAssigned !== selectedIds.length && selectedIds.length > 0 && (
-            <span className="text-sm text-destructive">Chưa allocate đủ target bin cho tất cả pallet.</span>
-          )}
-        </div>
-        <TaskListCard
-          title="Tạo MOVE Task"
-          tasks={openMoveTasks}
-          lineMap={openTaskMap}
-          currentTaskNo={lastTaskNo}
-          emptyMessage="Không có MOVE task mở"
-          onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } })}
-          onCancelTask={(task) => {
-            try {
-              cancelTask(task.id);
-              toast.success("Cancelled");
-            } catch (e: any) {
-              toast.error(e.message);
-            }
-          }}
-        />
-      </div>
+      <TaskListCard
+        title="MOVE task mở"
+        tasks={openMoveTasks}
+        lineMap={openTaskMap}
+        currentTaskNo={lastTaskNo}
+        emptyMessage="Không có MOVE task mở"
+        onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo } })}
+        onCancelTask={(task) => {
+          try {
+            cancelTask(task.id);
+            toast.success("Cancelled");
+          } catch (e: any) {
+            toast.error(e.message);
+          }
+        }}
+      />
     </div>
   );
 }

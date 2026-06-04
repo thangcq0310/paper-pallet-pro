@@ -56,9 +56,9 @@ function LocationPage() {
     status: "Active" as "Active" | "Blocked",
   });
 
-  const zones = Array.from(new Set(locations.map((l) => l.zone)));
+  const zones = Array.from(new Set(Array.isArray(locations) ? locations.map((l) => l.zone) : []));
   const slocsByPlant = useMemo(
-    () => slocs.filter((s) => s.plantCode === form.plantCode),
+    () => Array.isArray(slocs) ? slocs.filter((s) => s.plantCode === form.plantCode) : [],
     [form.plantCode, slocs],
   );
   const deleteWithConfirm = (label: string, message: string, action: () => void) => {
@@ -70,16 +70,16 @@ function LocationPage() {
       toast.error(e.message);
     }
   };
-  const filtered = locations.filter((l) =>
+  const filtered = Array.isArray(locations) ? locations.filter((l) =>
     (zoneFilter === "all" || l.zone === zoneFilter) &&
     (statusFilter === "all" || l.status === statusFilter),
-  );
+  ) : [];
 
   useEffect(() => {
     if (!open) return;
     setForm((prev) => {
       const nextPlant = prev.plantCode || plants[0]?.plantCode || "";
-      const eligibleSlocs = slocs.filter((s) => s.plantCode === nextPlant);
+      const eligibleSlocs = Array.isArray(slocs) ? slocs.filter((s) => s.plantCode === nextPlant) : [];
       const nextSloc = prev.slocCode && eligibleSlocs.some((s) => s.slocCode === prev.slocCode)
         ? prev.slocCode
         : eligibleSlocs[0]?.slocCode || "";
@@ -227,13 +227,13 @@ function LocationPage() {
                       <Select
                         value={form.plantCode}
                         onValueChange={(v) => {
-                          const nextSloc = slocs.filter((s) => s.plantCode === v)[0]?.slocCode ?? "";
+                          const nextSloc = Array.isArray(slocs) ? slocs.filter((s) => s.plantCode === v)[0]?.slocCode ?? "" : "";
                           setForm({ ...form, plantCode: v, slocCode: nextSloc });
                         }}
                       >
                         <SelectTrigger><SelectValue placeholder="Chọn Plant" /></SelectTrigger>
                         <SelectContent>
-                          {plants.map((p) => <SelectItem key={p.id} value={p.plantCode}>{p.plantCode} — {p.plantName ?? p.plantCode}</SelectItem>)}
+                          {(Array.isArray(plants) ? plants : []).map((p) => <SelectItem key={p.id} value={p.plantCode}>{p.plantCode} — {p.plantName ?? p.plantCode}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -348,7 +348,7 @@ function LocationPage() {
               </Dialog>
             </div>
                   <div className="space-y-2 max-h-48 overflow-auto">
-              {plants.map((p) => (
+              {(Array.isArray(plants) ? plants : []).map((p) => (
                 <div key={p.id} className="rounded-xl border p-3 flex items-start justify-between gap-3">
                   <div>
                     <div className="font-mono text-sm">{p.plantCode}</div>
@@ -397,7 +397,7 @@ function LocationPage() {
                       <Select value={slocForm.plantCode} onValueChange={(v) => setSlocForm({ ...slocForm, plantCode: v })}>
                         <SelectTrigger><SelectValue placeholder="Chọn Plant" /></SelectTrigger>
                         <SelectContent>
-                          {plants.map((p) => <SelectItem key={p.id} value={p.plantCode}>{p.plantCode} — {p.plantName ?? p.plantCode}</SelectItem>)}
+                          {(Array.isArray(plants) ? plants : []).map((p) => <SelectItem key={p.id} value={p.plantCode}>{p.plantCode} — {p.plantName ?? p.plantCode}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -419,7 +419,7 @@ function LocationPage() {
               </Dialog>
             </div>
             <div className="space-y-2 max-h-48 overflow-auto">
-              {slocs.map((s) => (
+              {(Array.isArray(slocs) ? slocs : []).map((s) => (
                 <div key={s.id} className="rounded-xl border p-3 flex items-start justify-between gap-3">
                   <div>
                     <div className="font-mono text-sm">{s.slocCode}</div>
