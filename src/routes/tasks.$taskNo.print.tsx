@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/services/store";
 import { printTask } from "@/services/taskService";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatLocationPath } from "@/utils/location";
 import { QrCode } from "@/components/qr/QrCode";
+import { Download } from "lucide-react";
 
 export const Route = createFileRoute("/tasks/$taskNo/print")({ component: TaskPrintPage });
 
@@ -16,10 +17,12 @@ function TaskPrintPage() {
   const taskLines = useStore((s) => s.taskLines);
   const outbounds = useStore((s) => s.outbounds);
   const locations = useStore((s) => s.locations);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const task = (Array.isArray(tasks) ? tasks : []).find((t) => t.taskNo === taskNo);
   const lines = (Array.isArray(taskLines) ? taskLines : []).filter((l) => l.taskNo === taskNo).sort((a, b) => a.lineNo - b.lineNo);
   const outboundDoc = task?.outboundNo ? (Array.isArray(outbounds) ? outbounds : []).find((o) => o.outboundNo === task.outboundNo) : undefined;
   const autoPrintedRef = useRef(false);
+  const printAreaRef = useRef<HTMLDivElement | null>(null);
 
   const triggerPrint = () => {
     window.focus();
@@ -35,6 +38,78 @@ function TaskPrintPage() {
       triggerPrint();
     } catch (e: any) {
       toast.error(e.message);
+    }
+  };
+
+  const doExportPdf = async () => {
+    try {
+      if (!task) throw new Error("Task không tồn tại");
+      if (!printAreaRef.current) throw new Error("Không tìm thấy vùng in task");
+
+      setIsExportingPdf(true);
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      const canvas = await html2canvas(printAreaRef.current, {
+        scale: Math.min(window.devicePixelRatio || 2, 2),
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const contentWidth = pageWidth - margin * 2;
+      const contentHeight = pageHeight - margin * 2;
+
+      const pxPerMm = canvas.width / contentWidth;
+      const pageCanvasHeight = Math.floor(contentHeight * pxPerMm);
+
+      let offsetY = 0;
+      let pageIndex = 0;
+
+      while (offsetY < canvas.height) {
+        const sliceHeight = Math.min(pageCanvasHeight, canvas.height - offsetY);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeight;
+
+        const ctx = pageCanvas.getContext("2d");
+        if (!ctx) throw new Error("Không tạo được canvas để export PDF");
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        ctx.drawImage(
+          canvas,
+          0,
+          offsetY,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          pageCanvas.width,
+          sliceHeight,
+        );
+
+        const imageData = pageCanvas.toDataURL("image/png");
+        const renderedHeight = sliceHeight / pxPerMm;
+
+        if (pageIndex > 0) pdf.addPage();
+        pdf.addImage(imageData, "PNG", margin, margin, contentWidth, renderedHeight, undefined, "FAST");
+
+        offsetY += sliceHeight;
+        pageIndex += 1;
+      }
+
+      pdf.save(`${task.taskNo}.pdf`);
+      toast.success(`Đã xuất PDF ${task.taskNo}.pdf`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Xuất PDF thất bại");
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -88,12 +163,18 @@ function TaskPrintPage() {
   };
 
   return (
-    <div className="print-area p-6">
+    <div className="print-area bg-white p-6">
       <div className="no-print flex justify-end mb-4">
-        <Button onClick={doPrint}>Print Task</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={doExportPdf} disabled={isExportingPdf}>
+            <Download className="mr-1 h-4 w-4" />
+            {isExportingPdf ? "Đang xuất PDF..." : "Xuất PDF"}
+          </Button>
+          <Button onClick={doPrint}>Print Task</Button>
+        </div>
       </div>
 
-      <Card className="rounded-2xl border-2 border-foreground">
+      <Card ref={printAreaRef} className="rounded-2xl border-2 border-foreground">
         <CardContent className="p-8 space-y-6">
           <div className="flex items-start justify-between gap-4 border-b-2 border-foreground pb-4">
             <div>
