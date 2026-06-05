@@ -12,13 +12,14 @@ import { Download } from "lucide-react";
 export const Route = createFileRoute("/tasks/$taskNo/print")({
   validateSearch: (search: Record<string, unknown>) => ({
     autoprint: search.autoprint === true || search.autoprint === "true" || search.autoprint === "1",
+    autoexport: search.autoexport === true || search.autoexport === "true" || search.autoexport === "1",
   }),
   component: TaskPrintPage,
 });
 
 function TaskPrintPage() {
   const { taskNo } = Route.useParams();
-  const { autoprint } = Route.useSearch();
+  const { autoprint, autoexport } = Route.useSearch();
   const tasks = useStore((s) => s.tasks);
   const taskLines = useStore((s) => s.taskLines);
   const outbounds = useStore((s) => s.outbounds);
@@ -133,6 +134,15 @@ function TaskPrintPage() {
     return () => window.clearTimeout(t);
   }, [autoprint, task]);
 
+  useEffect(() => {
+    if (!task || !autoexport || autoPrintedRef.current) return;
+    autoPrintedRef.current = true;
+    const t = window.setTimeout(() => {
+      void doExportPdf();
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [autoexport, task]);
+
   if (!task) {
     return (
       <div className="p-6">
@@ -176,7 +186,7 @@ function TaskPrintPage() {
             <Download className="mr-1 h-4 w-4" />
             {isExportingPdf ? "Đang xuất PDF..." : "Xuất PDF"}
           </Button>
-          <Button onClick={doPrint}>Print Task</Button>
+          <Button onClick={doPrint}>In trình duyệt</Button>
         </div>
       </div>
 

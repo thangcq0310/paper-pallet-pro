@@ -82,7 +82,7 @@ function WarehouseTasklistPage() {
   }, [filteredTasks]);
 
   const doPrint = (taskNo: string) => {
-    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoprint: true } });
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoexport: true } });
   };
 
   return (
@@ -202,7 +202,7 @@ function WarehouseTasklistPage() {
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => doPrint(task.taskNo)} disabled={task.status === "Confirmed" || task.status === "Cancelled"}>
                             <Printer className="mr-1 h-3.5 w-3.5" />
-                            Print
+                            Export PDF
                           </Button>
                           <Button
                             size="sm"

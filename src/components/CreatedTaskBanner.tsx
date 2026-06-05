@@ -19,7 +19,7 @@ export function CreatedTaskBanner(props: {
           <div className="text-sm text-muted-foreground">{status} • {taskType}</div>
         </div>
         <Button variant="outline" onClick={onPrint}>
-          Print
+          Export PDF
         </Button>
       </CardContent>
     </Card>

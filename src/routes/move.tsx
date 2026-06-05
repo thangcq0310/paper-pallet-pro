@@ -149,7 +149,7 @@ function MovePage() {
           taskNo={createdTask.taskNo}
           status={createdTask.status}
           taskType={createdTask.taskType}
-          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo }, search: { autoprint: true } })}
+          onPrint={() => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo: createdTask.taskNo }, search: { autoexport: true } })}
         />
       )}
 
@@ -327,7 +327,7 @@ function MovePage() {
         lineMap={openTaskMap}
         currentTaskNo={lastTaskNo}
         emptyMessage="Không có MOVE task mở"
-        onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoprint: true } })}
+        onPrintTask={(taskNo) => router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoexport: true } })}
         onCancelTask={(task) => {
           try {
             cancelTask(task.id);

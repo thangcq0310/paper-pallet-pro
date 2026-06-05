@@ -593,7 +593,7 @@ function InboundPalletizePutawayPage() {
   };
 
   const openPrintTask = (taskNo: string) => {
-    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoprint: true } });
+    router.navigate({ to: "/tasks/$taskNo/print", params: { taskNo }, search: { autoexport: true } });
   };
 
   const doAutoAllocate = () => {

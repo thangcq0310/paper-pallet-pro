@@ -28,7 +28,7 @@ export function TaskListCard(props: {
                 <TableHead>Task No</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Lines</TableHead>
-                <TableHead className="text-right">Print</TableHead>
+                <TableHead className="text-right">PDF</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -45,7 +45,7 @@ export function TaskListCard(props: {
                     <TableCell className="text-right font-mono">{task.printCount}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="sm" variant="outline" onClick={() => onPrintTask(task.taskNo)}>
-                        Print
+                        Export PDF
                       </Button>
                       <Button
                         size="sm"
